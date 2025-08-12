@@ -81,8 +81,15 @@ export default function ScanPage() {
       });
       setStream(mediaStream);
       setCameraActive(true);
+      
+      // Wait for video element to be ready
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        videoRef.current.onloadedmetadata = () => {
+          if (videoRef.current) {
+            videoRef.current.play().catch(console.error);
+          }
+        };
       }
     } catch (error) {
       console.error('Camera access denied:', error);

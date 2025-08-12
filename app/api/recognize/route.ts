@@ -244,8 +244,14 @@ export async function POST(request: NextRequest) {
       console.log('🐾 Using GOOGLE VISION + ANIMAL MAPPING engine');
       // Enhanced animal detection with species mapping
       const animalSpeciesMap: Record<string, { name: string; scientific: string; confidence: number }> = {
-        'dog': { name: 'Dog', scientific: 'Canis familiaris', confidence: 0.9 },
+        'tiger': { name: 'Tiger', scientific: 'Panthera tigris', confidence: 0.95 },
+        'lion': { name: 'Lion', scientific: 'Panthera leo', confidence: 0.95 },
+        'leopard': { name: 'Leopard', scientific: 'Panthera pardus', confidence: 0.95 },
+        'cheetah': { name: 'Cheetah', scientific: 'Acinonyx jubatus', confidence: 0.95 },
+        'jaguar': { name: 'Jaguar', scientific: 'Panthera onca', confidence: 0.95 },
+        'panther': { name: 'Panther', scientific: 'Panthera pardus', confidence: 0.95 },
         'cat': { name: 'Cat', scientific: 'Felis catus', confidence: 0.9 },
+        'dog': { name: 'Dog', scientific: 'Canis familiaris', confidence: 0.9 },
         'bird': { name: 'Bird', scientific: 'Aves sp.', confidence: 0.8 },
         'squirrel': { name: 'Squirrel', scientific: 'Sciurus sp.', confidence: 0.85 },
         'rabbit': { name: 'Rabbit', scientific: 'Oryctolagus cuniculus', confidence: 0.85 },
@@ -293,24 +299,29 @@ export async function POST(request: NextRequest) {
       // Check each label against our species map
       for (const label of labels) {
         const lowerLabel = label.toLowerCase();
+        console.log(`🔍 Checking label: "${label}" (lowercase: "${lowerLabel}")`);
         
-        // Direct match
+        // Direct match (highest priority)
         if (animalSpeciesMap[lowerLabel]) {
           const match = animalSpeciesMap[lowerLabel];
+          console.log(`✅ Direct match found: ${match.name} (confidence: ${match.confidence})`);
           if (match.confidence > bestConfidence) {
             bestMatch = match;
             bestConfidence = match.confidence;
           }
         }
         
-        // Partial match (e.g., "black cat" matches "cat")
+        // Partial match (lower priority)
         for (const [species, match] of Object.entries(animalSpeciesMap)) {
           if (lowerLabel.includes(species) && match.confidence > bestConfidence) {
+            console.log(`✅ Partial match found: ${match.name} (from "${species}" in "${lowerLabel}")`);
             bestMatch = match;
             bestConfidence = match.confidence;
           }
         }
       }
+      
+      console.log(`🏆 Best match: ${bestMatch?.name || 'None'} (confidence: ${bestConfidence})`);
       
       if (bestMatch) {
         speciesResult = {
