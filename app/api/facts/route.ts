@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { factsRequestSchema } from '@/lib/validation';
 import { generateFunFacts } from '@/lib/utils';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const canonicalName = searchParams.get('canonicalName');
-    const gbifKey = searchParams.get('gbifKey');
+    const canonicalName = request.nextUrl.searchParams.get('canonicalName');
+    const gbifKey = request.nextUrl.searchParams.get('gbifKey');
 
     // Validate request
     const validatedParams = factsRequestSchema.parse({

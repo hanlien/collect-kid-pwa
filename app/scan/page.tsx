@@ -372,7 +372,7 @@ export default function ScanPage() {
                 </motion.div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-800">Level {userData.level}</h2>
-                  <p className="text-sm text-gray-600">Brandon's Explorer</p>
+                  <p className="text-sm text-gray-600">Brandon&apos;s Explorer</p>
                 </div>
               </div>
               

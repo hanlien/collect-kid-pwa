@@ -1,17 +1,25 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import PWAProvider from '@/components/PWAProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#ed7516',
+};
+
 export const metadata: Metadata = {
+  metadataBase: new URL('https://buggies-with-brandon.vercel.app'),
   title: 'Backyard Brandon - Explore Nature with Your Camera',
   description: 'Explore your backyard and discover amazing creatures with Brandon! Learn fun facts and collect badges in this kid-friendly nature app.',
   keywords: 'nature, kids, education, camera, identification, flowers, bugs, animals, backyard',
   authors: [{ name: 'Backyard Brandon Team' }],
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover',
-  themeColor: '#ed7516',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
