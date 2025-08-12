@@ -333,7 +333,7 @@ export default function ScanPage() {
             }}
           >
             {/* Tree trunk */}
-            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-8 bg-brown-600 rounded-full" />
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-8 bg-amber-800 rounded-full" />
             {/* Tree leaves */}
             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-10 h-12 bg-green-600 rounded-full" />
           </motion.div>

@@ -102,9 +102,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Skip badges for now if database isn't ready
-    let badge = null;
+    let badge: any = null;
     let leveledUp = false;
-    let achievements = [];
+    let achievements: any[] = [];
 
     return NextResponse.json({
       capture,
