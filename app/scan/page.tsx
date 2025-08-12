@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Camera, Upload, Sparkles, Search, BookOpen, Trophy, Coins, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BigButton } from '@/components/ui/BigButton';
+import BigButton from '@/components/BigButton';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { ConfettiBurst } from '@/components/anim/ConfettiBurst';
 import Toast from '@/components/Toast';

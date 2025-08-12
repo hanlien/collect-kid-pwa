@@ -21,11 +21,11 @@ class LocalModel {
   private model: tf.GraphModel | null = null;
   private config: ModelConfig | null = null;
   private labelMap: any = null;
-  private isLoaded = false;
+  private _isLoaded = false;
   private isLoading = false;
 
   async load(): Promise<void> {
-    if (this.isLoaded || this.isLoading) return;
+    if (this._isLoaded || this.isLoading) return;
     
     this.isLoading = true;
     
@@ -42,11 +42,13 @@ class LocalModel {
       this.model = await tf.loadGraphModel('/models/local_model_v001.tflite');
       
       // Warm up the model
-      const dummyInput = tf.zeros([1, ...this.config.inputSize, 3]);
-      await this.model.predict(dummyInput);
-      dummyInput.dispose();
+      if (this.config && this.config.inputSize) {
+        const dummyInput = tf.zeros([1, ...this.config.inputSize, 3]);
+        await this.model.predict(dummyInput);
+        dummyInput.dispose();
+      }
       
-      this.isLoaded = true;
+      this._isLoaded = true;
       console.log('✅ Local model loaded successfully');
     } catch (error) {
       console.error('❌ Failed to load local model:', error);
@@ -57,8 +59,8 @@ class LocalModel {
   }
 
   async infer(imageData: ImageData | HTMLImageElement): Promise<LocalModelResult> {
-    if (!this.isLoaded || !this.model || !this.config) {
-      throw new Error('Model not loaded');
+    if (!this._isLoaded || !this.model || !this.config || !this.config.inputSize) {
+      throw new Error('Model not loaded or config invalid');
     }
 
     const startTime = performance.now();
@@ -110,12 +112,13 @@ class LocalModel {
     }
   }
 
-  private getTopK(probs: Float32Array, k: number): Array<{ labelId: string; prob: number }> {
-    const indexed = Array.from(probs).map((prob, index) => ({ prob, index }));
+  private getTopK(probs: Float32Array | Uint8Array | Int32Array, k: number): Array<{ labelId: string; prob: number }> {
+    const floatProbs = Array.from(probs).map(p => typeof p === 'number' ? p : 0);
+    const indexed = floatProbs.map((prob, index) => ({ prob, index }));
     indexed.sort((a, b) => b.prob - a.prob);
     
     return indexed.slice(0, k).map(({ prob, index }) => ({
-      labelId: this.labelMap.classes[index].id,
+      labelId: this.labelMap?.classes?.[index]?.id || 'unknown',
       prob
     }));
   }
@@ -139,7 +142,7 @@ class LocalModel {
   }
 
   isLoaded(): boolean {
-    return this.isLoaded;
+    return this._isLoaded;
   }
 }
 

@@ -5,7 +5,6 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { SpeciesResult, Category, Provider } from '@/types/species';
 import { colorNameToHex, getBadgeSubtype } from '@/lib/utils';
 import { findSpeciesByKeywords, localSpeciesToResult } from '@/lib/species-database';
-import { mlRouter } from '@/lib/ml/router';
 
 // Simple in-memory rate limiting (TODO: use Redis in production)
 const rateLimitCounts = {
@@ -86,7 +85,7 @@ export async function POST(request: NextRequest) {
     console.log('🔍 === SEARCH ENGINE DEBUG ===');
     console.log('🔍 Google Vision detected labels:', labels);
     console.log('🔍 User hint:', validatedHint);
-    console.log(' Dominant colors:', colors.map(c => c.color));
+    console.log('🎨 Dominant colors:', colors.map(c => c.color));
 
     // Extract color chips
     const colorChips = colors
@@ -100,79 +99,289 @@ export async function POST(request: NextRequest) {
       })
       .filter(Boolean) as string[];
 
-    // Create ImageData for local model inference
-    let imageData: ImageData | undefined;
-    try {
-      const img = new Image();
-      const blob = new Blob([imageBuffer], { type: image.type });
-      const url = URL.createObjectURL(blob);
+    // Check local database first (saves API credits!)
+    const localSpecies = findSpeciesByKeywords(labels);
+    if (localSpecies) {
+      console.log('✅ Using LOCAL DATABASE engine');
+      console.log(`✅ Found local match: ${localSpecies.commonName}`);
+      const localResult = localSpeciesToResult(localSpecies);
+      localResult.ui = { ...localResult.ui, colorChips };
       
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = url;
-      });
+      // Check confidence threshold
+      if (localResult.confidence < 0.6) {
+        console.log('❌ Local match confidence too low:', localResult.confidence);
+        return NextResponse.json(
+          {
+            error: 'LOW_CONFIDENCE',
+            message: 'Try getting closer, holding steady, or finding better lighting!',
+            result: localResult,
+          },
+          { status: 400 }
+        );
+      }
       
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d')!;
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      imageData = ctx.getImageData(0, 0, img.width, img.height);
-      
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.warn('Failed to create ImageData for local model:', error);
+      console.log('✅ Returning local database result');
+      return NextResponse.json({ result: localResult });
     }
 
-    // Use ML Router to decide on the best approach
-    const routerInput = {
-      visionLabels: labels,
-      hint: validatedHint,
-      imageData,
-      userId
-    };
+    console.log('❌ No local database match found, proceeding to API engines');
 
-    const { result: speciesResult, decision, localResult } = await mlRouter.route(routerInput);
+    // If no local match, proceed with API calls
+    let speciesResult: SpeciesResult;
 
-    // Add color chips to result
-    speciesResult.ui = { ...speciesResult.ui, colorChips };
+    const plantTerms = ['plant', 'flower', 'tree', 'leaf', 'petal', 'bloom', 'garden', 'flora'];
+    const bugTerms = ['insect', 'bug', 'bee', 'butterfly', 'ant', 'spider', 'fly', 'mosquito', 'beetle', 'grasshopper', 'cricket', 'dragonfly', 'ladybug'];
+    const animalTerms = ['animal', 'mammal', 'bird', 'reptile', 'amphibian', 'fish', 'pet', 'wildlife'];
 
-    // Log the decision
-    console.log('🎯 ML Router Decision:', decision);
+    const hasPlantLabels = labels.some(label => 
+      plantTerms.some(term => label.toLowerCase().includes(term))
+    );
+    const hasBugLabels = labels.some(label => 
+      bugTerms.some(term => label.toLowerCase().includes(term))
+    );
+    const hasAnimalLabels = labels.some(label => 
+      animalTerms.some(term => label.toLowerCase().includes(term))
+    );
 
-    // Check if we need to queue for active learning
-    const needsReview = decision.needsReview || 
-                       speciesResult.confidence < 0.6 ||
-                       (decision.useLocal && !decision.usePlantId && speciesResult.confidence < 0.7);
+    console.log('📊 Category detection:');
+    console.log('  - Plant labels:', hasPlantLabels);
+    console.log('  - Bug labels:', hasBugLabels);
+    console.log('  - Animal labels:', hasAnimalLabels);
 
-    if (needsReview && userId && process.env.AL_ENABLE === 'true') {
+    if ((hasPlantLabels || validatedHint === 'flower') && rateLimitCounts.plantid < env.PLANT_MAX_DAY) {
+      console.log('🌱 Using PLANT.ID API engine');
+      // Call Plant.id API
       try {
-        // Create thumbnail for active learning
-        const thumbUrl = await createThumbnail(imageBuffer, image.type);
-        
-        // Queue for active learning
-        await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/active-learning`, {
+        const plantResponse = await fetch('https://api.plant.id/v2/identify', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Api-Key': env.PLANT_ID_API_KEY,
+          },
           body: JSON.stringify({
-            userId,
-            thumbUrl,
-            providerSuggestion: speciesResult.provider,
-            visionLabels: labels,
-            localModel: localResult ? {
-              version: 'v001',
-              topK: localResult.topK
-            } : null,
-            hint: validatedHint,
-            locationHint: null
-          })
+            images: [base64Image],
+            modifiers: ['health_all', 'disease_similar_images'],
+            plant_details: ['common_names', 'taxonomy', 'wiki_description'],
+          }),
         });
-        
-        console.log('📝 Queued for active learning review');
+
+        if (plantResponse.ok) {
+          const plantData = await plantResponse.json();
+          const suggestion = plantData.suggestions?.[0];
+          
+          if (suggestion) {
+            rateLimitCounts.plantid++;
+            
+            speciesResult = {
+              category: 'flower',
+              canonicalName: suggestion.plant_name || 'Unknown Plant',
+              commonName: suggestion.plant_details?.common_names?.[0],
+              rank: suggestion.plant_details?.taxonomy?.rank || 'species',
+              confidence: suggestion.probability || 0.5,
+              provider: 'plantid',
+              ui: { colorChips },
+            };
+          } else {
+            throw new Error('No plant suggestions found');
+          }
+        } else {
+          throw new Error('Plant.id API error');
+        }
       } catch (error) {
-        console.error('Failed to queue for active learning:', error);
+        console.error('Plant.id API error:', error);
+        // Fallback to generic plant result
+        speciesResult = {
+          category: 'flower',
+          canonicalName: 'Plant',
+          commonName: 'Plant',
+          rank: 'kingdom',
+          confidence: 0.3,
+          provider: 'gcv',
+          ui: { colorChips },
+        };
       }
+    } else if (hasBugLabels || validatedHint === 'bug') {
+      console.log('🐛 Using GOOGLE VISION + BUG MAPPING engine');
+      // Enhanced bug detection with species mapping
+      const bugSpeciesMap: Record<string, { name: string; scientific: string; confidence: number }> = {
+        'bee': { name: 'Bee', scientific: 'Apis mellifera', confidence: 0.85 },
+        'butterfly': { name: 'Butterfly', scientific: 'Lepidoptera sp.', confidence: 0.8 },
+        'ant': { name: 'Ant', scientific: 'Formicidae sp.', confidence: 0.8 },
+        'spider': { name: 'Spider', scientific: 'Araneae sp.', confidence: 0.8 },
+        'fly': { name: 'Fly', scientific: 'Diptera sp.', confidence: 0.7 },
+        'mosquito': { name: 'Mosquito', scientific: 'Culicidae sp.', confidence: 0.8 },
+        'beetle': { name: 'Beetle', scientific: 'Coleoptera sp.', confidence: 0.8 },
+        'grasshopper': { name: 'Grasshopper', scientific: 'Caelifera sp.', confidence: 0.8 },
+        'cricket': { name: 'Cricket', scientific: 'Gryllidae sp.', confidence: 0.8 },
+        'dragonfly': { name: 'Dragonfly', scientific: 'Anisoptera sp.', confidence: 0.8 },
+        'ladybug': { name: 'Ladybug', scientific: 'Coccinellidae sp.', confidence: 0.8 },
+      };
+      
+      let bestMatch = null;
+      let bestConfidence = 0;
+      
+      // Check each label against our bug species map
+      for (const label of labels) {
+        const lowerLabel = label.toLowerCase();
+        
+        // Direct match
+        if (bugSpeciesMap[lowerLabel]) {
+          const match = bugSpeciesMap[lowerLabel];
+          if (match.confidence > bestConfidence) {
+            bestMatch = match;
+            bestConfidence = match.confidence;
+          }
+        }
+        
+        // Partial match
+        for (const [species, match] of Object.entries(bugSpeciesMap)) {
+          if (lowerLabel.includes(species) && match.confidence > bestConfidence) {
+            bestMatch = match;
+            bestConfidence = match.confidence;
+          }
+        }
+      }
+      
+      if (bestMatch) {
+        speciesResult = {
+          category: 'bug',
+          canonicalName: bestMatch.scientific,
+          commonName: bestMatch.name,
+          rank: 'species',
+          confidence: bestMatch.confidence,
+          provider: 'gcv',
+          ui: { colorChips },
+        };
+      } else {
+        // Fallback to generic bug detection
+        const bugName = labels.find(label => 
+          bugTerms.some(term => label.toLowerCase().includes(term))
+        ) || 'Bug';
+        
+        speciesResult = {
+          category: 'bug',
+          canonicalName: 'Insecta sp.',
+          commonName: bugName,
+          rank: 'class',
+          confidence: 0.6,
+          provider: 'gcv',
+          ui: { colorChips },
+        };
+      }
+    } else if (hasAnimalLabels || validatedHint === 'animal') {
+      console.log('🐾 Using GOOGLE VISION + ANIMAL MAPPING engine');
+      // Enhanced animal detection with species mapping
+      const animalSpeciesMap: Record<string, { name: string; scientific: string; confidence: number }> = {
+        'dog': { name: 'Dog', scientific: 'Canis familiaris', confidence: 0.9 },
+        'cat': { name: 'Cat', scientific: 'Felis catus', confidence: 0.9 },
+        'bird': { name: 'Bird', scientific: 'Aves sp.', confidence: 0.8 },
+        'squirrel': { name: 'Squirrel', scientific: 'Sciurus sp.', confidence: 0.85 },
+        'rabbit': { name: 'Rabbit', scientific: 'Oryctolagus cuniculus', confidence: 0.85 },
+        'deer': { name: 'Deer', scientific: 'Cervidae sp.', confidence: 0.8 },
+        'fox': { name: 'Fox', scientific: 'Vulpes sp.', confidence: 0.8 },
+        'raccoon': { name: 'Raccoon', scientific: 'Procyon lotor', confidence: 0.8 },
+        'skunk': { name: 'Skunk', scientific: 'Mephitidae sp.', confidence: 0.8 },
+        'chipmunk': { name: 'Chipmunk', scientific: 'Tamias sp.', confidence: 0.8 },
+        'mouse': { name: 'Mouse', scientific: 'Mus musculus', confidence: 0.8 },
+        'rat': { name: 'Rat', scientific: 'Rattus sp.', confidence: 0.8 },
+        'hamster': { name: 'Hamster', scientific: 'Cricetinae sp.', confidence: 0.8 },
+        'guinea pig': { name: 'Guinea Pig', scientific: 'Cavia porcellus', confidence: 0.8 },
+        'ferret': { name: 'Ferret', scientific: 'Mustela putorius furo', confidence: 0.8 },
+        'horse': { name: 'Horse', scientific: 'Equus caballus', confidence: 0.9 },
+        'cow': { name: 'Cow', scientific: 'Bos taurus', confidence: 0.9 },
+        'pig': { name: 'Pig', scientific: 'Sus scrofa', confidence: 0.9 },
+        'sheep': { name: 'Sheep', scientific: 'Ovis aries', confidence: 0.9 },
+        'goat': { name: 'Goat', scientific: 'Capra hircus', confidence: 0.9 },
+        'duck': { name: 'Duck', scientific: 'Anatidae sp.', confidence: 0.8 },
+        'goose': { name: 'Goose', scientific: 'Anser sp.', confidence: 0.8 },
+        'chicken': { name: 'Chicken', scientific: 'Gallus gallus', confidence: 0.8 },
+        'turkey': { name: 'Turkey', scientific: 'Meleagris gallopavo', confidence: 0.8 },
+        'pigeon': { name: 'Pigeon', scientific: 'Columba livia', confidence: 0.8 },
+        'sparrow': { name: 'Sparrow', scientific: 'Passer sp.', confidence: 0.8 },
+        'robin': { name: 'Robin', scientific: 'Turdus migratorius', confidence: 0.8 },
+        'cardinal': { name: 'Cardinal', scientific: 'Cardinalis cardinalis', confidence: 0.8 },
+        'blue jay': { name: 'Blue Jay', scientific: 'Cyanocitta cristata', confidence: 0.8 },
+        'crow': { name: 'Crow', scientific: 'Corvus sp.', confidence: 0.8 },
+        'hawk': { name: 'Hawk', scientific: 'Accipitridae sp.', confidence: 0.8 },
+        'eagle': { name: 'Eagle', scientific: 'Aquila sp.', confidence: 0.8 },
+        'owl': { name: 'Owl', scientific: 'Strigiformes sp.', confidence: 0.8 },
+        'snake': { name: 'Snake', scientific: 'Serpentes sp.', confidence: 0.8 },
+        'lizard': { name: 'Lizard', scientific: 'Lacertilia sp.', confidence: 0.8 },
+        'turtle': { name: 'Turtle', scientific: 'Testudines sp.', confidence: 0.8 },
+        'frog': { name: 'Frog', scientific: 'Anura sp.', confidence: 0.8 },
+        'toad': { name: 'Toad', scientific: 'Bufonidae sp.', confidence: 0.8 },
+        'fish': { name: 'Fish', scientific: 'Actinopterygii sp.', confidence: 0.7 },
+        'goldfish': { name: 'Goldfish', scientific: 'Carassius auratus', confidence: 0.8 },
+        'koi': { name: 'Koi', scientific: 'Cyprinus carpio', confidence: 0.8 },
+      };
+      
+      let bestMatch = null;
+      let bestConfidence = 0;
+      
+      // Check each label against our species map
+      for (const label of labels) {
+        const lowerLabel = label.toLowerCase();
+        
+        // Direct match
+        if (animalSpeciesMap[lowerLabel]) {
+          const match = animalSpeciesMap[lowerLabel];
+          if (match.confidence > bestConfidence) {
+            bestMatch = match;
+            bestConfidence = match.confidence;
+          }
+        }
+        
+        // Partial match (e.g., "black cat" matches "cat")
+        for (const [species, match] of Object.entries(animalSpeciesMap)) {
+          if (lowerLabel.includes(species) && match.confidence > bestConfidence) {
+            bestMatch = match;
+            bestConfidence = match.confidence;
+          }
+        }
+      }
+      
+      if (bestMatch) {
+        speciesResult = {
+          category: 'animal',
+          canonicalName: bestMatch.scientific,
+          commonName: bestMatch.name,
+          rank: 'species',
+          confidence: bestMatch.confidence,
+          provider: 'gcv',
+          ui: { colorChips },
+        };
+      } else {
+        // Fallback to generic animal detection
+        const animalLabel = labels.find(label => 
+          animalTerms.some(term => label.toLowerCase().includes(term)) ||
+          ['dog', 'cat', 'bird', 'squirrel', 'rabbit', 'pet', 'wildlife'].some(term => 
+            label.toLowerCase().includes(term)
+          )
+        ) || 'Animal';
+        
+        speciesResult = {
+          category: 'animal',
+          canonicalName: animalLabel,
+          commonName: animalLabel,
+          rank: 'species',
+          confidence: 0.6,
+          provider: 'gcv',
+          ui: { colorChips },
+        };
+      }
+    } else {
+      console.log('❓ Using GENERIC GOOGLE VISION fallback engine');
+      // Generic result
+      const topLabel = labels[0] || 'Unknown';
+      speciesResult = {
+        category: 'flower',
+        canonicalName: topLabel,
+        commonName: topLabel,
+        rank: 'species',
+        confidence: 0.4,
+        provider: 'gcv',
+        ui: { colorChips },
+      };
     }
 
     // Check confidence threshold
@@ -187,13 +396,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ 
-      result: speciesResult,
-      meta: {
-        decision,
-        needsReview
-      }
-    });
+    return NextResponse.json({ result: speciesResult });
 
   } catch (error) {
     console.error('Recognition error:', error);
@@ -202,11 +405,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-async function createThumbnail(imageBuffer: ArrayBuffer, mimeType: string): Promise<string> {
-  // Create a thumbnail for active learning
-  // This is a simplified version - in production, you'd want to resize and compress
-  const blob = new Blob([imageBuffer], { type: mimeType });
-  return URL.createObjectURL(blob);
 }

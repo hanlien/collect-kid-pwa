@@ -102,10 +102,9 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      summary: wikiData?.extract || 'This is a fascinating creature!',
-      imageUrl: wikiData?.thumbnail?.source,
       funFacts,
-      gbifKey: speciesKey,
+      summary: wikiData?.extract || `Learn more about ${validatedParams.canonicalName}!`,
+      imageUrl: wikiData?.thumbnail?.source,
     });
   } catch (error) {
     console.error('Facts API error:', error);

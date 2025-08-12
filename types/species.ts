@@ -11,6 +11,17 @@ export type SpeciesResult = {
   gbifKey?: number;
   wiki?: { summary?: string; imageUrl?: string };
   ui?: { colorChips?: string[]; funFacts?: string[] };
+  meta?: {
+    modelVersion?: string;
+    reasoning?: string;
+    topK?: Array<{ labelId: string; prob: number }>;
+    inferenceTime?: number;
+  };
+  safety?: {
+    dangerous?: boolean;
+    stinging?: boolean;
+    venomous?: boolean;
+  };
 };
 
 export type Capture = {
