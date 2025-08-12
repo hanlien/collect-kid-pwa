@@ -11,6 +11,7 @@ export type SpeciesResult = {
   gbifKey?: number;
   wiki?: { summary?: string; imageUrl?: string };
   ui?: { colorChips?: string[]; funFacts?: string[] };
+  capturedImageUrl?: string; // URL of the captured image
   meta?: {
     modelVersion?: string;
     reasoning?: string;

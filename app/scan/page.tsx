@@ -156,6 +156,9 @@ export default function ScanPage() {
       setIsScanning(true);
       setShowScanRing(true);
 
+      // Create a data URL for the original image
+      const imageUrl = URL.createObjectURL(file);
+
       // Downscale image
       const processedImage = await downscaleImage(file, 1024);
 
@@ -187,8 +190,11 @@ export default function ScanPage() {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2000);
 
-      // Navigate to result page with data
-      const result: SpeciesResult = data.result;
+      // Navigate to result page with data and image
+      const result: SpeciesResult = {
+        ...data.result,
+        capturedImageUrl: imageUrl, // Add the captured image URL
+      };
       router.push(`/result?data=${encodeURIComponent(JSON.stringify(result))}`);
     } catch (error) {
       console.error('Scan error:', error);

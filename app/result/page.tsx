@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Volume2, Heart, ArrowLeft, RotateCcw, Star, MapPin, Calendar, Users, Award, BookOpen } from 'lucide-react';
+import { Volume2, Heart, ArrowLeft, RotateCcw, Star, MapPin, Calendar, Users, Award, BookOpen, Bookmark } from 'lucide-react';
 import Image from 'next/image';
 import BigButton from '@/components/BigButton';
 import ColorChips from '@/components/ColorChips';
 import Confetti from '@/components/Confetti';
 import Toast from '@/components/Toast';
+import BadgePopup from '@/components/BadgePopup';
 import { isDangerousSpecies } from '@/lib/utils';
 import { SpeciesResult } from '@/types/species';
 
@@ -21,6 +22,8 @@ export default function ResultPage() {
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'info' | 'success' } | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'facts' | 'colors'>('info');
+  const [showBadgePopup, setShowBadgePopup] = useState(false);
+  const [badgeData, setBadgeData] = useState<{ speciesName: string; category: string; imageUrl?: string } | null>(null);
 
   useEffect(() => {
     const data = searchParams.get('data');
@@ -120,6 +123,16 @@ export default function ResultPage() {
         };
         localStorage.setItem('userData', JSON.stringify(newUserData));
 
+        // Show badge popup for new species
+        if (data.isNewSpecies) {
+          setBadgeData({
+            speciesName: result.commonName || result.canonicalName,
+            category: result.category,
+            imageUrl: result.capturedImageUrl,
+          });
+          setShowBadgePopup(true);
+        }
+
         // Show success message with coin reward
         const coinMessage = data.isNewSpecies 
           ? `New species! +${data.coinsEarned} $BRANDON coins! 🎉` 
@@ -205,7 +218,15 @@ export default function ResultPage() {
         <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
           {/* Image Section */}
           <div className="relative h-64 bg-gradient-to-br from-green-100 to-blue-100">
-            {result.wiki?.imageUrl ? (
+            {result.capturedImageUrl ? (
+              <Image
+                src={result.capturedImageUrl}
+                alt={result.commonName || result.canonicalName}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            ) : result.wiki?.imageUrl ? (
               <Image
                 src={result.wiki.imageUrl}
                 alt={result.commonName || result.canonicalName}
@@ -372,6 +393,16 @@ export default function ResultPage() {
             <span>{isCollecting ? 'Collecting...' : 'Collect'}</span>
           </BigButton>
         </div>
+
+        {/* Collection Button */}
+        <BigButton
+          onClick={() => router.push('/book')}
+          variant="secondary"
+          className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-purple-400 to-pink-500 hover:from-purple-500 hover:to-pink-600 text-white"
+        >
+          <Bookmark className="w-5 h-5" />
+          <span>View My Collection</span>
+        </BigButton>
       </div>
 
       {/* Confetti */}
@@ -383,6 +414,17 @@ export default function ResultPage() {
           message={toast.message}
           type={toast.type}
           onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Badge Popup */}
+      {badgeData && (
+        <BadgePopup
+          isOpen={showBadgePopup}
+          onClose={() => setShowBadgePopup(false)}
+          speciesName={badgeData.speciesName}
+          category={badgeData.category}
+          imageUrl={badgeData.imageUrl}
         />
       )}
     </div>
