@@ -1,0 +1,17 @@
+path,label_id,split,source,license,location_hint,date_taken
+images/rose_garden_001.jpg,rose_garden,train,wikimedia,cc-by-sa-3.0,garden,2024-01-15
+images/rose_garden_002.jpg,rose_garden,train,wikimedia,cc-by-sa-3.0,garden,2024-01-15
+images/dandelion_001.jpg,dandelion,train,wikimedia,cc-by-sa-3.0,lawn,2024-01-15
+images/dandelion_002.jpg,dandelion,train,wikimedia,cc-by-sa-3.0,meadow,2024-01-15
+images/sunflower_001.jpg,sunflower,train,wikimedia,cc-by-sa-3.0,field,2024-01-15
+images/sunflower_002.jpg,sunflower,train,wikimedia,cc-by-sa-3.0,garden,2024-01-15
+images/bee_honey_001.jpg,bee_honey,train,wikimedia,cc-by-sa-3.0,garden,2024-01-15
+images/bee_honey_002.jpg,bee_honey,train,wikimedia,cc-by-sa-3.0,flower,2024-01-15
+images/butterfly_monarch_001.jpg,butterfly_monarch,train,wikimedia,cc-by-sa-3.0,meadow,2024-01-15
+images/butterfly_monarch_002.jpg,butterfly_monarch,train,wikimedia,cc-by-sa-3.0,garden,2024-01-15
+images/dog_001.jpg,dog,train,wikimedia,cc-by-sa-3.0,home,2024-01-15
+images/dog_002.jpg,dog,train,wikimedia,cc-by-sa-3.0,park,2024-01-15
+images/cat_001.jpg,cat,train,wikimedia,cc-by-sa-3.0,home,2024-01-15
+images/cat_002.jpg,cat,train,wikimedia,cc-by-sa-3.0,window,2024-01-15
+images/squirrel_gray_001.jpg,squirrel_gray,train,wikimedia,cc-by-sa-3.0,tree,2024-01-15
+images/squirrel_gray_002.jpg,squirrel_gray,train,wikimedia,cc-by-sa-3.0,park,2024-01-15

@@ -1,68 +1,72 @@
 -- Enable UUID generation
-create extension if not exists pgcrypto;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Users table
-create table if not exists users(
-  id uuid primary key default gen_random_uuid(),
-  created_at timestamp with time zone default now(),
-  last_seen timestamp with time zone default now(),
-  kid_mode boolean default true,
-  streak_days int default 0,
-  coins integer default 0 not null,
-  level integer default 1 not null,
-  total_captures integer default 0 not null,
-  unique_species_count integer default 0 not null
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  email TEXT UNIQUE NOT NULL,
+  coins INTEGER DEFAULT 0,
+  total_captures INTEGER DEFAULT 0,
+  unique_species_count INTEGER DEFAULT 0,
+  level INTEGER DEFAULT 1,
+  experience_points INTEGER DEFAULT 0
 );
 
--- Captures table for storing identification results
-create table if not exists captures(
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references users(id) on delete cascade,
-  created_at timestamp with time zone default now(),
-  category text check (category in ('animal','bug','flower')),
-  provider text check (provider in ('gcv','plantid','local')),
-  canonical_name text,
-  common_name text,
-  rank text,
-  confidence float,
-  gbif_key int,
-  thumb_url text,
-  location_hint text,
-  summary text,
-  fun_facts text[],
-  color_chips text[],
-  coins_earned integer default 0 not null,
-  is_new_species boolean default false not null
+-- Create captures table
+CREATE TABLE IF NOT EXISTS captures (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  canonical_name TEXT NOT NULL,
+  common_name TEXT,
+  category TEXT NOT NULL CHECK (category IN ('flower', 'bug', 'animal')),
+  confidence DECIMAL(3,2) NOT NULL,
+  provider TEXT NOT NULL,
+  image_url TEXT,
+  location_hint TEXT,
+  gbif_key INTEGER
 );
 
--- Badges table for gamification
-create table if not exists badges(
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references users(id) on delete cascade,
-  category text not null,
-  subtype text not null,
-  level int default 1,
-  count int default 0,
-  next_goal integer not null,
-  unique(user_id, category, subtype)
+-- Create active learning queue table
+CREATE TABLE IF NOT EXISTS active_learning_queue (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  thumb_url TEXT NOT NULL,
+  provider_suggestion TEXT CHECK (provider_suggestion IN ('gcv', 'plantid', 'local')),
+  vision_labels JSONB,
+  local_model JSONB,
+  hint TEXT CHECK (hint IN ('auto', 'flower', 'bug', 'animal')),
+  location_hint TEXT,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'resolved', 'skipped')),
+  final_label_id TEXT,
+  notes TEXT
 );
 
--- Achievements table for coin rewards
-create table if not exists achievements(
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references users(id) on delete cascade,
-  created_at timestamp with time zone default now(),
-  type text not null,
-  title text not null,
-  description text not null,
-  coins_rewarded integer default 0 not null,
-  icon text,
-  unique(user_id, type)
+-- Create model registry table
+CREATE TABLE IF NOT EXISTS model_registry (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  version TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  tflite_url TEXT NOT NULL,
+  labels_sha256 TEXT NOT NULL,
+  tau DECIMAL(3,2) DEFAULT 0.62,
+  margin DECIMAL(3,2) DEFAULT 0.08,
+  metrics JSONB
 );
 
--- Indexes for performance
-create index if not exists idx_captures_user_id on captures(user_id);
-create index if not exists idx_captures_category on captures(category);
-create index if not exists idx_badges_user_id on badges(user_id);
-create index if not exists idx_badges_category on badges(category);
-create index if not exists idx_achievements_user_id on achievements(user_id);
+-- Insert default model registry entry
+INSERT INTO model_registry (version, tflite_url, labels_sha256, metrics) 
+VALUES (
+  'v001', 
+  '/models/local_model_v001.tflite',
+  'placeholder-sha256-hash',
+  '{"top1": 0.85, "top3": 0.92, "ece": 0.08}'
+) ON CONFLICT (version) DO NOTHING;
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_captures_user_id ON captures(user_id);
+CREATE INDEX IF NOT EXISTS idx_captures_category ON captures(category);
+CREATE INDEX IF NOT EXISTS idx_al_queue_status ON active_learning_queue(status);
+CREATE INDEX IF NOT EXISTS idx_al_queue_user_id ON active_learning_queue(user_id);

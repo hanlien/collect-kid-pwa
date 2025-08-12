@@ -1,0 +1,200 @@
+{
+  "version": "v001",
+  "updated": "2024-01-15",
+  "classes": [
+    {
+      "id": "unknown",
+      "category": "unknown",
+      "genus": "Unknown",
+      "species": "Unknown",
+      "commonName": "Unknown",
+      "description": "Unknown or unidentifiable species"
+    },
+    {
+      "id": "rose_garden",
+      "category": "flower",
+      "genus": "Rosa",
+      "species": "Rosa sp.",
+      "commonName": "Garden Rose",
+      "description": "Common garden roses with various colors"
+    },
+    {
+      "id": "dandelion",
+      "category": "flower",
+      "genus": "Taraxacum",
+      "species": "Taraxacum officinale",
+      "commonName": "Dandelion",
+      "description": "Yellow wildflower with fluffy seed heads"
+    },
+    {
+      "id": "sunflower",
+      "category": "flower",
+      "genus": "Helianthus",
+      "species": "Helianthus annuus",
+      "commonName": "Sunflower",
+      "description": "Tall yellow flower that follows the sun"
+    },
+    {
+      "id": "daisy_oxeye",
+      "category": "flower",
+      "genus": "Leucanthemum",
+      "species": "Leucanthemum vulgare",
+      "commonName": "Oxeye Daisy",
+      "description": "White flower with yellow center"
+    },
+    {
+      "id": "tulip",
+      "category": "flower",
+      "genus": "Tulipa",
+      "species": "Tulipa sp.",
+      "commonName": "Tulip",
+      "description": "Spring-blooming bulb flower"
+    },
+    {
+      "id": "lily",
+      "category": "flower",
+      "genus": "Lilium",
+      "species": "Lilium sp.",
+      "commonName": "Lily",
+      "description": "Elegant flower with large blooms"
+    },
+    {
+      "id": "marigold",
+      "category": "flower",
+      "genus": "Tagetes",
+      "species": "Tagetes sp.",
+      "commonName": "Marigold",
+      "description": "Bright orange or yellow garden flower"
+    },
+    {
+      "id": "clover_white",
+      "category": "flower",
+      "genus": "Trifolium",
+      "species": "Trifolium repens",
+      "commonName": "White Clover",
+      "description": "Small white flower heads in lawns"
+    },
+    {
+      "id": "bee_honey",
+      "category": "bug",
+      "genus": "Apis",
+      "species": "Apis mellifera",
+      "commonName": "Honey Bee",
+      "description": "Yellow and black striped pollinator"
+    },
+    {
+      "id": "butterfly_monarch",
+      "category": "bug",
+      "genus": "Danaus",
+      "species": "Danaus plexippus",
+      "commonName": "Monarch Butterfly",
+      "description": "Orange and black migratory butterfly"
+    },
+    {
+      "id": "ladybug",
+      "category": "bug",
+      "genus": "Coccinella",
+      "species": "Coccinella septempunctata",
+      "commonName": "Seven-Spotted Ladybug",
+      "description": "Red beetle with black spots"
+    },
+    {
+      "id": "dragonfly_green",
+      "category": "bug",
+      "genus": "Anax",
+      "species": "Anax junius",
+      "commonName": "Common Green Darner",
+      "description": "Large green dragonfly"
+    },
+    {
+      "id": "ant_black_garden",
+      "category": "bug",
+      "genus": "Lasius",
+      "species": "Lasius niger",
+      "commonName": "Black Garden Ant",
+      "description": "Common black ant in gardens"
+    },
+    {
+      "id": "spider_garden",
+      "category": "bug",
+      "genus": "Araneus",
+      "species": "Araneus diadematus",
+      "commonName": "Garden Spider",
+      "description": "Orb-weaving spider with cross pattern"
+    },
+    {
+      "id": "dog",
+      "category": "animal",
+      "genus": "Canis",
+      "species": "Canis familiaris",
+      "commonName": "Dog",
+      "description": "Domesticated canine companion"
+    },
+    {
+      "id": "cat",
+      "category": "animal",
+      "genus": "Felis",
+      "species": "Felis catus",
+      "commonName": "Cat",
+      "description": "Domestic feline companion"
+    },
+    {
+      "id": "squirrel_gray",
+      "category": "animal",
+      "genus": "Sciurus",
+      "species": "Sciurus carolinensis",
+      "commonName": "Eastern Gray Squirrel",
+      "description": "Common tree-dwelling rodent"
+    },
+    {
+      "id": "rabbit_cottontail",
+      "category": "animal",
+      "genus": "Sylvilagus",
+      "species": "Sylvilagus floridanus",
+      "commonName": "Eastern Cottontail",
+      "description": "Wild rabbit with white tail"
+    },
+    {
+      "id": "bird_sparrow",
+      "category": "animal",
+      "genus": "Passer",
+      "species": "Passer domesticus",
+      "commonName": "House Sparrow",
+      "description": "Small brown songbird"
+    },
+    {
+      "id": "bird_robin",
+      "category": "animal",
+      "genus": "Turdus",
+      "species": "Turdus migratorius",
+      "commonName": "American Robin",
+      "description": "Orange-breasted thrush"
+    },
+    {
+      "id": "chipmunk_eastern",
+      "category": "animal",
+      "genus": "Tamias",
+      "species": "Tamias striatus",
+      "commonName": "Eastern Chipmunk",
+      "description": "Striped ground squirrel"
+    },
+    {
+      "id": "deer_whitetail",
+      "category": "animal",
+      "genus": "Odocoileus",
+      "species": "Odocoileus virginianus",
+      "commonName": "White-tailed Deer",
+      "description": "Large forest mammal with white tail"
+    }
+  ],
+  "categories": {
+    "flower": ["rose_garden", "dandelion", "sunflower", "daisy_oxeye", "tulip", "lily", "marigold", "clover_white"],
+    "bug": ["bee_honey", "butterfly_monarch", "ladybug", "dragonfly_green", "ant_black_garden", "spider_garden"],
+    "animal": ["dog", "cat", "squirrel_gray", "rabbit_cottontail", "bird_sparrow", "bird_robin", "chipmunk_eastern", "deer_whitetail"]
+  },
+  "safety_flags": {
+    "dangerous": ["spider_garden"],
+    "stinging": ["bee_honey"],
+    "venomous": []
+  }
+}
