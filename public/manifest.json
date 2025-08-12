@@ -1,7 +1,7 @@
 {
-  "name": "Collect Kid",
-  "short_name": "Collect Kid",
-  "description": "Discover and collect flowers, bugs, and animals with your camera!",
+  "name": "Backyard Brandon",
+  "short_name": "Backyard Brandon",
+  "description": "Explore your backyard and discover amazing creatures with Brandon!",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#fef7ee",

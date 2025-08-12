@@ -5,7 +5,7 @@ import { ReactNode } from 'react';
 interface BigButtonProps {
   children: ReactNode;
   onClick: () => void;
-  variant?: 'primary' | 'secondary' | 'outline';
+  variant?: 'primary' | 'secondary' | 'outline' | 'gradient' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   className?: string;
@@ -33,6 +33,8 @@ export default function BigButton({
     primary: 'bg-primary-500 hover:bg-primary-600 text-white',
     secondary: 'bg-secondary-500 hover:bg-secondary-600 text-white',
     outline: 'border-2 border-primary-500 text-primary-600 hover:bg-primary-500 hover:text-white',
+    gradient: 'bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white shadow-xl hover:shadow-2xl',
+    ghost: 'bg-transparent hover:bg-gray-100 text-gray-700 border border-gray-200 hover:border-gray-300',
   };
 
   const sizeClasses = {

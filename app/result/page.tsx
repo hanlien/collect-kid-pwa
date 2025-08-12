@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Volume2, Heart, ArrowLeft, RotateCcw } from 'lucide-react';
+import { Volume2, Heart, ArrowLeft, RotateCcw, Star, MapPin, Calendar, Users, Award, BookOpen } from 'lucide-react';
 import BigButton from '@/components/BigButton';
 import ColorChips from '@/components/ColorChips';
 import Confetti from '@/components/Confetti';
@@ -19,6 +19,7 @@ export default function ResultPage() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'info' | 'success' } | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [activeTab, setActiveTab] = useState<'info' | 'facts' | 'colors'>('info');
 
   useEffect(() => {
     const data = searchParams.get('data');
@@ -99,26 +100,26 @@ export default function ResultPage() {
         },
         body: JSON.stringify({
           userId,
-          result,
+          speciesResult: result,
         }),
       });
 
       if (response.ok) {
-        const data = await response.json();
         setShowConfetti(true);
         setToast({
-          message: data.leveledUp ? 'Level up! 🎉' : 'Added to collection!',
+          message: 'Added to your collection! 🎉',
           type: 'success',
         });
         
+        // Hide confetti after 3 seconds
         setTimeout(() => setShowConfetti(false), 3000);
       } else {
         throw new Error('Failed to collect');
       }
     } catch (error) {
-      console.error('Collect error:', error);
+      console.error('Collection error:', error);
       setToast({
-        message: 'Failed to save to collection',
+        message: 'Failed to add to collection. Please try again!',
         type: 'error',
       });
     } finally {
@@ -129,146 +130,227 @@ export default function ResultPage() {
   if (!result) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin-slow">Loading...</div>
+        <div className="animate-spin-slow">
+          <RotateCcw className="w-8 h-8" />
+        </div>
       </div>
     );
   }
 
-  const displayName = result.commonName || result.canonicalName;
   const isDangerous = isDangerousSpecies(result);
+  const categoryEmoji = {
+    flower: '🌸',
+    bug: '🦋',
+    animal: '🐾',
+  }[result.category];
 
   return (
-    <div className="min-h-screen flex flex-col p-6 safe-area-top safe-area-bottom">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <BigButton
-          onClick={() => router.push('/scan')}
-          variant="outline"
-          size="sm"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </BigButton>
-        
-        <h1 className="text-xl font-bold text-gray-800">Discovery!</h1>
-        
-        <BigButton
-          onClick={() => router.push('/scan')}
-          variant="outline"
-          size="sm"
-        >
-          <RotateCcw className="w-4 h-4 mr-2" />
-          Scan Again
-        </BigButton>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-10 right-10 w-32 h-32 bg-yellow-200 rounded-full opacity-10 animate-float"></div>
+        <div className="absolute bottom-20 left-10 w-24 h-24 bg-blue-200 rounded-full opacity-10 animate-float delay-1000"></div>
       </div>
 
-      {/* Safety Warning */}
-      {isDangerous && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center gap-2">
-            <div className="text-2xl">⚠️</div>
-            <div>
-              <h3 className="font-bold text-red-800">Look, don&apos;t touch!</h3>
-              <p className="text-sm text-red-700">This creature might be dangerous. Keep your distance!</p>
+      {/* Header */}
+      <div className="relative z-10 bg-white/80 backdrop-blur-sm border-b border-gray-200">
+        <div className="flex items-center justify-between p-4">
+          <BigButton
+            onClick={() => router.push('/scan')}
+            variant="ghost"
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back</span>
+          </BigButton>
+          
+          <div className="text-center">
+            <h1 className="text-lg font-semibold text-gray-800">Discovery</h1>
+            <p className="text-sm text-gray-500">Found something amazing!</p>
+          </div>
+          
+          <BigButton
+            onClick={() => router.push('/scan')}
+            variant="ghost"
+            className="flex items-center gap-2"
+          >
+            <RotateCcw className="w-5 h-5" />
+            <span>Scan Again</span>
+          </BigButton>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 p-6 space-y-6">
+        {/* Species Card */}
+        <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
+          {/* Image Section */}
+          <div className="relative h-64 bg-gradient-to-br from-green-100 to-blue-100">
+            {result.wiki?.imageUrl ? (
+              <img
+                src={result.wiki.imageUrl}
+                alt={result.commonName || result.canonicalName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-8xl">{categoryEmoji}</div>
+              </div>
+            )}
+            
+            {/* Category Badge */}
+            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-2">
+              <span className="text-2xl">{categoryEmoji}</span>
+              <span className="font-semibold text-gray-800 capitalize">{result.category}</span>
+            </div>
+            
+            {/* Confidence Badge */}
+            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1">
+              <span className="font-semibold text-green-600">
+                {Math.round(result.confidence * 100)}% match
+              </span>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Result Card */}
-      <div className="card mb-6">
-        {/* Image */}
-        {result.wiki?.imageUrl && (
-          <div className="mb-4">
-            <img
-              src={result.wiki.imageUrl}
-              alt={displayName}
-              className="w-full h-48 object-cover rounded-lg"
-            />
-          </div>
-        )}
+          {/* Info Section */}
+          <div className="p-6">
+            <div className="text-center mb-6">
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                {result.commonName || result.canonicalName}
+              </h2>
+              <p className="text-gray-600 italic">{result.canonicalName}</p>
+            </div>
 
-        {/* Name and Category */}
-        <div className="text-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">{displayName}</h2>
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-sm text-gray-600 capitalize">{result.category}</span>
-            <span className="text-gray-400">•</span>
-            <span className="text-sm text-gray-600">{result.provider}</span>
-          </div>
-        </div>
-
-        {/* Color Chips */}
-        {result.ui?.colorChips && (
-          <ColorChips colors={result.ui.colorChips} className="mb-4" />
-        )}
-
-        {/* Fun Facts */}
-        {result.ui?.funFacts && result.ui.funFacts.length > 0 && (
-          <div className="mb-4">
-            <h3 className="font-bold text-gray-800 mb-2">Fun Facts:</h3>
-            <div className="space-y-2">
-              {result.ui.funFacts.map((fact, index) => (
-                <div key={index} className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                  {fact}
-                </div>
+            {/* Tabs */}
+            <div className="flex gap-2 mb-6">
+              {[
+                { id: 'info', label: 'Info', icon: Star },
+                { id: 'facts', label: 'Facts', icon: Award },
+                { id: 'colors', label: 'Colors', icon: MapPin },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-full font-medium transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-gradient-to-r from-green-400 to-blue-500 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
               ))}
             </div>
+
+            {/* Tab Content */}
+            <div className="min-h-[200px]">
+              {activeTab === 'info' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-50 rounded-xl p-4 text-center">
+                      <div className="text-2xl mb-2">🔬</div>
+                      <div className="text-sm text-gray-500">Rank</div>
+                      <div className="font-semibold text-gray-800 capitalize">{result.rank || 'Unknown'}</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-4 text-center">
+                      <div className="text-2xl mb-2">🎯</div>
+                      <div className="text-sm text-gray-500">Confidence</div>
+                      <div className="font-semibold text-gray-800">{Math.round(result.confidence * 100)}%</div>
+                    </div>
+                  </div>
+                  
+                  {facts?.summary && (
+                    <div className="bg-blue-50 rounded-xl p-4">
+                      <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                        <BookOpen className="w-4 h-4" />
+                        About this species
+                      </h4>
+                      <p className="text-gray-700 text-sm leading-relaxed">{facts.summary}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'facts' && (
+                <div className="space-y-4">
+                  {facts?.funFacts ? (
+                    facts.funFacts.map((fact: string, index: number) => (
+                      <div key={index} className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border-l-4 border-yellow-400">
+                        <div className="flex items-start gap-3">
+                          <div className="text-2xl">💡</div>
+                          <p className="text-gray-700 text-sm leading-relaxed">{fact}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <div className="text-4xl mb-2">🤔</div>
+                      <p>Facts coming soon!</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'colors' && (
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-800 mb-3">Dominant Colors</h4>
+                  {result.ui?.colorChips && result.ui.colorChips.length > 0 ? (
+                    <div className="flex flex-wrap gap-3">
+                      {result.ui.colorChips.map((color, index) => (
+                        <div
+                          key={index}
+                          className="w-16 h-16 rounded-xl shadow-md"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <div className="text-4xl mb-2">🎨</div>
+                      <p>No color data available</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Safety Warning */}
+        {isDangerous && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">⚠️</div>
+              <div>
+                <h4 className="font-semibold text-red-800">Safety Notice</h4>
+                <p className="text-red-700 text-sm">Look, don&apos;t touch! This species might be dangerous.</p>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Summary */}
-        {result.wiki?.summary && (
-          <div className="mb-4">
-            <h3 className="font-bold text-gray-800 mb-2">About:</h3>
-            <p className="text-sm text-gray-600">{result.wiki.summary}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex gap-4 mb-6">
-        <BigButton
-          onClick={handleSpeak}
-          variant="outline"
-          size="md"
-          disabled={isSpeaking}
-          className="flex-1"
-        >
-          <Volume2 className="w-4 h-4 mr-2" />
-          {isSpeaking ? 'Speaking...' : 'Speak'}
-        </BigButton>
-
-        <BigButton
-          onClick={handleCollect}
-          variant="primary"
-          size="md"
-          disabled={isCollecting}
-          className="flex-1"
-        >
-          <Heart className="w-4 h-4 mr-2" />
-          {isCollecting ? 'Collecting...' : 'Collect!'}
-        </BigButton>
-      </div>
-
-      {/* Navigation */}
-      <div className="flex gap-4">
-        <BigButton
-          onClick={() => router.push('/book')}
-          variant="outline"
-          size="sm"
-          className="flex-1"
-        >
-          View Collection
-        </BigButton>
-        <BigButton
-          onClick={() => router.push('/quest')}
-          variant="outline"
-          size="sm"
-          className="flex-1"
-        >
-          Daily Quest
-        </BigButton>
+        {/* Action Buttons */}
+        <div className="flex gap-4">
+          <BigButton
+            onClick={handleSpeak}
+            disabled={isSpeaking}
+            variant="secondary"
+            className="flex-1 flex items-center justify-center gap-2 py-4"
+          >
+            <Volume2 className={`w-5 h-5 ${isSpeaking ? 'animate-pulse' : ''}`} />
+            <span>{isSpeaking ? 'Speaking...' : 'Listen'}</span>
+          </BigButton>
+          
+          <BigButton
+            onClick={handleCollect}
+            disabled={isCollecting}
+            className="flex-1 flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600"
+          >
+            <Heart className={`w-5 h-5 ${isCollecting ? 'animate-pulse' : ''}`} />
+            <span>{isCollecting ? 'Collecting...' : 'Collect'}</span>
+          </BigButton>
+        </div>
       </div>
 
       {/* Confetti */}
