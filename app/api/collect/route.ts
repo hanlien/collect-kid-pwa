@@ -6,21 +6,36 @@ import { getBadgeSubtype, getBadgeLevel } from '@/lib/utils';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, result } = collectRequestSchema.parse(body);
+    const { userId, speciesResult } = collectRequestSchema.parse(body);
 
-    // Insert capture
+    // Check if this is a new species for this user
+    const { data: existingCaptures } = await supabaseAdmin
+      .from('captures')
+      .select('canonical_name')
+      .eq('user_id', userId)
+      .eq('canonical_name', speciesResult.canonicalName);
+
+    const isNewSpecies = existingCaptures.length === 0;
+    const coinsEarned = isNewSpecies ? 50 : 10; // 50 coins for new species, 10 for duplicates
+
+    // Insert capture with enhanced data
     const { data: capture, error: captureError } = await supabaseAdmin
       .from('captures')
       .insert({
         user_id: userId,
-        category: result.category,
-        provider: result.provider,
-        canonical_name: result.canonicalName,
-        common_name: result.commonName,
-        rank: result.rank,
-        confidence: result.confidence,
-        gbif_key: result.gbifKey,
-        thumb_url: result.wiki?.imageUrl,
+        category: speciesResult.category,
+        provider: speciesResult.provider,
+        canonical_name: speciesResult.canonicalName,
+        common_name: speciesResult.commonName,
+        rank: speciesResult.rank,
+        confidence: speciesResult.confidence,
+        gbif_key: speciesResult.gbifKey,
+        thumb_url: speciesResult.wiki?.imageUrl,
+        summary: speciesResult.wiki?.summary,
+        fun_facts: speciesResult.ui?.funFacts,
+        color_chips: speciesResult.ui?.colorChips,
+        coins_earned: coinsEarned,
+        is_new_species: isNewSpecies,
       })
       .select()
       .single();
@@ -33,21 +48,68 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine badge subtype from labels (simplified for MVP)
-    const labels = [result.canonicalName, result.commonName].filter(Boolean);
-    const subtype = getBadgeSubtype(labels, result.category);
+    // Update user coins and stats
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('coins, total_captures, unique_species_count')
+      .eq('id', userId)
+      .single();
+
+    if (userError) {
+      console.error('User fetch error:', userError);
+      return NextResponse.json(
+        { error: 'Failed to fetch user data' },
+        { status: 500 }
+      );
+    }
+
+    const newCoins = (user.coins || 0) + coinsEarned;
+    const newTotalCaptures = (user.total_captures || 0) + 1;
+    const newUniqueSpeciesCount = isNewSpecies 
+      ? (user.unique_species_count || 0) + 1 
+      : (user.unique_species_count || 0);
+
+    // Calculate new level based on unique species count
+    const newLevel = Math.floor(newUniqueSpeciesCount / 10) + 1;
+
+    const { error: updateUserError } = await supabaseAdmin
+      .from('users')
+      .update({
+        coins: newCoins,
+        total_captures: newTotalCaptures,
+        unique_species_count: newUniqueSpeciesCount,
+        level: newLevel,
+        last_seen: new Date().toISOString(),
+      })
+      .eq('id', userId);
+
+    if (updateUserError) {
+      console.error('User update error:', updateUserError);
+      return NextResponse.json(
+        { error: 'Failed to update user data' },
+        { status: 500 }
+      );
+    }
+
+    // Determine badge subtype and handle badges
+    const labels = [speciesResult.canonicalName, speciesResult.commonName].filter(Boolean);
+    const subtype = getBadgeSubtype(labels, speciesResult.category);
 
     // Get or create badge
     const { data: existingBadge } = await supabaseAdmin
       .from('badges')
       .select('*')
       .eq('user_id', userId)
-      .eq('category', result.category)
+      .eq('category', speciesResult.category)
       .eq('subtype', subtype)
       .single();
 
     const newCount = (existingBadge?.count || 0) + 1;
-    const newLevel = getBadgeLevel(newCount);
+    const newBadgeLevel = getBadgeLevel(newCount);
+    const nextGoal = newBadgeLevel === 1 ? 3 : newBadgeLevel === 2 ? 7 : 15;
+
+    let badge;
+    let leveledUp = false;
 
     if (existingBadge) {
       // Update existing badge
@@ -55,7 +117,8 @@ export async function POST(request: NextRequest) {
         .from('badges')
         .update({
           count: newCount,
-          level: newLevel,
+          level: newBadgeLevel,
+          next_goal: nextGoal,
         })
         .eq('id', existingBadge.id)
         .select()
@@ -63,49 +126,134 @@ export async function POST(request: NextRequest) {
 
       if (updateError) {
         console.error('Badge update error:', updateError);
-        return NextResponse.json(
-          { error: 'Failed to update badge' },
-          { status: 500 }
-        );
+      } else {
+        badge = updatedBadge;
+        leveledUp = newBadgeLevel > existingBadge.level;
       }
-
-      return NextResponse.json({
-        capture,
-        badge: updatedBadge,
-        level: newLevel,
-        nextGoal: newLevel === 1 ? 3 : newLevel === 2 ? 7 : null,
-        leveledUp: newLevel > existingBadge.level,
-      });
     } else {
       // Create new badge
       const { data: newBadge, error: createError } = await supabaseAdmin
         .from('badges')
         .insert({
           user_id: userId,
-          category: result.category,
+          category: speciesResult.category,
           subtype,
           level: 1,
           count: 1,
+          next_goal: 3,
         })
         .select()
         .single();
 
       if (createError) {
         console.error('Badge create error:', createError);
-        return NextResponse.json(
-          { error: 'Failed to create badge' },
-          { status: 500 }
-        );
+      } else {
+        badge = newBadge;
+        leveledUp = true;
       }
-
-      return NextResponse.json({
-        capture,
-        badge: newBadge,
-        level: 1,
-        nextGoal: 3,
-        leveledUp: true,
-      });
     }
+
+    // Check for achievements
+    const achievements = [];
+
+    // First species achievement
+    if (newUniqueSpeciesCount === 1) {
+      const { data: firstSpeciesAchievement } = await supabaseAdmin
+        .from('achievements')
+        .insert({
+          user_id: userId,
+          type: 'first_species',
+          title: 'First Discovery!',
+          description: 'Found your first species',
+          coins_rewarded: 100,
+          icon: '🌟',
+        })
+        .select()
+        .single();
+      
+      if (firstSpeciesAchievement) {
+        achievements.push(firstSpeciesAchievement);
+        // Add bonus coins
+        await supabaseAdmin
+          .from('users')
+          .update({ coins: newCoins + 100 })
+          .eq('id', userId);
+      }
+    }
+
+    // Level up achievement
+    if (newLevel > (user.level || 1)) {
+      const { data: levelUpAchievement } = await supabaseAdmin
+        .from('achievements')
+        .insert({
+          user_id: userId,
+          type: `level_${newLevel}`,
+          title: `Level ${newLevel} Explorer!`,
+          description: `Reached level ${newLevel}`,
+          coins_rewarded: newLevel * 50,
+          icon: '🏆',
+        })
+        .select()
+        .single();
+      
+      if (levelUpAchievement) {
+        achievements.push(levelUpAchievement);
+        // Add bonus coins
+        await supabaseAdmin
+          .from('users')
+          .update({ coins: newCoins + (newLevel * 50) })
+          .eq('id', userId);
+      }
+    }
+
+    // Category completion achievements
+    const { data: categoryCounts } = await supabaseAdmin
+      .from('captures')
+      .select('category')
+      .eq('user_id', userId)
+      .eq('is_new_species', true);
+
+    const categoryTotals = categoryCounts?.reduce((acc, capture) => {
+      acc[capture.category] = (acc[capture.category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>) || {};
+
+    for (const [category, count] of Object.entries(categoryTotals)) {
+      if (count === 5) {
+        const { data: categoryAchievement } = await supabaseAdmin
+          .from('achievements')
+          .insert({
+            user_id: userId,
+            type: `${category}_collector`,
+            title: `${category.charAt(0).toUpperCase() + category.slice(1)} Collector!`,
+            description: `Found 5 different ${category}s`,
+            coins_rewarded: 200,
+            icon: category === 'flower' ? '🌸' : category === 'bug' ? '🦋' : '🐾',
+          })
+          .select()
+          .single();
+        
+        if (categoryAchievement) {
+          achievements.push(categoryAchievement);
+        }
+      }
+    }
+
+    return NextResponse.json({
+      capture,
+      badge,
+      leveledUp,
+      coinsEarned,
+      isNewSpecies,
+      newTotalCoins: newCoins,
+      newLevel,
+      achievements,
+      userStats: {
+        totalCaptures: newTotalCaptures,
+        uniqueSpeciesCount: newUniqueSpeciesCount,
+        level: newLevel,
+      },
+    });
   } catch (error) {
     console.error('Collect API error:', error);
     return NextResponse.json(

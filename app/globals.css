@@ -8,30 +8,34 @@
   }
   
   body {
-    @apply bg-gradient-to-br from-primary-50 to-secondary-50 min-h-screen;
+    @apply bg-gradient-to-br from-green-50 via-mint-50 to-teal-50;
     -webkit-tap-highlight-color: transparent;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-500 hover:bg-primary-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transform transition-all duration-200 active:scale-95;
+    @apply bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-bold py-4 px-8 rounded-2xl shadow-lg transform transition-all duration-200 active:scale-95;
   }
   
   .btn-secondary {
-    @apply bg-secondary-500 hover:bg-secondary-600 text-white font-bold py-3 px-6 rounded-full shadow-md transform transition-all duration-200 active:scale-95;
+    @apply bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-bold py-3 px-6 rounded-2xl shadow-md transform transition-all duration-200 active:scale-95;
   }
   
   .btn-outline {
-    @apply border-2 border-primary-500 text-primary-600 hover:bg-primary-500 hover:text-white font-bold py-3 px-6 rounded-full transition-all duration-200 active:scale-95;
+    @apply border-2 border-orange-400 text-orange-600 hover:bg-orange-400 hover:text-white font-bold py-3 px-6 rounded-2xl transition-all duration-200 active:scale-95;
   }
   
   .card {
-    @apply bg-white rounded-2xl shadow-lg p-6 border border-gray-100;
+    @apply bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-6 border border-white/20;
+  }
+
+  .card-3d {
+    @apply bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-6 border border-white/30 transform hover:scale-105 transition-all duration-300;
   }
   
   .scan-ring {
-    @apply absolute inset-0 border-4 border-primary-400 rounded-full animate-pulse-slow;
+    @apply absolute inset-0 border-4 border-green-400 rounded-full animate-pulse-slow;
   }
   
   .badge-ring {
@@ -65,17 +69,66 @@
 
   /* Enhanced shadows */
   .shadow-3xl {
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
   }
 
   /* Gradient text */
   .gradient-text {
-    @apply bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent;
+  }
+
+  /* Coin system styling */
+  .coin-jar {
+    @apply relative bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full p-4 shadow-lg;
+  }
+
+  .coin {
+    @apply bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full shadow-md transform hover:scale-110 transition-all duration-200;
+  }
+
+  .coin-text {
+    @apply text-yellow-600 font-bold;
+  }
+
+  /* 3D Avatar styling */
+  .avatar-3d {
+    @apply relative transform hover:scale-105 transition-all duration-300;
+  }
+
+  .avatar-3d::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-br from-green-200 to-teal-200 rounded-full blur-xl opacity-50 -z-10;
+  }
+
+  /* Task/Collection cards */
+  .task-card {
+    @apply bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/30 transform hover:scale-105 transition-all duration-300;
+  }
+
+  .task-card.completed {
+    @apply bg-green-50 border-green-200;
+  }
+
+  .task-card.pending {
+    @apply bg-orange-50 border-orange-200;
+  }
+
+  /* Progress indicators */
+  .progress-ring {
+    @apply relative w-16 h-16;
+  }
+
+  .progress-ring svg {
+    @apply transform -rotate-90;
+  }
+
+  .progress-ring circle {
+    @apply transition-all duration-300;
   }
 
   /* Animated backgrounds */
   .animated-bg {
-    background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+    background: linear-gradient(-45deg, #f0f9ff, #ecfdf5, #fef7ee, #f0fdf4);
     background-size: 400% 400%;
     animation: gradient 15s ease infinite;
   }
@@ -91,11 +144,37 @@
 
   /* Enhanced button variants */
   .btn-gradient {
-    @apply bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transform transition-all duration-200 active:scale-95;
+    @apply bg-gradient-to-r from-green-400 to-teal-500 hover:from-green-500 hover:to-teal-600 text-white font-bold py-4 px-8 rounded-2xl shadow-lg transform transition-all duration-200 active:scale-95;
   }
 
   .btn-ghost {
-    @apply bg-transparent hover:bg-gray-100 text-gray-700 font-medium py-3 px-4 rounded-full transition-all duration-200;
+    @apply bg-transparent hover:bg-white/20 text-gray-700 font-medium py-3 px-4 rounded-2xl transition-all duration-200;
+  }
+
+  /* Gamification elements */
+  .achievement-badge {
+    @apply bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-full px-3 py-1 text-sm font-bold shadow-lg;
+  }
+
+  .level-indicator {
+    @apply bg-gradient-to-r from-green-400 to-teal-500 text-white rounded-full px-4 py-2 font-bold shadow-lg;
+  }
+
+  /* Navigation bar */
+  .nav-bar {
+    @apply bg-white/80 backdrop-blur-md border-t border-white/30 rounded-t-3xl shadow-lg;
+  }
+
+  .nav-item {
+    @apply flex flex-col items-center justify-center p-2 rounded-2xl transition-all duration-200;
+  }
+
+  .nav-item.active {
+    @apply bg-gradient-to-r from-green-400 to-teal-500 text-white shadow-lg;
+  }
+
+  .nav-item:not(.active) {
+    @apply text-gray-600 hover:bg-white/50;
   }
 }
 
@@ -153,6 +232,15 @@
   .backdrop-blur-lg {
     backdrop-filter: blur(16px);
   }
+
+  /* Coin animations */
+  .coin-bounce {
+    animation: coin-bounce 0.6s ease-out;
+  }
+
+  .coin-spin {
+    animation: coin-spin 1s ease-in-out;
+  }
 }
 
 /* Keyframe animations */
@@ -207,6 +295,32 @@
   }
   40%, 100% {
     transform: rotateZ(0);
+  }
+}
+
+@keyframes coin-bounce {
+  0% {
+    transform: scale(0.3) translateY(-100px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) translateY(10px);
+  }
+  70% {
+    transform: scale(0.9) translateY(-5px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes coin-spin {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(360deg);
   }
 }
 

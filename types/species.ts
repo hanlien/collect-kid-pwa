@@ -26,6 +26,11 @@ export type Capture = {
   thumbUrl?: string;
   locationHint?: string;
   createdAt: string;
+  summary?: string;
+  funFacts?: string[];
+  colorChips?: string[];
+  coinsEarned: number;
+  isNewSpecies: boolean;
 };
 
 export type Badge = {
@@ -35,6 +40,18 @@ export type Badge = {
   subtype: string;
   level: number;
   count: number;
+  nextGoal: number;
+};
+
+export type Achievement = {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  description: string;
+  coinsRewarded: number;
+  icon?: string;
+  createdAt: string;
 };
 
 export type User = {
@@ -42,6 +59,11 @@ export type User = {
   kidMode: boolean;
   streakDays: number;
   createdAt: string;
+  lastSeen: string;
+  coins: number;
+  level: number;
+  totalCaptures: number;
+  uniqueSpeciesCount: number;
 };
 
 export type RecognitionHint = 'auto' | 'flower' | 'bug' | 'animal';

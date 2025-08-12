@@ -105,9 +105,27 @@ export default function ResultPage() {
       });
 
       if (response.ok) {
+        const data = await response.json();
         setShowConfetti(true);
+        
+        // Update local storage with new user data
+        const currentUserData = JSON.parse(localStorage.getItem('userData') || '{}');
+        const newUserData = {
+          ...currentUserData,
+          coins: data.newTotalCoins,
+          level: data.newLevel,
+          totalCaptures: data.userStats.totalCaptures,
+          uniqueSpeciesCount: data.userStats.uniqueSpeciesCount,
+        };
+        localStorage.setItem('userData', JSON.stringify(newUserData));
+
+        // Show success message with coin reward
+        const coinMessage = data.isNewSpecies 
+          ? `New species! +${data.coinsEarned} $BRANDON coins! 🎉` 
+          : `+${data.coinsEarned} $BRANDON coins! 🎉`;
+        
         setToast({
-          message: 'Added to your collection! 🎉',
+          message: coinMessage,
           type: 'success',
         });
         
