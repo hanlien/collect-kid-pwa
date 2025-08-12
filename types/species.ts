@@ -1,5 +1,5 @@
 export type Category = 'flower' | 'bug' | 'animal';
-export type Provider = 'plantid' | 'gcv';
+export type Provider = 'plantid' | 'gcv' | 'local';
 
 export type SpeciesResult = {
   category: Category;

@@ -4,6 +4,7 @@ import { validateEnv, recognizeRequestSchema } from '@/lib/validation';
 import { supabaseAdmin } from '@/lib/supabase';
 import { SpeciesResult, Category, Provider } from '@/types/species';
 import { colorNameToHex, getBadgeSubtype } from '@/lib/utils';
+import { findSpeciesByKeywords, localSpeciesToResult } from '@/lib/species-database';
 
 // Simple in-memory rate limiting (TODO: use Redis in production)
 const rateLimitCounts = {
@@ -91,7 +92,29 @@ export async function POST(request: NextRequest) {
       })
       .filter(Boolean) as string[];
 
-    // Routing logic
+    // Check local database first (saves API credits!)
+    const localSpecies = findSpeciesByKeywords(labels);
+    if (localSpecies) {
+      console.log(`Found local match: ${localSpecies.commonName}`);
+      speciesResult = localSpeciesToResult(localSpecies);
+      speciesResult.ui = { ...speciesResult.ui, colorChips };
+      
+      // Check confidence threshold
+      if (speciesResult.confidence < 0.6) {
+        return NextResponse.json(
+          {
+            error: 'LOW_CONFIDENCE',
+            message: 'Try getting closer, holding steady, or finding better lighting!',
+            result: speciesResult,
+          },
+          { status: 400 }
+        );
+      }
+      
+      return NextResponse.json({ result: speciesResult });
+    }
+
+    // If no local match, proceed with API calls
     let speciesResult: SpeciesResult;
 
     const plantTerms = ['plant', 'flower', 'tree', 'leaf', 'petal', 'bloom', 'garden', 'flora'];
