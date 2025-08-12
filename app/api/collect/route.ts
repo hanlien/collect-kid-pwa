@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       .eq('user_id', userId)
       .eq('canonical_name', speciesResult.canonicalName);
 
-    const isNewSpecies = existingCaptures.length === 0;
+    const isNewSpecies = (existingCaptures?.length || 0) === 0;
     const coinsEarned = isNewSpecies ? 50 : 10; // 50 coins for new species, 10 for duplicates
 
     // Insert capture with enhanced data
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     // Update user coins and stats
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
-      .select('coins, total_captures, unique_species_count')
+      .select('coins, total_captures, unique_species_count, level')
       .eq('id', userId)
       .single();
 
@@ -213,10 +213,10 @@ export async function POST(request: NextRequest) {
       .eq('user_id', userId)
       .eq('is_new_species', true);
 
-    const categoryTotals = categoryCounts?.reduce((acc, capture) => {
+    const categoryTotals = (categoryCounts || []).reduce((acc, capture) => {
       acc[capture.category] = (acc[capture.category] || 0) + 1;
       return acc;
-    }, {} as Record<string, number>) || {};
+    }, {} as Record<string, number>);
 
     for (const [category, count] of Object.entries(categoryTotals)) {
       if (count === 5) {
