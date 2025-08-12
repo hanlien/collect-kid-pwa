@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    appDir: true,
-  },
   images: {
     domains: ['upload.wikimedia.org', 'api.gbif.org'],
     formats: ['image/webp', 'image/avif'],

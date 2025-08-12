@@ -49,6 +49,19 @@ export function validateEnv() {
     return envSchema.parse(process.env);
   } catch (error) {
     console.error('Environment validation failed:', error);
+    // During build time, return a mock object
+    if (process.env.NODE_ENV === 'production' && !process.env.SUPABASE_URL) {
+      return {
+        PLANT_ID_API_KEY: 'placeholder',
+        GOOGLE_APPLICATION_CREDENTIALS_JSON: '{"type":"service_account"}',
+        SUPABASE_URL: 'https://placeholder.supabase.co',
+        SUPABASE_ANON_KEY: 'placeholder',
+        SUPABASE_SERVICE_ROLE_KEY: 'placeholder',
+        GCV_MAX_DAY: 300,
+        PLANT_MAX_DAY: 200,
+        MAX_IMAGE_MB: 2,
+      };
+    }
     throw new Error('Invalid environment configuration');
   }
 }

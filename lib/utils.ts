@@ -28,8 +28,8 @@ export function downscaleImage(file: File, maxSize: number = 1024): Promise<Blob
 }
 
 // Badge subtype mapping
-export function getBadgeSubtype(labels: string[], category: Category): string {
-  const lowerLabels = labels.map(l => l.toLowerCase());
+export function getBadgeSubtype(labels: (string | undefined)[], category: Category): string {
+  const lowerLabels = labels.filter(Boolean).map(l => l!.toLowerCase());
   
   if (category === 'flower') {
     if (lowerLabels.some(l => l.includes('rose'))) return 'rose';

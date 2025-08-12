@@ -27,7 +27,7 @@ export default function PWAProvider({ children }: { children: React.ReactNode })
     // Check if app is already installed
     const checkInstalled = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      const isInApp = window.navigator.standalone === true;
+      const isInApp = (window.navigator as any).standalone === true;
       setIsInstalled(isStandalone || isInApp);
     };
 

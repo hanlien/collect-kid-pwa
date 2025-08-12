@@ -5,7 +5,7 @@ export type SpeciesResult = {
   category: Category;
   canonicalName: string;
   commonName?: string;
-  rank?: 'species' | 'genus' | 'family';
+  rank?: 'species' | 'genus' | 'family' | 'kingdom' | 'class';
   confidence: number; // 0..1
   provider: Provider;
   gbifKey?: number;

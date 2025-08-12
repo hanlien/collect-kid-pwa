@@ -125,7 +125,7 @@ export default function ScanPage() {
           <ul className="text-sm text-gray-600 space-y-1 text-left">
             <li>• Get close to your subject</li>
             <li>• Hold your phone steady</li>
-            <li>• Make sure there's good lighting</li>
+            <li>• Make sure there&apos;s good lighting</li>
             <li>• Tap the scan button to take a photo</li>
           </ul>
         </div>

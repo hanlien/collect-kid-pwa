@@ -168,7 +168,7 @@ export default function ResultPage() {
           <div className="flex items-center gap-2">
             <div className="text-2xl">⚠️</div>
             <div>
-              <h3 className="font-bold text-red-800">Look, don't touch!</h3>
+              <h3 className="font-bold text-red-800">Look, don&apos;t touch!</h3>
               <p className="text-sm text-red-700">This creature might be dangerous. Keep your distance!</p>
             </div>
           </div>

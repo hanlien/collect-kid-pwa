@@ -147,7 +147,7 @@ export default function QuestPage() {
       {/* Progress */}
       <div className="card mb-6">
         <div className="text-center">
-          <h2 className="text-lg font-bold text-gray-800 mb-2">Today's Progress</h2>
+          <h2 className="text-lg font-bold text-gray-800 mb-2">Today&apos;s Progress</h2>
           <div className="flex items-center justify-center gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary-600">
@@ -177,7 +177,7 @@ export default function QuestPage() {
 
       {/* Quests */}
       <div className="flex-1">
-        <h2 className="text-lg font-bold text-gray-800 mb-4">Today's Challenges</h2>
+        <h2 className="text-lg font-bold text-gray-800 mb-4">Today&apos;s Challenges</h2>
         
         <div className="space-y-4">
           {quests.map((quest) => (
