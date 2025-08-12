@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-gradient-to-br from-primary-50 to-secondary-50 min-h-screen;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transform transition-all duration-200 active:scale-95;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary-500 hover:bg-secondary-600 text-white font-bold py-3 px-6 rounded-full shadow-md transform transition-all duration-200 active:scale-95;
+  }
+  
+  .btn-outline {
+    @apply border-2 border-primary-500 text-primary-600 hover:bg-primary-500 hover:text-white font-bold py-3 px-6 rounded-full transition-all duration-200 active:scale-95;
+  }
+  
+  .card {
+    @apply bg-white rounded-2xl shadow-lg p-6 border border-gray-100;
+  }
+  
+  .scan-ring {
+    @apply absolute inset-0 border-4 border-primary-400 rounded-full animate-pulse-slow;
+  }
+  
+  .badge-ring {
+    @apply absolute inset-0 rounded-full border-4;
+  }
+  
+  .badge-ring.bronze {
+    @apply border-amber-600;
+  }
+  
+  .badge-ring.silver {
+    @apply border-gray-400;
+  }
+  
+  .badge-ring.gold {
+    @apply border-yellow-400;
+  }
+  
+  .sparkle {
+    @apply absolute w-2 h-2 bg-yellow-400 rounded-full animate-ping;
+  }
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* PWA specific styles */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
