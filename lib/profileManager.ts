@@ -40,9 +40,12 @@ class ProfileManager {
 
   private loadSettings(): ProfileSettings {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.PROFILE_SETTINGS);
-      if (stored) {
-        return JSON.parse(stored);
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const stored = localStorage.getItem(STORAGE_KEYS.PROFILE_SETTINGS);
+        if (stored) {
+          return JSON.parse(stored);
+        }
       }
     } catch (error) {
       console.error('Failed to load profile settings:', error);
@@ -59,7 +62,10 @@ class ProfileManager {
 
   private saveSettings(): void {
     try {
-      localStorage.setItem(STORAGE_KEYS.PROFILE_SETTINGS, JSON.stringify(this.settings));
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem(STORAGE_KEYS.PROFILE_SETTINGS, JSON.stringify(this.settings));
+      }
     } catch (error) {
       console.error('Failed to save profile settings:', error);
     }
@@ -170,9 +176,12 @@ class ProfileManager {
 
   getCaptures(): Capture[] {
     try {
-      const stored = localStorage.getItem(`${STORAGE_KEYS.PROFILE_DATA}-${this.getCurrentProfile().id}`);
-      if (stored) {
-        return JSON.parse(stored);
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const stored = localStorage.getItem(`${STORAGE_KEYS.PROFILE_DATA}-${this.getCurrentProfile().id}`);
+        if (stored) {
+          return JSON.parse(stored);
+        }
       }
     } catch (error) {
       console.error('Failed to load captures:', error);
@@ -182,7 +191,10 @@ class ProfileManager {
 
   private saveCaptures(captures: Capture[]): void {
     try {
-      localStorage.setItem(`${STORAGE_KEYS.PROFILE_DATA}-${this.getCurrentProfile().id}`, JSON.stringify(captures));
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem(`${STORAGE_KEYS.PROFILE_DATA}-${this.getCurrentProfile().id}`, JSON.stringify(captures));
+      }
     } catch (error) {
       console.error('Failed to save captures:', error);
     }
@@ -204,9 +216,12 @@ class ProfileManager {
 
   getBadges(): Badge[] {
     try {
-      const stored = localStorage.getItem(`${STORAGE_KEYS.PROFILE_DATA}-badges-${this.getCurrentProfile().id}`);
-      if (stored) {
-        return JSON.parse(stored);
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const stored = localStorage.getItem(`${STORAGE_KEYS.PROFILE_DATA}-badges-${this.getCurrentProfile().id}`);
+        if (stored) {
+          return JSON.parse(stored);
+        }
       }
     } catch (error) {
       console.error('Failed to load badges:', error);
@@ -216,7 +231,10 @@ class ProfileManager {
 
   private saveBadges(badges: Badge[]): void {
     try {
-      localStorage.setItem(`${STORAGE_KEYS.PROFILE_DATA}-badges-${this.getCurrentProfile().id}`, JSON.stringify(badges));
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem(`${STORAGE_KEYS.PROFILE_DATA}-badges-${this.getCurrentProfile().id}`, JSON.stringify(badges));
+      }
     } catch (error) {
       console.error('Failed to save badges:', error);
     }
@@ -239,9 +257,12 @@ class ProfileManager {
 
   getAchievements(): Achievement[] {
     try {
-      const stored = localStorage.getItem(`${STORAGE_KEYS.PROFILE_DATA}-achievements-${this.getCurrentProfile().id}`);
-      if (stored) {
-        return JSON.parse(stored);
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const stored = localStorage.getItem(`${STORAGE_KEYS.PROFILE_DATA}-achievements-${this.getCurrentProfile().id}`);
+        if (stored) {
+          return JSON.parse(stored);
+        }
       }
     } catch (error) {
       console.error('Failed to load achievements:', error);
@@ -251,7 +272,10 @@ class ProfileManager {
 
   private saveAchievements(achievements: Achievement[]): void {
     try {
-      localStorage.setItem(`${STORAGE_KEYS.PROFILE_DATA}-achievements-${this.getCurrentProfile().id}`, JSON.stringify(achievements));
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem(`${STORAGE_KEYS.PROFILE_DATA}-achievements-${this.getCurrentProfile().id}`, JSON.stringify(achievements));
+      }
     } catch (error) {
       console.error('Failed to save achievements:', error);
     }
@@ -273,9 +297,12 @@ class ProfileManager {
 
   getScanHistory(): ScanRecord[] {
     try {
-      const stored = localStorage.getItem(`${STORAGE_KEYS.SCAN_HISTORY}-${this.getCurrentProfile().id}`);
-      if (stored) {
-        return JSON.parse(stored);
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const stored = localStorage.getItem(`${STORAGE_KEYS.SCAN_HISTORY}-${this.getCurrentProfile().id}`);
+        if (stored) {
+          return JSON.parse(stored);
+        }
       }
     } catch (error) {
       console.error('Failed to load scan history:', error);
@@ -285,7 +312,10 @@ class ProfileManager {
 
   private saveScanHistory(history: ScanRecord[]): void {
     try {
-      localStorage.setItem(`${STORAGE_KEYS.SCAN_HISTORY}-${this.getCurrentProfile().id}`, JSON.stringify(history));
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.setItem(`${STORAGE_KEYS.SCAN_HISTORY}-${this.getCurrentProfile().id}`, JSON.stringify(history));
+      }
     } catch (error) {
       console.error('Failed to save scan history:', error);
     }
@@ -312,10 +342,13 @@ class ProfileManager {
 
   private clearProfileData(profileId: string): void {
     try {
-      localStorage.removeItem(`${STORAGE_KEYS.PROFILE_DATA}-${profileId}`);
-      localStorage.removeItem(`${STORAGE_KEYS.PROFILE_DATA}-badges-${profileId}`);
-      localStorage.removeItem(`${STORAGE_KEYS.PROFILE_DATA}-achievements-${profileId}`);
-      localStorage.removeItem(`${STORAGE_KEYS.SCAN_HISTORY}-${profileId}`);
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.removeItem(`${STORAGE_KEYS.PROFILE_DATA}-${profileId}`);
+        localStorage.removeItem(`${STORAGE_KEYS.PROFILE_DATA}-badges-${profileId}`);
+        localStorage.removeItem(`${STORAGE_KEYS.PROFILE_DATA}-achievements-${profileId}`);
+        localStorage.removeItem(`${STORAGE_KEYS.SCAN_HISTORY}-${profileId}`);
+      }
     } catch (error) {
       console.error('Failed to clear profile data:', error);
     }

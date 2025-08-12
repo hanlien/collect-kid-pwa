@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Star, Award } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import Image from 'next/image';
 
 interface BadgePopupProps {
   isOpen: boolean;
@@ -110,10 +111,12 @@ export default function BadgePopup({ isOpen, onClose, speciesName, category, ima
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{ delay: 0.4, type: "spring", damping: 15 }}
                   >
-                    <img
+                    <Image
                       src={imageUrl}
                       alt={speciesName}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 50vw"
                     />
                   </motion.div>
                 )}

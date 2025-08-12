@@ -10,6 +10,7 @@ import Confetti from '@/components/Confetti';
 import Toast from '@/components/Toast';
 import BadgePopup from '@/components/BadgePopup';
 import { isDangerousSpecies } from '@/lib/utils';
+import ProfileManager from '@/lib/profileManager';
 import { SpeciesResult } from '@/types/species';
 
 export default function ResultPage() {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Settings, User } from 'lucide-react';
 import ProfileManager from '@/lib/profileManager';
@@ -21,18 +21,18 @@ export default function ProfileSelector({ isOpen, onClose, onProfileSwitch }: Pr
 
   const profileManager = ProfileManager.getInstance();
 
-  useEffect(() => {
-    if (isOpen) {
-      loadProfiles();
-    }
-  }, [isOpen]);
-
-  const loadProfiles = () => {
+  const loadProfiles = useCallback(() => {
     const allProfiles = profileManager.getAllProfiles();
     const current = profileManager.getCurrentProfile();
     setProfiles(allProfiles);
     setCurrentProfile(current);
-  };
+  }, [profileManager]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadProfiles();
+    }
+  }, [isOpen, loadProfiles]);
 
   const handleProfileSwitch = (profile: Profile) => {
     profileManager.switchProfile(profile.id);

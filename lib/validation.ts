@@ -27,6 +27,7 @@ export const collectRequestSchema = z.object({
     confidence: z.number().min(0).max(1),
     provider: z.enum(['plantid', 'gcv']),
     gbifKey: z.number().optional(),
+    capturedImageUrl: z.string().optional(),
     wiki: z.object({
       summary: z.string().optional(),
       imageUrl: z.string().url().optional(),

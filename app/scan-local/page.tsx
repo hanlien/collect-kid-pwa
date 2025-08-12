@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Camera, Upload, ArrowLeft } from 'lucide-react';
 import BigButton from '@/components/BigButton';
-import ProgressRing from '@/components/ui/ProgressRing';
+import { ProgressRing } from '@/components/ui/ProgressRing';
 import Confetti from '@/components/Confetti';
 import Toast from '@/components/Toast';
 import { localModel } from '@/lib/ml/localModel';
@@ -188,7 +188,7 @@ export default function ScanLocalPage() {
           
           <div className="text-center">
             <h1 className="text-lg font-semibold text-gray-800">Local Scan</h1>
-            <p className="text-sm text-gray-500">Using your device's AI</p>
+            <p className="text-sm text-gray-500">Using your device&apos;s AI</p>
           </div>
           
           <div className="w-20"></div>
@@ -215,7 +215,7 @@ export default function ScanLocalPage() {
           {/* Scan Ring */}
           {showScanRing && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <ProgressRing size={200} strokeWidth={4} />
+              <ProgressRing progress={75} size={200} strokeWidth={4} />
             </div>
           )}
 
@@ -262,7 +262,7 @@ export default function ScanLocalPage() {
       </div>
 
       {/* Confetti */}
-      {showConfetti && <Confetti />}
+      <Confetti trigger={showConfetti} />
 
       {/* Toast */}
       {toast && (
