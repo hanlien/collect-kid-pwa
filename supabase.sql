@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS captures (
   common_name TEXT,
   category TEXT NOT NULL CHECK (category IN ('flower', 'bug', 'animal')),
   confidence DECIMAL(3,2) NOT NULL,
-  provider TEXT NOT NULL CHECK (provider IN ('plantid', 'gcv', 'local')),
+  provider TEXT NOT NULL CHECK (provider IN ('plantid', 'gcv')),
   thumb_url TEXT,
   location_hint TEXT,
   gbif_key INTEGER,

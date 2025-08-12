@@ -25,7 +25,7 @@ export const collectRequestSchema = z.object({
     commonName: z.string().optional(),
     rank: z.enum(['species', 'genus', 'family']).optional(),
     confidence: z.number().min(0).max(1),
-    provider: z.enum(['plantid', 'gcv', 'local']),
+    provider: z.enum(['plantid', 'gcv']),
     gbifKey: z.number().optional(),
     wiki: z.object({
       summary: z.string().optional(),

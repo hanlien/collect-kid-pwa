@@ -4,7 +4,6 @@ import { validateEnv, recognizeRequestSchema } from '@/lib/validation';
 import { supabaseAdmin } from '@/lib/supabase';
 import { SpeciesResult, Category, Provider } from '@/types/species';
 import { colorNameToHex, getBadgeSubtype } from '@/lib/utils';
-import { findSpeciesByKeywords, localSpeciesToResult } from '@/lib/species-database';
 
 // Simple in-memory rate limiting (TODO: use Redis in production)
 const rateLimitCounts = {
@@ -99,36 +98,7 @@ export async function POST(request: NextRequest) {
       })
       .filter(Boolean) as string[];
 
-    // Check local database first (saves API credits!)
-    const localSpecies = findSpeciesByKeywords(labels);
-    if (localSpecies) {
-      console.log('✅ Using LOCAL DATABASE engine');
-      console.log(`✅ Found local match: ${localSpecies.commonName}`);
-      const localResult = localSpeciesToResult(localSpecies);
-      localResult.ui = { ...localResult.ui, colorChips };
-      
-      // Check confidence threshold
-      if (localResult.confidence < 0.6) {
-        console.log('❌ Local match confidence too low:', localResult.confidence);
-        return NextResponse.json(
-          {
-            error: 'LOW_CONFIDENCE',
-            message: 'Try getting closer, holding steady, or finding better lighting!',
-            result: localResult,
-          },
-          { status: 400 }
-        );
-      }
-      
-      console.log('✅ Returning local database result');
-      return NextResponse.json({ result: localResult });
-    }
-
-    console.log('❌ No local database match found, proceeding to API engines');
-
-    // If no local match, proceed with API calls
-    let speciesResult: SpeciesResult;
-
+    // Determine category and use appropriate API
     const plantTerms = ['plant', 'flower', 'tree', 'leaf', 'petal', 'bloom', 'garden', 'flora'];
     const bugTerms = ['insect', 'bug', 'bee', 'butterfly', 'ant', 'spider', 'fly', 'mosquito', 'beetle', 'grasshopper', 'cricket', 'dragonfly', 'ladybug'];
     const animalTerms = ['animal', 'mammal', 'bird', 'reptile', 'amphibian', 'fish', 'pet', 'wildlife'];
@@ -147,6 +117,8 @@ export async function POST(request: NextRequest) {
     console.log('  - Plant labels:', hasPlantLabels);
     console.log('  - Bug labels:', hasBugLabels);
     console.log('  - Animal labels:', hasAnimalLabels);
+
+    let speciesResult: SpeciesResult;
 
     if ((hasPlantLabels || validatedHint === 'flower') && rateLimitCounts.plantid < env.PLANT_MAX_DAY) {
       console.log('🌱 Using PLANT.ID API engine');
