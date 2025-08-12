@@ -49,10 +49,20 @@ export function postprocessLocalResult(localResult: LocalModelResult): SpeciesRe
   };
 }
 
+let labelMapCache: any = null;
+
+async function loadLabelMap(): Promise<any> {
+  if (!labelMapCache) {
+    const response = await fetch('/ml/label_map.json');
+    labelMapCache = await response.json();
+  }
+  return labelMapCache;
+}
+
 function getLabelInfo(labelId: string): any {
-  // This would normally load from the label map
-  // For now, return a basic structure
-  const labelMap = {
+  // For now, return a basic structure based on the label ID
+  // In a full implementation, this would load from the label map
+  const basicLabelMap: Record<string, any> = {
     'rose_garden': {
       category: 'flower',
       species: 'Rosa sp.',
@@ -65,21 +75,129 @@ function getLabelInfo(labelId: string): any {
       commonName: 'Dandelion',
       description: 'Yellow wildflower with fluffy seed heads'
     },
+    'sunflower': {
+      category: 'flower',
+      species: 'Helianthus annuus',
+      commonName: 'Sunflower',
+      description: 'Tall yellow flower that follows the sun'
+    },
+    'daisy_oxeye': {
+      category: 'flower',
+      species: 'Leucanthemum vulgare',
+      commonName: 'Oxeye Daisy',
+      description: 'White flower with yellow center'
+    },
+    'tulip': {
+      category: 'flower',
+      species: 'Tulipa sp.',
+      commonName: 'Tulip',
+      description: 'Spring-blooming bulb flower'
+    },
+    'lily': {
+      category: 'flower',
+      species: 'Lilium sp.',
+      commonName: 'Lily',
+      description: 'Elegant flower with large blooms'
+    },
+    'marigold': {
+      category: 'flower',
+      species: 'Tagetes sp.',
+      commonName: 'Marigold',
+      description: 'Bright orange or yellow garden flower'
+    },
+    'clover_white': {
+      category: 'flower',
+      species: 'Trifolium repens',
+      commonName: 'White Clover',
+      description: 'Small white flower heads in lawns'
+    },
     'bee_honey': {
       category: 'bug',
       species: 'Apis mellifera',
       commonName: 'Honey Bee',
       description: 'Essential pollinator that produces honey'
     },
+    'butterfly_monarch': {
+      category: 'bug',
+      species: 'Danaus plexippus',
+      commonName: 'Monarch Butterfly',
+      description: 'Orange and black migratory butterfly'
+    },
+    'ladybug': {
+      category: 'bug',
+      species: 'Coccinella septempunctata',
+      commonName: 'Seven-Spotted Ladybug',
+      description: 'Red beetle with black spots'
+    },
+    'dragonfly_green': {
+      category: 'bug',
+      species: 'Anax junius',
+      commonName: 'Common Green Darner',
+      description: 'Large green dragonfly'
+    },
+    'ant_black_garden': {
+      category: 'bug',
+      species: 'Lasius niger',
+      commonName: 'Black Garden Ant',
+      description: 'Common black ant in gardens'
+    },
+    'spider_garden': {
+      category: 'bug',
+      species: 'Araneus diadematus',
+      commonName: 'Garden Spider',
+      description: 'Orb-weaving spider with cross pattern'
+    },
     'dog': {
       category: 'animal',
       species: 'Canis familiaris',
       commonName: 'Dog',
       description: 'Domesticated canine companion'
+    },
+    'cat': {
+      category: 'animal',
+      species: 'Felis catus',
+      commonName: 'Cat',
+      description: 'Domestic feline companion'
+    },
+    'squirrel_gray': {
+      category: 'animal',
+      species: 'Sciurus carolinensis',
+      commonName: 'Eastern Gray Squirrel',
+      description: 'Common tree-dwelling rodent'
+    },
+    'rabbit_cottontail': {
+      category: 'animal',
+      species: 'Sylvilagus floridanus',
+      commonName: 'Eastern Cottontail',
+      description: 'Wild rabbit with white tail'
+    },
+    'bird_sparrow': {
+      category: 'animal',
+      species: 'Passer domesticus',
+      commonName: 'House Sparrow',
+      description: 'Small brown songbird'
+    },
+    'bird_robin': {
+      category: 'animal',
+      species: 'Turdus migratorius',
+      commonName: 'American Robin',
+      description: 'Orange-breasted thrush'
+    },
+    'chipmunk_eastern': {
+      category: 'animal',
+      species: 'Tamias striatus',
+      commonName: 'Eastern Chipmunk',
+      description: 'Striped ground squirrel'
+    },
+    'deer_whitetail': {
+      category: 'animal',
+      species: 'Odocoileus virginianus',
+      commonName: 'White-tailed Deer',
+      description: 'Large forest mammal with white tail'
     }
   };
   
-  return labelMap[labelId as keyof typeof labelMap];
+  return basicLabelMap[labelId];
 }
 
 function getSafetyFlags(labelId: string): any {

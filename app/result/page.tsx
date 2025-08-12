@@ -93,9 +93,9 @@ export default function ResultPage() {
     try {
       setIsCollecting(true);
 
-      // Generate a simple user ID (in production, use proper auth)
-      const userId = localStorage.getItem('userId') || crypto.randomUUID();
-      localStorage.setItem('userId', userId);
+      // Use profile manager instead of simple user ID
+      const profileManager = ProfileManager.getInstance();
+      const currentProfile = profileManager.getCurrentProfile();
 
       const response = await fetch('/api/collect', {
         method: 'POST',
@@ -103,7 +103,7 @@ export default function ResultPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId,
+          userId: currentProfile.id,
           result: result,
         }),
       });

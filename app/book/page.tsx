@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trophy, BookOpen } from 'lucide-react';
 import BigButton from '@/components/BigButton';
 import Badge from '@/components/Badge';
-import { Capture, Badge as BadgeType } from '@/types/species';
+import ProfileManager from '@/lib/profileManager';
+import { Capture, Badge as BadgeType } from '@/types/profile';
 
 type TabType = 'animals' | 'bugs' | 'flowers';
 
@@ -22,23 +23,20 @@ export default function BookPage() {
 
   const loadCollection = async () => {
     try {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
+      const profileManager = ProfileManager.getInstance();
+      const currentProfile = profileManager.getCurrentProfile();
+      
+      if (!currentProfile) {
         setIsLoading(false);
         return;
       }
 
-      // In a real app, you'd fetch from your API
-      // For now, we'll use localStorage for demo
-      const storedCaptures = localStorage.getItem('captures');
-      const storedBadges = localStorage.getItem('badges');
+      // Load captures and badges from profile
+      const profileCaptures = profileManager.getCaptures();
+      const profileBadges = profileManager.getBadges();
 
-      if (storedCaptures) {
-        setCaptures(JSON.parse(storedCaptures));
-      }
-      if (storedBadges) {
-        setBadges(JSON.parse(storedBadges));
-      }
+      setCaptures(profileCaptures);
+      setBadges(profileBadges);
     } catch (error) {
       console.error('Failed to load collection:', error);
     } finally {

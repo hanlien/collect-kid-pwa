@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { collectRequestSchema } from '@/lib/validation';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getBadgeSubtype, getBadgeLevel } from '@/lib/utils';
+import ProfileManager from '@/lib/profileManager';
 
 export async function POST(request: NextRequest) {
   try {
@@ -105,6 +106,37 @@ export async function POST(request: NextRequest) {
     let badge: any = null;
     let leveledUp = false;
     let achievements: any[] = [];
+
+    // Update profile data using ProfileManager
+    const profileManager = ProfileManager.getInstance();
+    const currentProfile = profileManager.getCurrentProfile();
+    
+    // Update profile stats
+    profileManager.updateProfile(currentProfile.id, {
+      coins: newCoins,
+      level: newLevel,
+      totalCaptures: newTotalCaptures,
+      uniqueSpeciesCount: newUniqueSpeciesCount,
+    });
+
+    // Add capture to profile collection
+    profileManager.addCapture({
+      category: speciesResult.category,
+      provider: speciesResult.provider,
+      canonicalName: speciesResult.canonicalName,
+      commonName: speciesResult.commonName,
+      rank: speciesResult.rank,
+      confidence: speciesResult.confidence,
+      gbifKey: speciesResult.gbifKey,
+      thumbUrl: speciesResult.wiki?.imageUrl,
+      createdAt: new Date().toISOString(),
+      summary: speciesResult.wiki?.summary,
+      funFacts: speciesResult.ui?.funFacts,
+      colorChips: speciesResult.ui?.colorChips,
+      coinsEarned: coinsEarned,
+      isNewSpecies: isNewSpecies,
+      capturedImageUrl: speciesResult.capturedImageUrl,
+    });
 
     return NextResponse.json({
       capture,

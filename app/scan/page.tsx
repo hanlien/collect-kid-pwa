@@ -2,14 +2,17 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Camera, Upload, Sparkles, Search, BookOpen, Trophy, Coins, Target, X, RotateCcw } from 'lucide-react';
+import { Camera, Upload, Sparkles, Search, BookOpen, Trophy, Coins, Target, X, RotateCcw, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BigButton from '@/components/BigButton';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { ConfettiBurst } from '@/components/anim/ConfettiBurst';
 import Toast from '@/components/Toast';
+import ProfileSelector from '@/components/ProfileSelector';
+import ProfileManager from '@/lib/profileManager';
 import { downscaleImage } from '@/lib/utils';
 import { SpeciesResult, RecognitionHint } from '@/types/species';
+import { Profile } from '@/types/profile';
 
 export default function ScanPage() {
   const router = useRouter();
@@ -30,6 +33,8 @@ export default function ScanPage() {
     totalCaptures: 0,
     uniqueSpeciesCount: 0,
   });
+  const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
+  const [showProfileSelector, setShowProfileSelector] = useState(false);
 
   // Scanning text animation
   useEffect(() => {
@@ -58,15 +63,17 @@ export default function ScanPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Load user data
+  // Load profile data
   useEffect(() => {
-    const userId = localStorage.getItem('userId');
-    if (userId) {
-      const savedData = localStorage.getItem('userData');
-      if (savedData) {
-        setUserData(JSON.parse(savedData));
-      }
-    }
+    const profileManager = ProfileManager.getInstance();
+    const profile = profileManager.getCurrentProfile();
+    setCurrentProfile(profile);
+    setUserData({
+      coins: profile.coins,
+      level: profile.level,
+      totalCaptures: profile.totalCaptures,
+      uniqueSpeciesCount: profile.uniqueSpeciesCount,
+    });
   }, []);
 
   // Ensure video plays when camera becomes active
@@ -190,6 +197,15 @@ export default function ScanPage() {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2000);
 
+      // Add scan record to profile
+      const profileManager = ProfileManager.getInstance();
+      profileManager.addScanRecord({
+        speciesName: data.result.commonName || data.result.canonicalName,
+        category: data.result.category,
+        confidence: data.result.confidence,
+        imageUrl: imageUrl,
+      });
+
       // Navigate to result page with data and image
       const result: SpeciesResult = {
         ...data.result,
@@ -221,6 +237,16 @@ export default function ScanPage() {
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleProfileSwitch = (profile: Profile) => {
+    setCurrentProfile(profile);
+    setUserData({
+      coins: profile.coins,
+      level: profile.level,
+      totalCaptures: profile.totalCaptures,
+      uniqueSpeciesCount: profile.uniqueSpeciesCount,
+    });
   };
 
   return (
@@ -704,7 +730,8 @@ export default function ScanPage() {
           >
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-4">
-                <motion.div
+                <motion.button
+                  onClick={() => setShowProfileSelector(true)}
                   className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg"
                   whileHover={{ scale: 1.1, rotate: 360 }}
                   whileTap={{ scale: 0.9 }}
@@ -717,11 +744,11 @@ export default function ScanPage() {
                   }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <span className="text-white font-bold text-lg">👦</span>
-                </motion.div>
+                  <span className="text-white font-bold text-lg">{currentProfile?.emoji || '👦'}</span>
+                </motion.button>
                 <div>
                   <h2 className="text-xl font-bold text-white drop-shadow-lg">Level {userData.level}</h2>
-                  <p className="text-sm text-white/80 drop-shadow-md">Brandon&apos;s Explorer</p>
+                  <p className="text-sm text-white/80 drop-shadow-md">{currentProfile?.name || 'Brandon'}&apos;s Explorer</p>
                 </div>
               </div>
               
@@ -975,6 +1002,13 @@ export default function ScanPage() {
 
       {/* Confetti burst */}
       <ConfettiBurst trigger={showConfetti} />
+
+      {/* Profile Selector */}
+      <ProfileSelector
+        isOpen={showProfileSelector}
+        onClose={() => setShowProfileSelector(false)}
+        onProfileSwitch={handleProfileSwitch}
+      />
     </div>
   );
 }

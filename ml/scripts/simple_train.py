@@ -96,7 +96,7 @@ def train_model(model, train_images, train_labels, val_images, val_labels, epoch
     model.compile(
         optimizer='adam',
         loss='sparse_categorical_crossentropy',
-        metrics=['accuracy', 'top_3_accuracy']
+        metrics=['accuracy']
     )
     
     # Add callbacks

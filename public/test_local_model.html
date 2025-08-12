@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Model Test - Collect Kid</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .species-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .species-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            background: #f9f9f9;
+        }
+        .species-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .species-card p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .category-flower { border-left: 4px solid #ff69b4; }
+        .category-bug { border-left: 4px solid #ffd700; }
+        .category-animal { border-left: 4px solid #8b4513; }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Local Model Test - Collect Kid</h1>
+        
+        <div class="test-section">
+            <h2>📋 Species the Model Can Recognize</h2>
+            <p>The local model is trained on these 22 species. Try uploading images of these species for best results!</p>
+            
+            <div class="species-list">
+                <div class="species-card category-flower">
+                    <h3>🌹 Garden Rose</h3>
+                    <p>Category: Flower</p>
+                    <p>ID: rose_garden</p>
+                </div>
+                <div class="species-card category-flower">
+                    <h3>🌼 Dandelion</h3>
+                    <p>Category: Flower</p>
+                    <p>ID: dandelion</p>
+                </div>
+                <div class="species-card category-flower">
+                    <h3>🌻 Sunflower</h3>
+                    <p>Category: Flower</p>
+                    <p>ID: sunflower</p>
+                </div>
+                <div class="species-card category-flower">
+                    <h3>🌼 Oxeye Daisy</h3>
+                    <p>Category: Flower</p>
+                    <p>ID: daisy_oxeye</p>
+                </div>
+                <div class="species-card category-flower">
+                    <h3>🌷 Tulip</h3>
+                    <p>Category: Flower</p>
+                    <p>ID: tulip</p>
+                </div>
+                <div class="species-card category-flower">
+                    <h3>🌸 Lily</h3>
+                    <p>Category: Flower</p>
+                    <p>ID: lily</p>
+                </div>
+                <div class="species-card category-flower">
+                    <h3>🌺 Marigold</h3>
+                    <p>Category: Flower</p>
+                    <p>ID: marigold</p>
+                </div>
+                <div class="species-card category-flower">
+                    <h3>☘️ White Clover</h3>
+                    <p>Category: Flower</p>
+                    <p>ID: clover_white</p>
+                </div>
+                <div class="species-card category-bug">
+                    <h3>🐝 Honey Bee</h3>
+                    <p>Category: Bug</p>
+                    <p>ID: bee_honey</p>
+                </div>
+                <div class="species-card category-bug">
+                    <h3>🦋 Monarch Butterfly</h3>
+                    <p>Category: Bug</p>
+                    <p>ID: butterfly_monarch</p>
+                </div>
+                <div class="species-card category-bug">
+                    <h3>🐞 Ladybug</h3>
+                    <p>Category: Bug</p>
+                    <p>ID: ladybug</p>
+                </div>
+                <div class="species-card category-bug">
+                    <h3>🦗 Green Darner</h3>
+                    <p>Category: Bug</p>
+                    <p>ID: dragonfly_green</p>
+                </div>
+                <div class="species-card category-bug">
+                    <h3>🐜 Black Garden Ant</h3>
+                    <p>Category: Bug</p>
+                    <p>ID: ant_black_garden</p>
+                </div>
+                <div class="species-card category-bug">
+                    <h3>🕷️ Garden Spider</h3>
+                    <p>Category: Bug</p>
+                    <p>ID: spider_garden</p>
+                </div>
+                <div class="species-card category-animal">
+                    <h3>🐕 Dog</h3>
+                    <p>Category: Animal</p>
+                    <p>ID: dog</p>
+                </div>
+                <div class="species-card category-animal">
+                    <h3>🐱 Cat</h3>
+                    <p>Category: Animal</p>
+                    <p>ID: cat</p>
+                </div>
+                <div class="species-card category-animal">
+                    <h3>🐿️ Gray Squirrel</h3>
+                    <p>Category: Animal</p>
+                    <p>ID: squirrel_gray</p>
+                </div>
+                <div class="species-card category-animal">
+                    <h3>🐰 Cottontail</h3>
+                    <p>Category: Animal</p>
+                    <p>ID: rabbit_cottontail</p>
+                </div>
+                <div class="species-card category-animal">
+                    <h3>🐦 House Sparrow</h3>
+                    <p>Category: Animal</p>
+                    <p>ID: bird_sparrow</p>
+                </div>
+                <div class="species-card category-animal">
+                    <h3>🦅 American Robin</h3>
+                    <p>Category: Animal</p>
+                    <p>ID: bird_robin</p>
+                </div>
+                <div class="species-card category-animal">
+                    <h3>🐿️ Eastern Chipmunk</h3>
+                    <p>Category: Animal</p>
+                    <p>ID: chipmunk_eastern</p>
+                </div>
+                <div class="species-card category-animal">
+                    <h3>🦌 White-tailed Deer</h3>
+                    <p>Category: Animal</p>
+                    <p>ID: deer_whitetail</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Test Local Model</h2>
+            <p>Upload an image of one of the species above to test the local model:</p>
+            
+            <input type="file" id="imageInput" accept="image/*">
+            <button onclick="testLocalModel()">Test Local Model</button>
+            <button onclick="testGoogleVision()">Test Google Vision (for comparison)</button>
+            
+            <div id="testResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Model Information</h2>
+            <div class="result">
+                <strong>Model Version:</strong> v001<br>
+                <strong>Input Size:</strong> 224x224 pixels<br>
+                <strong>Number of Classes:</strong> 22<br>
+                <strong>Training Accuracy:</strong> 13.9% (Top-1), 42.4% (Top-3)<br>
+                <strong>Model Size:</strong> ~1.3 MB<br>
+                <strong>Format:</strong> TFLite (optimized for web/mobile)
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>💡 Tips for Best Results</h2>
+            <ul>
+                <li>Use clear, well-lit images</li>
+                <li>Get close to the subject</li>
+                <li>Hold the camera steady</li>
+                <li>Try different angles</li>
+                <li>Focus on the species listed above</li>
+                <li>The model works best with the 22 species it was trained on</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        async function testLocalModel() {
+            const fileInput = document.getElementById('imageInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showResult('Please select an image file first', 'error');
+                return;
+            }
+
+            showResult('Testing local model...', 'info');
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch('/api/recognize-local', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult(`
+                        <strong>✅ Local Model Success!</strong><br>
+                        <strong>Species:</strong> ${data.result.commonName}<br>
+                        <strong>Category:</strong> ${data.result.category}<br>
+                        <strong>Confidence:</strong> ${(data.result.confidence * 100).toFixed(1)}%<br>
+                        <strong>Inference Time:</strong> ${data.meta.inferenceTime.toFixed(1)}ms<br>
+                        <strong>Top Predictions:</strong><br>
+                        ${data.meta.topK.map((pred, i) => `${i+1}. ${pred.labelId} (${(pred.prob * 100).toFixed(1)}%)`).join('<br>')}
+                    `, 'success');
+                } else {
+                    if (data.error === 'LOW_CONFIDENCE') {
+                        showResult(`
+                            <strong>⚠️ Low Confidence</strong><br>
+                            ${data.message}<br>
+                            <strong>Best Guess:</strong> ${data.result.commonName}<br>
+                            <strong>Confidence:</strong> ${(data.result.confidence * 100).toFixed(1)}%
+                        `, 'error');
+                    } else {
+                        showResult(`❌ Error: ${data.error}`, 'error');
+                    }
+                }
+            } catch (error) {
+                showResult(`❌ Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGoogleVision() {
+            const fileInput = document.getElementById('imageInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showResult('Please select an image file first', 'error');
+                return;
+            }
+
+            showResult('Testing Google Vision...', 'info');
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                formData.append('hint', 'auto');
+
+                const response = await fetch('/api/recognize', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult(`
+                        <strong>✅ Google Vision Success!</strong><br>
+                        <strong>Species:</strong> ${data.result.commonName}<br>
+                        <strong>Category:</strong> ${data.result.category}<br>
+                        <strong>Confidence:</strong> ${(data.result.confidence * 100).toFixed(1)}%<br>
+                        <strong>Provider:</strong> ${data.result.provider}
+                    `, 'success');
+                } else {
+                    if (data.error === 'LOW_CONFIDENCE') {
+                        showResult(`
+                            <strong>⚠️ Low Confidence</strong><br>
+                            ${data.message}<br>
+                            <strong>Best Guess:</strong> ${data.result.commonName}<br>
+                            <strong>Confidence:</strong> ${(data.result.confidence * 100).toFixed(1)}%
+                        `, 'error');
+                    } else {
+                        showResult(`❌ Error: ${data.error}`, 'error');
+                    }
+                }
+            } catch (error) {
+                showResult(`❌ Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+    </script>
+</body>
+</html>
