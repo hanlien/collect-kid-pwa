@@ -105,7 +105,7 @@ export default function ScanPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-green-50 via-mint-50 to-teal-50 relative overflow-hidden">
+            <div className="min-h-screen flex flex-col bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className={`absolute top-20 left-10 w-20 h-20 bg-yellow-200 rounded-full opacity-20 animate-float ${pulseAnimation ? 'scale-110' : 'scale-100'} transition-transform duration-1000`}></div>
