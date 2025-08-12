@@ -96,22 +96,22 @@ export async function POST(request: NextRequest) {
     const localSpecies = findSpeciesByKeywords(labels);
     if (localSpecies) {
       console.log(`Found local match: ${localSpecies.commonName}`);
-      speciesResult = localSpeciesToResult(localSpecies);
-      speciesResult.ui = { ...speciesResult.ui, colorChips };
+      const localResult = localSpeciesToResult(localSpecies);
+      localResult.ui = { ...localResult.ui, colorChips };
       
       // Check confidence threshold
-      if (speciesResult.confidence < 0.6) {
+      if (localResult.confidence < 0.6) {
         return NextResponse.json(
           {
             error: 'LOW_CONFIDENCE',
             message: 'Try getting closer, holding steady, or finding better lighting!',
-            result: speciesResult,
+            result: localResult,
           },
           { status: 400 }
         );
       }
       
-      return NextResponse.json({ result: speciesResult });
+      return NextResponse.json({ result: localResult });
     }
 
     // If no local match, proceed with API calls

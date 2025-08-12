@@ -26,7 +26,7 @@ export default function QuestPage() {
 
   useEffect(() => {
     loadQuests();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadQuests = () => {
     // Load from localStorage or generate new quests

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Volume2, Heart, ArrowLeft, RotateCcw, Star, MapPin, Calendar, Users, Award, BookOpen } from 'lucide-react';
+import Image from 'next/image';
 import BigButton from '@/components/BigButton';
 import ColorChips from '@/components/ColorChips';
 import Confetti from '@/components/Confetti';
@@ -205,10 +206,12 @@ export default function ResultPage() {
           {/* Image Section */}
           <div className="relative h-64 bg-gradient-to-br from-green-100 to-blue-100">
             {result.wiki?.imageUrl ? (
-              <img
+              <Image
                 src={result.wiki.imageUrl}
                 alt={result.commonName || result.canonicalName}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
