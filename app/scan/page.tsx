@@ -225,169 +225,320 @@ export default function ScanPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-300 via-green-200 to-yellow-200 relative overflow-hidden">
-      {/* Cute Garden Background */}
+      {/* Animated Garden Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Sky with clouds */}
+        {/* Moving Sun */}
         <motion.div
-          className="absolute top-10 left-10 w-24 h-16 bg-white/60 rounded-full"
+          className="absolute top-8 right-8 w-16 h-16 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full shadow-lg"
           animate={{
-            x: [0, 50, 0],
-            opacity: [0.6, 0.8, 0.6],
+            x: [0, -20, 0],
+            y: [0, -10, 0],
+            scale: [1, 1.1, 1],
           }}
           transition={{
-            duration: 8,
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          {/* Sun rays */}
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1 h-3 bg-yellow-300 rounded-full"
+              style={{
+                left: '50%',
+                top: '50%',
+                transform: `translate(-50%, -50%) rotate(${i * 45}deg) translateY(-12px)`,
+              }}
+              animate={{
+                scaleY: [1, 1.5, 1],
+                opacity: [0.7, 1, 0.7],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.2,
+              }}
+            />
+          ))}
+        </motion.div>
+
+        {/* Floating Clouds */}
+        <motion.div
+          className="absolute top-12 left-8 w-20 h-12 bg-white/70 rounded-full"
+          animate={{
+            x: [0, 60, 0],
+            opacity: [0.6, 0.9, 0.6],
+          }}
+          transition={{
+            duration: 20,
             repeat: Infinity,
             ease: "easeInOut"
           }}
         />
         <motion.div
-          className="absolute top-20 right-20 w-20 h-12 bg-white/50 rounded-full"
+          className="absolute top-6 right-16 w-16 h-10 bg-white/60 rounded-full"
           animate={{
             x: [0, -40, 0],
-            opacity: [0.5, 0.7, 0.5],
+            y: [0, -5, 0],
+            opacity: [0.5, 0.8, 0.5],
           }}
           transition={{
-            duration: 10,
+            duration: 25,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: 2
+            delay: 5
           }}
         />
         <motion.div
-          className="absolute top-5 left-1/3 w-16 h-10 bg-white/40 rounded-full"
+          className="absolute top-16 left-1/3 w-14 h-8 bg-white/50 rounded-full"
           animate={{
             x: [0, 30, 0],
-            y: [0, -10, 0],
+            y: [0, -8, 0],
           }}
           transition={{
-            duration: 12,
+            duration: 18,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: 1
+            delay: 10
           }}
         />
 
-        {/* Hills */}
+        {/* Animated Hills */}
         <div className="absolute bottom-0 left-0 right-0">
           <motion.div
-            className="absolute bottom-0 left-0 w-full h-32 bg-green-400 rounded-t-full"
+            className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-green-500 to-green-400 rounded-t-full"
             animate={{
-              y: [0, -5, 0],
+              y: [0, -8, 0],
             }}
             transition={{
-              duration: 6,
+              duration: 8,
               repeat: Infinity,
               ease: "easeInOut"
             }}
           />
           <motion.div
-            className="absolute bottom-0 left-1/4 w-1/2 h-24 bg-green-500 rounded-t-full"
+            className="absolute bottom-0 left-1/4 w-1/2 h-24 bg-gradient-to-t from-green-600 to-green-500 rounded-t-full"
             animate={{
-              y: [0, -3, 0],
+              y: [0, -5, 0],
             }}
             transition={{
-              duration: 8,
+              duration: 10,
               repeat: Infinity,
               ease: "easeInOut",
-              delay: 1
+              delay: 2
             }}
           />
         </div>
 
-        {/* Flowers */}
-        {[...Array(6)].map((_, i) => (
+        {/* Blooming Flowers */}
+        {[...Array(8)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute bottom-8 w-8 h-8"
+            className="absolute bottom-12 w-10 h-10"
             style={{
-              left: `${15 + i * 15}%`,
+              left: `${10 + i * 12}%`,
             }}
+            initial={{ scale: 0, rotate: 0 }}
             animate={{
-              y: [0, -8, 0],
-              rotate: [0, 5, -5, 0],
+              scale: [0, 1, 1.1, 1],
+              rotate: [0, 180, 360],
+              y: [0, -12, 0],
             }}
             transition={{
-              duration: 4 + i * 0.5,
+              duration: 6 + i * 0.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 0.8,
+            }}
+          >
+            {/* Flower petals */}
+            {[...Array(6)].map((_, petalIndex) => (
+              <motion.div
+                key={petalIndex}
+                className="absolute w-4 h-6 bg-pink-400 rounded-full"
+                style={{
+                  left: '50%',
+                  top: '50%',
+                  transform: `translate(-50%, -50%) rotate(${petalIndex * 60}deg) translateY(-8px)`,
+                  transformOrigin: 'center bottom',
+                }}
+                animate={{
+                  scaleY: [1, 1.3, 1],
+                  rotate: [0, 5, 0],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: petalIndex * 0.1 + i * 0.2,
+                }}
+              />
+            ))}
+            {/* Flower center */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-yellow-400 rounded-full" />
+          </motion.div>
+        ))}
+
+        {/* Swaying Trees */}
+        {[...Array(5)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute bottom-0 w-14 h-24"
+            style={{
+              left: `${8 + i * 20}%`,
+            }}
+            animate={{
+              y: [0, -4, 0],
+              rotate: [0, 2, -2, 0],
+            }}
+            transition={{
+              duration: 6 + i,
               repeat: Infinity,
               ease: "easeInOut",
               delay: i * 0.3,
             }}
           >
-            <div className="w-full h-full bg-pink-400 rounded-full flex items-center justify-center">
-              <div className="w-2 h-2 bg-yellow-400 rounded-full" />
-            </div>
+            {/* Tree trunk */}
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-10 bg-amber-800 rounded-full" />
+            {/* Tree leaves */}
+            <motion.div
+              className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-12 h-14 bg-green-600 rounded-full"
+              animate={{
+                rotate: [0, 3, -3, 0],
+              }}
+              transition={{
+                duration: 4 + i * 0.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.2,
+              }}
+            />
           </motion.div>
         ))}
 
-        {/* Trees */}
+        {/* Flying Butterflies */}
         {[...Array(4)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute bottom-0 w-12 h-20"
+            className="absolute w-8 h-6"
             style={{
-              left: `${10 + i * 25}%`,
+              left: `${15 + i * 25}%`,
+              top: `${25 + (i % 2) * 15}%`,
             }}
             animate={{
-              y: [0, -3, 0],
-              rotate: [0, 1, -1, 0],
+              x: [0, 30, 0],
+              y: [0, -20, 0],
+              rotate: [0, 15, -15, 0],
             }}
             transition={{
-              duration: 5 + i,
+              duration: 8 + i * 2,
               repeat: Infinity,
               ease: "easeInOut",
-              delay: i * 0.5,
+              delay: i * 1.5,
             }}
           >
-            {/* Tree trunk */}
-            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-8 bg-amber-800 rounded-full" />
-            {/* Tree leaves */}
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-10 h-12 bg-green-600 rounded-full" />
+            {/* Butterfly wings */}
+            <div className="absolute left-0 w-4 h-5 bg-purple-300 rounded-full" />
+            <div className="absolute right-0 w-4 h-5 bg-purple-300 rounded-full" />
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1 h-2 bg-black rounded-full" />
           </motion.div>
         ))}
 
-        {/* Butterflies */}
+        {/* Small Animals */}
+        {/* Birds */}
         {[...Array(3)].map((_, i) => (
           <motion.div
-            key={i}
-            className="absolute w-6 h-6"
+            key={`bird-${i}`}
+            className="absolute w-6 h-4"
             style={{
               left: `${20 + i * 30}%`,
-              top: `${30 + (i % 2) * 20}%`,
+              top: `${15 + (i % 2) * 10}%`,
             }}
             animate={{
-              x: [0, 20, 0],
-              y: [0, -15, 0],
-              rotate: [0, 10, -10, 0],
+              x: [0, 40, 0],
+              y: [0, -10, 0],
             }}
             transition={{
-              duration: 6 + i * 2,
+              duration: 12 + i * 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 2,
+            }}
+          >
+            <div className="w-full h-full bg-blue-400 rounded-full" />
+            <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-yellow-400 rounded-full" />
+          </motion.div>
+        ))}
+
+        {/* Bees */}
+        {[...Array(2)].map((_, i) => (
+          <motion.div
+            key={`bee-${i}`}
+            className="absolute w-4 h-4"
+            style={{
+              left: `${30 + i * 40}%`,
+              top: `${35 + i * 10}%`,
+            }}
+            animate={{
+              x: [0, 15, 0],
+              y: [0, -8, 0],
+              rotate: [0, 5, -5, 0],
+            }}
+            transition={{
+              duration: 4 + i,
               repeat: Infinity,
               ease: "easeInOut",
               delay: i * 1,
             }}
           >
-            <div className="w-full h-full bg-purple-300 rounded-full flex items-center justify-center">
-              <div className="w-1 h-1 bg-black rounded-full" />
-            </div>
+            <div className="w-full h-full bg-yellow-400 rounded-full" />
+            <div className="absolute inset-0 border-2 border-black rounded-full" />
           </motion.div>
         ))}
 
-        {/* Grass */}
-        {[...Array(12)].map((_, i) => (
+        {/* Waving Grass */}
+        {[...Array(15)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute bottom-0 w-1 h-6 bg-green-500"
+            className="absolute bottom-0 w-1 h-8 bg-green-500"
             style={{
-              left: `${5 + i * 8}%`,
+              left: `${3 + i * 6}%`,
             }}
             animate={{
-              y: [0, -2, 0],
+              y: [0, -4, 0],
+              rotate: [0, 5, -5, 0],
             }}
             transition={{
-              duration: 3 + i * 0.2,
+              duration: 3 + i * 0.3,
               repeat: Infinity,
               ease: "easeInOut",
               delay: i * 0.1,
+            }}
+          />
+        ))}
+
+        {/* Floating Leaves */}
+        {[...Array(5)].map((_, i) => (
+          <motion.div
+            key={`leaf-${i}`}
+            className="absolute w-3 h-3 bg-green-400 rounded-full"
+            style={{
+              left: `${25 + i * 15}%`,
+              top: `${60 + i * 8}%`,
+            }}
+            animate={{
+              x: [0, 10, 0],
+              y: [0, -15, 0],
+              rotate: [0, 180, 360],
+            }}
+            transition={{
+              duration: 10 + i * 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 1.5,
             }}
           />
         ))}
