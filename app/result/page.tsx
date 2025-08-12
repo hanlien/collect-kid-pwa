@@ -101,7 +101,7 @@ export default function ResultPage() {
         },
         body: JSON.stringify({
           userId,
-          speciesResult: result,
+          result: result,
         }),
       });
 
