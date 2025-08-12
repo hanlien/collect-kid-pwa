@@ -94,9 +94,54 @@ export async function POST(request: NextRequest) {
     // Routing logic
     let speciesResult: SpeciesResult;
 
-    const plantTerms = ['plant', 'flower', 'tree', 'leaf', 'petal', 'bloom'];
-    const bugTerms = ['insect', 'bug', 'bee', 'butterfly', 'ant', 'spider'];
-    const animalTerms = ['animal', 'mammal', 'bird', 'reptile', 'amphibian', 'fish'];
+    const plantTerms = ['plant', 'flower', 'tree', 'leaf', 'petal', 'bloom', 'garden', 'flora'];
+    const bugTerms = ['insect', 'bug', 'bee', 'butterfly', 'ant', 'spider', 'fly', 'mosquito', 'beetle', 'grasshopper', 'cricket', 'dragonfly', 'ladybug'];
+    const animalTerms = ['animal', 'mammal', 'bird', 'reptile', 'amphibian', 'fish', 'pet', 'wildlife'];
+    
+    // Enhanced animal species mapping
+    const animalSpeciesMap: Record<string, { name: string; scientific: string; confidence: number }> = {
+      'dog': { name: 'Dog', scientific: 'Canis familiaris', confidence: 0.9 },
+      'cat': { name: 'Cat', scientific: 'Felis catus', confidence: 0.9 },
+      'bird': { name: 'Bird', scientific: 'Aves sp.', confidence: 0.8 },
+      'squirrel': { name: 'Squirrel', scientific: 'Sciurus sp.', confidence: 0.85 },
+      'rabbit': { name: 'Rabbit', scientific: 'Oryctolagus cuniculus', confidence: 0.85 },
+      'deer': { name: 'Deer', scientific: 'Cervidae sp.', confidence: 0.8 },
+      'fox': { name: 'Fox', scientific: 'Vulpes sp.', confidence: 0.8 },
+      'raccoon': { name: 'Raccoon', scientific: 'Procyon lotor', confidence: 0.8 },
+      'skunk': { name: 'Skunk', scientific: 'Mephitidae sp.', confidence: 0.8 },
+      'chipmunk': { name: 'Chipmunk', scientific: 'Tamias sp.', confidence: 0.8 },
+      'mouse': { name: 'Mouse', scientific: 'Mus musculus', confidence: 0.8 },
+      'rat': { name: 'Rat', scientific: 'Rattus sp.', confidence: 0.8 },
+      'hamster': { name: 'Hamster', scientific: 'Cricetinae sp.', confidence: 0.8 },
+      'guinea pig': { name: 'Guinea Pig', scientific: 'Cavia porcellus', confidence: 0.8 },
+      'ferret': { name: 'Ferret', scientific: 'Mustela putorius furo', confidence: 0.8 },
+      'horse': { name: 'Horse', scientific: 'Equus caballus', confidence: 0.9 },
+      'cow': { name: 'Cow', scientific: 'Bos taurus', confidence: 0.9 },
+      'pig': { name: 'Pig', scientific: 'Sus scrofa', confidence: 0.9 },
+      'sheep': { name: 'Sheep', scientific: 'Ovis aries', confidence: 0.9 },
+      'goat': { name: 'Goat', scientific: 'Capra hircus', confidence: 0.9 },
+      'duck': { name: 'Duck', scientific: 'Anatidae sp.', confidence: 0.8 },
+      'goose': { name: 'Goose', scientific: 'Anser sp.', confidence: 0.8 },
+      'chicken': { name: 'Chicken', scientific: 'Gallus gallus', confidence: 0.8 },
+      'turkey': { name: 'Turkey', scientific: 'Meleagris gallopavo', confidence: 0.8 },
+      'pigeon': { name: 'Pigeon', scientific: 'Columba livia', confidence: 0.8 },
+      'sparrow': { name: 'Sparrow', scientific: 'Passer sp.', confidence: 0.8 },
+      'robin': { name: 'Robin', scientific: 'Turdus migratorius', confidence: 0.8 },
+      'cardinal': { name: 'Cardinal', scientific: 'Cardinalis cardinalis', confidence: 0.8 },
+      'blue jay': { name: 'Blue Jay', scientific: 'Cyanocitta cristata', confidence: 0.8 },
+      'crow': { name: 'Crow', scientific: 'Corvus sp.', confidence: 0.8 },
+      'hawk': { name: 'Hawk', scientific: 'Accipitridae sp.', confidence: 0.8 },
+      'eagle': { name: 'Eagle', scientific: 'Aquila sp.', confidence: 0.8 },
+      'owl': { name: 'Owl', scientific: 'Strigiformes sp.', confidence: 0.8 },
+      'snake': { name: 'Snake', scientific: 'Serpentes sp.', confidence: 0.8 },
+      'lizard': { name: 'Lizard', scientific: 'Lacertilia sp.', confidence: 0.8 },
+      'turtle': { name: 'Turtle', scientific: 'Testudines sp.', confidence: 0.8 },
+      'frog': { name: 'Frog', scientific: 'Anura sp.', confidence: 0.8 },
+      'toad': { name: 'Toad', scientific: 'Bufonidae sp.', confidence: 0.8 },
+      'fish': { name: 'Fish', scientific: 'Actinopterygii sp.', confidence: 0.7 },
+      'goldfish': { name: 'Goldfish', scientific: 'Carassius auratus', confidence: 0.8 },
+      'koi': { name: 'Koi', scientific: 'Cyprinus carpio', confidence: 0.8 },
+    };
 
     const hasPlantLabels = labels.some(label => 
       plantTerms.some(term => label.toLowerCase().includes(term))
@@ -160,38 +205,135 @@ export async function POST(request: NextRequest) {
         };
       }
     } else if (hasBugLabels || validatedHint === 'bug') {
-      // MVP bug detection (no paid API yet)
-      const bugName = labels.find(label => 
-        bugTerms.some(term => label.toLowerCase().includes(term))
-      ) || 'Bug';
-      
-      speciesResult = {
-        category: 'bug',
-        canonicalName: 'Insecta sp.',
-        commonName: bugName,
-        rank: 'class',
-        confidence: 0.6,
-        provider: 'gcv',
-        ui: { colorChips },
+      // Enhanced bug detection with species mapping
+      const bugSpeciesMap: Record<string, { name: string; scientific: string; confidence: number }> = {
+        'bee': { name: 'Bee', scientific: 'Apis mellifera', confidence: 0.85 },
+        'butterfly': { name: 'Butterfly', scientific: 'Lepidoptera sp.', confidence: 0.8 },
+        'ant': { name: 'Ant', scientific: 'Formicidae sp.', confidence: 0.8 },
+        'spider': { name: 'Spider', scientific: 'Araneae sp.', confidence: 0.8 },
+        'fly': { name: 'Fly', scientific: 'Diptera sp.', confidence: 0.7 },
+        'mosquito': { name: 'Mosquito', scientific: 'Culicidae sp.', confidence: 0.8 },
+        'beetle': { name: 'Beetle', scientific: 'Coleoptera sp.', confidence: 0.8 },
+        'grasshopper': { name: 'Grasshopper', scientific: 'Caelifera sp.', confidence: 0.8 },
+        'cricket': { name: 'Cricket', scientific: 'Gryllidae sp.', confidence: 0.8 },
+        'dragonfly': { name: 'Dragonfly', scientific: 'Anisoptera sp.', confidence: 0.8 },
+        'ladybug': { name: 'Ladybug', scientific: 'Coccinellidae sp.', confidence: 0.8 },
+        'moth': { name: 'Moth', scientific: 'Lepidoptera sp.', confidence: 0.8 },
+        'wasp': { name: 'Wasp', scientific: 'Vespidae sp.', confidence: 0.8 },
+        'hornet': { name: 'Hornet', scientific: 'Vespa sp.', confidence: 0.8 },
+        'firefly': { name: 'Firefly', scientific: 'Lampyridae sp.', confidence: 0.8 },
+        'cicada': { name: 'Cicada', scientific: 'Cicadidae sp.', confidence: 0.8 },
+        'stick insect': { name: 'Stick Insect', scientific: 'Phasmatodea sp.', confidence: 0.8 },
+        'praying mantis': { name: 'Praying Mantis', scientific: 'Mantodea sp.', confidence: 0.8 },
       };
+      
+      let bestMatch = null;
+      let bestConfidence = 0;
+      
+      // Check each label against our bug species map
+      for (const label of labels) {
+        const lowerLabel = label.toLowerCase();
+        
+        // Direct match
+        if (bugSpeciesMap[lowerLabel]) {
+          const match = bugSpeciesMap[lowerLabel];
+          if (match.confidence > bestConfidence) {
+            bestMatch = match;
+            bestConfidence = match.confidence;
+          }
+        }
+        
+        // Partial match
+        for (const [species, match] of Object.entries(bugSpeciesMap)) {
+          if (lowerLabel.includes(species) && match.confidence > bestConfidence) {
+            bestMatch = match;
+            bestConfidence = match.confidence;
+          }
+        }
+      }
+      
+      if (bestMatch) {
+        speciesResult = {
+          category: 'bug',
+          canonicalName: bestMatch.scientific,
+          commonName: bestMatch.name,
+          rank: 'species',
+          confidence: bestMatch.confidence,
+          provider: 'gcv',
+          ui: { colorChips },
+        };
+      } else {
+        // Fallback to generic bug detection
+        const bugName = labels.find(label => 
+          bugTerms.some(term => label.toLowerCase().includes(term))
+        ) || 'Bug';
+        
+        speciesResult = {
+          category: 'bug',
+          canonicalName: 'Insecta sp.',
+          commonName: bugName,
+          rank: 'class',
+          confidence: 0.6,
+          provider: 'gcv',
+          ui: { colorChips },
+        };
+      }
     } else if (hasAnimalLabels || validatedHint === 'animal') {
-      // Use Vision result for animals
-      const animalLabel = labels.find(label => 
-        animalTerms.some(term => label.toLowerCase().includes(term)) ||
-        ['dog', 'cat', 'bird', 'squirrel', 'rabbit'].some(term => 
-          label.toLowerCase().includes(term)
-        )
-      ) || 'Animal';
+      // Enhanced animal detection with species mapping
+      let bestMatch = null;
+      let bestConfidence = 0;
       
-      speciesResult = {
-        category: 'animal',
-        canonicalName: animalLabel,
-        commonName: animalLabel,
-        rank: 'species',
-        confidence: 0.7,
-        provider: 'gcv',
-        ui: { colorChips },
-      };
+      // Check each label against our species map
+      for (const label of labels) {
+        const lowerLabel = label.toLowerCase();
+        
+        // Direct match
+        if (animalSpeciesMap[lowerLabel]) {
+          const match = animalSpeciesMap[lowerLabel];
+          if (match.confidence > bestConfidence) {
+            bestMatch = match;
+            bestConfidence = match.confidence;
+          }
+        }
+        
+        // Partial match (e.g., "black cat" matches "cat")
+        for (const [species, match] of Object.entries(animalSpeciesMap)) {
+          if (lowerLabel.includes(species) && match.confidence > bestConfidence) {
+            bestMatch = match;
+            bestConfidence = match.confidence;
+          }
+        }
+      }
+      
+      if (bestMatch) {
+        speciesResult = {
+          category: 'animal',
+          canonicalName: bestMatch.scientific,
+          commonName: bestMatch.name,
+          rank: 'species',
+          confidence: bestMatch.confidence,
+          provider: 'gcv',
+          ui: { colorChips },
+        };
+      } else {
+        // Fallback to generic animal detection
+        const animalLabel = labels.find(label => 
+          animalTerms.some(term => label.toLowerCase().includes(term)) ||
+          ['dog', 'cat', 'bird', 'squirrel', 'rabbit', 'pet', 'wildlife'].some(term => 
+            label.toLowerCase().includes(term)
+          )
+        ) || 'Animal';
+        
+        speciesResult = {
+          category: 'animal',
+          canonicalName: animalLabel,
+          commonName: animalLabel,
+          rank: 'species',
+          confidence: 0.6,
+          provider: 'gcv',
+          ui: { colorChips },
+        };
+      }
     } else {
       // Generic result
       const topLabel = labels[0] || 'Unknown';
