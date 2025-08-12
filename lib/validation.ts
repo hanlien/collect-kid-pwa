@@ -18,7 +18,7 @@ export const recognizeRequestSchema = z.object({
 });
 
 export const collectRequestSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().min(1), // Changed from UUID to any non-empty string for profile IDs
   result: z.object({
     category: z.enum(['flower', 'bug', 'animal']),
     canonicalName: z.string(),

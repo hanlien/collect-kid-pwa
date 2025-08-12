@@ -9,108 +9,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { userId, result: speciesResult } = collectRequestSchema.parse(body);
 
-    // Check if this is a new species for this user
-    let existingCaptures = [];
-    try {
-      const { data } = await supabaseAdmin
-        .from('captures')
-        .select('canonical_name')
-        .eq('user_id', userId)
-        .eq('canonical_name', speciesResult.canonicalName);
-      existingCaptures = data || [];
-    } catch (error) {
-      console.log('Database not ready, treating as new species');
-      existingCaptures = [];
-    }
-
-    const isNewSpecies = existingCaptures.length === 0;
+    // Use ProfileManager to check if this is a new species
+    const profileManager = ProfileManager.getInstance();
+    const currentProfile = profileManager.getCurrentProfile();
+    
+    // Check if this is a new species for this profile
+    const existingCaptures = profileManager.getCaptures();
+    const isNewSpecies = !existingCaptures.some(capture => 
+      capture.canonicalName === speciesResult.canonicalName
+    );
     const coinsEarned = isNewSpecies ? 50 : 10; // 50 coins for new species, 10 for duplicates
 
-    // Try to insert capture, but don't fail if database isn't ready
-    let capture = null;
-    let captureError = null;
-    
-    try {
-      const { data, error } = await supabaseAdmin
-        .from('captures')
-        .insert({
-          user_id: userId,
-          category: speciesResult.category,
-          provider: speciesResult.provider,
-          canonical_name: speciesResult.canonicalName,
-          common_name: speciesResult.commonName,
-          rank: speciesResult.rank,
-          confidence: speciesResult.confidence,
-          gbif_key: speciesResult.gbifKey,
-          thumb_url: speciesResult.wiki?.imageUrl,
-          summary: speciesResult.wiki?.summary,
-          fun_facts: speciesResult.ui?.funFacts,
-          color_chips: speciesResult.ui?.colorChips,
-          coins_earned: coinsEarned,
-          is_new_species: isNewSpecies,
-        })
-        .select()
-        .single();
-      
-      capture = data;
-      captureError = error;
-    } catch (error) {
-      console.log('Database insert failed, continuing with local storage');
-      captureError = error;
-    }
-
-    // Update user coins and stats (try database first, fallback to local storage)
-    let user = { coins: 0, total_captures: 0, unique_species_count: 0, level: 1 };
-    let userError = null;
-    
-    try {
-      const { data, error } = await supabaseAdmin
-        .from('users')
-        .select('coins, total_captures, unique_species_count, level')
-        .eq('id', userId)
-        .single();
-      
-      if (data) user = data;
-      userError = error;
-    } catch (error) {
-      console.log('Database user fetch failed, using defaults');
-      userError = error;
-    }
-
-    const newCoins = (user.coins || 0) + coinsEarned;
-    const newTotalCaptures = (user.total_captures || 0) + 1;
+    // Calculate new stats based on current profile
+    const newCoins = currentProfile.coins + coinsEarned;
+    const newTotalCaptures = currentProfile.totalCaptures + 1;
     const newUniqueSpeciesCount = isNewSpecies 
-      ? (user.unique_species_count || 0) + 1 
-      : (user.unique_species_count || 0);
+      ? currentProfile.uniqueSpeciesCount + 1 
+      : currentProfile.uniqueSpeciesCount;
 
     // Calculate new level based on unique species count
     const newLevel = Math.floor(newUniqueSpeciesCount / 10) + 1;
 
-    // Try to update user in database
-    try {
-      await supabaseAdmin
-        .from('users')
-        .update({
-          coins: newCoins,
-          total_captures: newTotalCaptures,
-          unique_species_count: newUniqueSpeciesCount,
-          level: newLevel,
-          last_seen: new Date().toISOString(),
-        })
-        .eq('id', userId);
-    } catch (error) {
-      console.log('Database user update failed, continuing');
-    }
-
-    // Skip badges for now if database isn't ready
+    // Skip badges for now
     let badge: any = null;
     let leveledUp = false;
     let achievements: any[] = [];
 
-    // Update profile data using ProfileManager
-    const profileManager = ProfileManager.getInstance();
-    const currentProfile = profileManager.getCurrentProfile();
-    
     // Update profile stats
     profileManager.updateProfile(currentProfile.id, {
       coins: newCoins,
@@ -120,7 +44,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Add capture to profile collection
-    profileManager.addCapture({
+    const newCapture = profileManager.addCapture({
       category: speciesResult.category,
       provider: speciesResult.provider,
       canonicalName: speciesResult.canonicalName,
@@ -139,7 +63,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({
-      capture,
+      capture: newCapture,
       badge,
       leveledUp,
       coinsEarned,
