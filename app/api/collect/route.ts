@@ -6,7 +6,7 @@ import { getBadgeSubtype, getBadgeLevel } from '@/lib/utils';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, speciesResult } = collectRequestSchema.parse(body);
+    const { userId, result: speciesResult } = collectRequestSchema.parse(body);
 
     // Check if this is a new species for this user
     const { data: existingCaptures } = await supabaseAdmin
