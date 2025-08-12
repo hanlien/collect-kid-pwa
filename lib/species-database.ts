@@ -446,27 +446,62 @@ export const speciesDatabase: LocalSpecies[] = [
 export function findSpeciesByKeywords(labels: string[]): LocalSpecies | null {
   const lowerLabels = labels.map(label => label.toLowerCase());
   
-  // Try exact matches first
+  console.log('🔍 Searching for species with labels:', labels);
+  
+  // Define category-specific terms to avoid cross-category confusion
+  const flowerTerms = ['flower', 'bloom', 'petal', 'rose', 'tulip', 'lily', 'daisy', 'sunflower', 'dandelion', 'clover', 'marigold', 'plant', 'garden plant'];
+  const bugTerms = ['insect', 'bug', 'bee', 'butterfly', 'ant', 'spider', 'ladybug', 'dragonfly', 'moth', 'wasp', 'hornet', 'firefly', 'cicada', 'stick insect', 'praying mantis'];
+  const animalTerms = ['animal', 'mammal', 'bird', 'reptile', 'amphibian', 'fish', 'dog', 'cat', 'squirrel', 'rabbit', 'deer', 'fox', 'raccoon', 'skunk', 'chipmunk', 'mouse', 'rat', 'hamster', 'guinea pig', 'ferret', 'horse', 'cow', 'pig', 'sheep', 'goat', 'duck', 'goose', 'chicken', 'turkey', 'pigeon', 'sparrow', 'robin', 'cardinal', 'blue jay', 'crow', 'hawk', 'eagle', 'owl', 'snake', 'lizard', 'turtle', 'frog', 'toad', 'goldfish', 'koi'];
+  
+  let bestMatch: LocalSpecies | null = null;
+  let bestScore = 0;
+  
   for (const species of speciesDatabase) {
-    if (species.keywords.some(keyword => 
-      lowerLabels.some(label => label.includes(keyword))
-    )) {
-      return species;
+    let currentScore = 0;
+    const lowerCommonName = species.commonName.toLowerCase();
+    const lowerScientificName = species.scientificName.toLowerCase();
+    
+    // 1. Exact match on common or scientific name
+    if (lowerLabels.includes(lowerCommonName) || lowerLabels.includes(lowerScientificName)) {
+      currentScore += 100; // High score for exact match
+    }
+    
+    // 2. Category-specific keyword matches
+    for (const label of lowerLabels) {
+      if (species.category === 'flower' && flowerTerms.includes(label)) {
+        currentScore += 20;
+      } else if (species.category === 'bug' && bugTerms.includes(label)) {
+        currentScore += 20;
+      } else if (species.category === 'animal' && animalTerms.includes(label)) {
+        currentScore += 20;
+      }
+    }
+    
+    // 3. General keyword matches (case-insensitive, partial)
+    for (const keyword of species.keywords) {
+      for (const label of lowerLabels) {
+        if (label.includes(keyword) || keyword.includes(label)) {
+          currentScore += 10;
+        }
+      }
+    }
+    
+    // 4. Confidence boost (if species has high confidence)
+    currentScore += species.confidence * 50; // Scale confidence to add to score
+    
+    if (currentScore > bestScore) {
+      bestScore = currentScore;
+      bestMatch = species;
     }
   }
   
-  // Try partial matches
-  for (const species of speciesDatabase) {
-    if (species.keywords.some(keyword => 
-      lowerLabels.some(label => 
-        label.includes(keyword) || keyword.includes(label)
-      )
-    )) {
-      return species;
-    }
+  if (bestMatch) {
+    console.log(`✅ Best match found: ${bestMatch.commonName} with score ${bestScore}`);
+  } else {
+    console.log('❌ No strong local match found.');
   }
   
-  return null;
+  return bestMatch;
 }
 
 // Helper function to convert LocalSpecies to SpeciesResult
