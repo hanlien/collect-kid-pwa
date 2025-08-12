@@ -209,7 +209,154 @@ export default function ScanPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-black relative overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-green-400 via-blue-500 to-purple-600 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Floating bubbles */}
+        <motion.div
+          className="absolute top-20 left-10 w-20 h-20 bg-white/20 rounded-full backdrop-blur-sm"
+          animate={{
+            x: [0, 100, 0],
+            y: [0, -50, 0],
+            scale: [1, 1.2, 1],
+            rotate: [0, 180, 360],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute top-40 right-20 w-16 h-16 bg-yellow-300/30 rounded-full backdrop-blur-sm"
+          animate={{
+            x: [0, -80, 0],
+            y: [0, 60, 0],
+            scale: [1, 0.8, 1],
+            rotate: [0, -180, -360],
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1
+          }}
+        />
+        <motion.div
+          className="absolute bottom-40 left-20 w-12 h-12 bg-pink-300/40 rounded-full backdrop-blur-sm"
+          animate={{
+            x: [0, 60, 0],
+            y: [0, -40, 0],
+            scale: [1, 1.4, 1],
+            rotate: [0, 90, 180],
+          }}
+          transition={{
+            duration: 7,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2
+          }}
+        />
+        <motion.div
+          className="absolute top-60 left-1/2 w-24 h-24 bg-cyan-300/25 rounded-full backdrop-blur-sm"
+          animate={{
+            x: [0, -100, 0],
+            y: [0, 80, 0],
+            scale: [1, 0.6, 1],
+            rotate: [0, -90, -180],
+          }}
+          transition={{
+            duration: 9,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.5
+          }}
+        />
+        <motion.div
+          className="absolute bottom-20 right-1/3 w-18 h-18 bg-orange-300/35 rounded-full backdrop-blur-sm"
+          animate={{
+            x: [0, 70, 0],
+            y: [0, -60, 0],
+            scale: [1, 1.3, 1],
+            rotate: [0, 270, 540],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1.5
+          }}
+        />
+
+        {/* Animated gradient orbs */}
+        <motion.div
+          className="absolute top-1/4 left-1/4 w-32 h-32 bg-gradient-to-r from-green-400/30 to-blue-500/30 rounded-full blur-xl"
+          animate={{
+            scale: [1, 1.5, 1],
+            opacity: [0.3, 0.6, 0.3],
+            x: [0, 50, 0],
+            y: [0, -30, 0],
+          }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-gradient-to-r from-purple-500/25 to-pink-500/25 rounded-full blur-xl"
+          animate={{
+            scale: [1, 0.8, 1],
+            opacity: [0.25, 0.5, 0.25],
+            x: [0, -60, 0],
+            y: [0, 40, 0],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 3
+          }}
+        />
+
+        {/* Floating particles */}
+        {[...Array(8)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 bg-white/60 rounded-full"
+            style={{
+              left: `${20 + i * 10}%`,
+              top: `${30 + (i % 3) * 20}%`,
+            }}
+            animate={{
+              y: [0, -20, 0],
+              opacity: [0.6, 1, 0.6],
+              scale: [1, 1.5, 1],
+            }}
+            transition={{
+              duration: 3 + i * 0.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 0.3,
+            }}
+          />
+        ))}
+
+        {/* Animated waves */}
+        <motion.div
+          className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white/10 to-transparent"
+          animate={{
+            y: [0, -10, 0],
+            opacity: [0.1, 0.2, 0.1],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </div>
+
       {/* Camera viewfinder */}
       {cameraActive && (
         <div className="absolute inset-0 z-10">
@@ -371,32 +518,40 @@ export default function ScanPage() {
             <div className="flex justify-between items-center">
               <div className="flex items-center space-x-4">
                 <motion.div
-                  className="w-12 h-12 bg-gradient-to-br from-brand to-brand-dark rounded-full flex items-center justify-center shadow-candy"
-                  whileHover={{ scale: 1.1 }}
+                  className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg"
+                  whileHover={{ scale: 1.1, rotate: 360 }}
                   whileTap={{ scale: 0.9 }}
+                  animate={{
+                    boxShadow: [
+                      "0 0 20px rgba(251, 191, 36, 0.5)",
+                      "0 0 30px rgba(251, 191, 36, 0.8)",
+                      "0 0 20px rgba(251, 191, 36, 0.5)"
+                    ]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
                 >
                   <span className="text-white font-bold text-lg">👦</span>
                 </motion.div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Level {userData.level}</h2>
-                  <p className="text-sm text-gray-600">Brandon&apos;s Explorer</p>
+                  <h2 className="text-xl font-bold text-white drop-shadow-lg">Level {userData.level}</h2>
+                  <p className="text-sm text-white/80 drop-shadow-md">Brandon&apos;s Explorer</p>
                 </div>
               </div>
               
               <div className="flex items-center space-x-4">
                 <motion.div
-                  className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-2xl px-4 py-2 shadow-candy"
-                  whileHover={{ scale: 1.05 }}
+                  className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-2xl px-4 py-2 shadow-lg"
+                  whileHover={{ scale: 1.05, y: -2 }}
                 >
-                  <Coins className="w-5 h-5 text-accent" />
+                  <Coins className="w-5 h-5 text-yellow-500" />
                   <span className="font-bold text-gray-800">{userData.coins}</span>
                 </motion.div>
                 
                 <motion.div
-                  className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-2xl px-4 py-2 shadow-candy"
-                  whileHover={{ scale: 1.05 }}
+                  className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-2xl px-4 py-2 shadow-lg"
+                  whileHover={{ scale: 1.05, y: -2 }}
                 >
-                  <Trophy className="w-5 h-5 text-brand" />
+                  <Trophy className="w-5 h-5 text-yellow-500" />
                   <span className="font-bold text-gray-800">{userData.uniqueSpeciesCount}</span>
                 </motion.div>
               </div>
@@ -411,12 +566,26 @@ export default function ScanPage() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <h1 className="text-4xl font-bold text-gray-800 mb-2">
+              <motion.h1 
+                className="text-5xl font-bold text-white mb-4 drop-shadow-2xl"
+                animate={{
+                  textShadow: [
+                    "0 0 20px rgba(255,255,255,0.5)",
+                    "0 0 30px rgba(255,255,255,0.8)",
+                    "0 0 20px rgba(255,255,255,0.5)"
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
                 🐛 Buggies with Brandon
-              </h1>
-              <p className="text-lg text-gray-600">
+              </motion.h1>
+              <motion.p 
+                className="text-xl text-white/90 drop-shadow-lg"
+                animate={{ y: [0, -5, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              >
                 Point your camera at plants, bugs, and animals!
-              </p>
+              </motion.p>
             </motion.div>
 
             {/* Camera button */}
@@ -426,24 +595,52 @@ export default function ScanPage() {
               animate={{ scale: 1 }}
               transition={{ duration: 0.6, delay: 0.4, type: "spring", stiffness: 200 }}
             >
+              {/* Glowing ring around camera button */}
+              <motion.div
+                className="absolute inset-0 rounded-full"
+                animate={{
+                  boxShadow: [
+                    "0 0 30px rgba(255, 255, 255, 0.3)",
+                    "0 0 50px rgba(255, 255, 255, 0.6)",
+                    "0 0 30px rgba(255, 255, 255, 0.3)"
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              
               <motion.button
-                className={`w-32 h-32 rounded-full bg-gradient-to-br from-brand to-brand-dark shadow-candy-lg flex items-center justify-center ${
+                className={`w-36 h-36 rounded-full bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 shadow-2xl flex items-center justify-center ${
                   isScanning ? 'animate-pulse' : ''
                 }`}
                 onClick={handleCameraClick}
                 disabled={isScanning}
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ 
+                  scale: 1.1,
+                  rotate: 5,
+                  boxShadow: "0 25px 80px rgba(255, 255, 255, 0.4)"
+                }}
                 whileTap={{ scale: 0.95 }}
-                animate={pulseAnimation ? {
+                animate={{
                   boxShadow: [
-                    "0 20px 60px rgba(74, 222, 128, 0.3)",
-                    "0 20px 60px rgba(74, 222, 128, 0.6)",
-                    "0 20px 60px rgba(74, 222, 128, 0.3)"
-                  ]
-                } : {}}
-                transition={{ duration: 2, repeat: Infinity }}
+                    "0 20px 60px rgba(255, 255, 255, 0.2)",
+                    "0 20px 60px rgba(255, 255, 255, 0.4)",
+                    "0 20px 60px rgba(255, 255, 255, 0.2)"
+                  ],
+                  y: [0, -5, 0]
+                }}
+                transition={{ 
+                  duration: 3, 
+                  repeat: Infinity, 
+                  ease: "easeInOut",
+                  boxShadow: { duration: 2, repeat: Infinity }
+                }}
               >
-                <Camera className="w-12 h-12 text-white" />
+                <motion.div
+                  animate={{ rotate: [0, 360] }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                >
+                  <Camera className="w-16 h-16 text-white drop-shadow-lg" />
+                </motion.div>
               </motion.button>
             </motion.div>
 
@@ -454,24 +651,49 @@ export default function ScanPage() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.6 }}
             >
-              <BigButton
+              <motion.button
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-4 shadow-lg flex items-center justify-center space-x-3 backdrop-blur-sm"
+                whileHover={{ 
+                  scale: 1.05, 
+                  y: -2,
+                  boxShadow: "0 10px 30px rgba(59, 130, 246, 0.4)"
+                }}
+                whileTap={{ scale: 0.95 }}
                 onClick={handleUploadClick}
-                variant="secondary"
-                size="lg"
                 disabled={isScanning}
+                animate={{
+                  boxShadow: [
+                    "0 5px 15px rgba(59, 130, 246, 0.3)",
+                    "0 10px 25px rgba(59, 130, 246, 0.5)",
+                    "0 5px 15px rgba(59, 130, 246, 0.3)"
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
               >
-                <Upload className="w-6 h-6 mr-2" />
-                Upload Photo
-              </BigButton>
+                <Upload className="w-6 h-6" />
+                <span className="text-lg font-bold">Upload Photo</span>
+              </motion.button>
 
               <motion.button
-                className="w-full bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-candy flex flex-col items-center"
-                whileHover={{ scale: 1.05 }}
+                className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-2xl p-4 shadow-lg flex items-center justify-center space-x-3 backdrop-blur-sm"
+                whileHover={{ 
+                  scale: 1.05, 
+                  y: -2,
+                  boxShadow: "0 10px 30px rgba(34, 197, 94, 0.4)"
+                }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => router.push('/quest')}
+                animate={{
+                  boxShadow: [
+                    "0 5px 15px rgba(34, 197, 94, 0.3)",
+                    "0 10px 25px rgba(34, 197, 94, 0.5)",
+                    "0 5px 15px rgba(34, 197, 94, 0.3)"
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
               >
-                <Target className="w-6 h-6 text-accent mb-2" />
-                <span className="text-sm font-semibold text-gray-800">Quests</span>
+                <Target className="w-6 h-6" />
+                <span className="text-lg font-bold">Quests</span>
               </motion.button>
             </motion.div>
 
@@ -499,10 +721,32 @@ export default function ScanPage() {
             transition={{ duration: 0.6, delay: 0.8 }}
           >
             <motion.button
-              className="w-full bg-gradient-to-r from-brand to-brand-dark text-white rounded-2xl p-4 shadow-candy-lg flex items-center justify-center space-x-3"
-              whileHover={{ scale: 1.02 }}
+              className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 text-white rounded-2xl p-4 shadow-2xl flex items-center justify-center space-x-3 backdrop-blur-sm"
+              whileHover={{ 
+                scale: 1.02, 
+                y: -3,
+                boxShadow: "0 15px 40px rgba(236, 72, 153, 0.4)"
+              }}
               whileTap={{ scale: 0.98 }}
               onClick={() => router.push('/book')}
+              animate={{
+                boxShadow: [
+                  "0 10px 30px rgba(236, 72, 153, 0.3)",
+                  "0 15px 40px rgba(236, 72, 153, 0.5)",
+                  "0 10px 30px rgba(236, 72, 153, 0.3)"
+                ],
+                background: [
+                  "linear-gradient(to right, #ec4899, #a855f7, #4f46e5)",
+                  "linear-gradient(to right, #db2777, #9333ea, #3730a3)",
+                  "linear-gradient(to right, #ec4899, #a855f7, #4f46e5)"
+                ]
+              }}
+              transition={{ 
+                duration: 3, 
+                repeat: Infinity, 
+                ease: "easeInOut",
+                boxShadow: { duration: 2, repeat: Infinity }
+              }}
             >
               <BookOpen className="w-6 h-6" />
               <span className="text-lg font-bold">My Collection</span>
