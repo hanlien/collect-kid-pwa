@@ -3,7 +3,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Camera, Upload, Sparkles, Search, BookOpen, Trophy, Coins, Target } from 'lucide-react';
-import BigButton from '@/components/BigButton';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BigButton } from '@/components/ui/BigButton';
+import { ProgressRing } from '@/components/ui/ProgressRing';
+import { ConfettiBurst } from '@/components/anim/ConfettiBurst';
 import Toast from '@/components/Toast';
 import { downscaleImage } from '@/lib/utils';
 import { SpeciesResult, RecognitionHint } from '@/types/species';
@@ -15,6 +18,7 @@ export default function ScanPage() {
   const [showScanRing, setShowScanRing] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'info' } | null>(null);
   const [pulseAnimation, setPulseAnimation] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [userData, setUserData] = useState({
     coins: 0,
     level: 1,
@@ -82,6 +86,10 @@ export default function ScanPage() {
         throw new Error(data.error || 'Recognition failed');
       }
 
+      // Show confetti for successful scan
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 2000);
+
       // Navigate to result page with data
       const result: SpeciesResult = data.result;
       router.push(`/result?data=${encodeURIComponent(JSON.stringify(result))}`);
@@ -100,156 +108,212 @@ export default function ScanPage() {
     }
   };
 
-  const handleScanClick = () => {
+  const handleCameraClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
 
   return (
-            <div className="min-h-screen flex flex-col bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className={`absolute top-20 left-10 w-20 h-20 bg-yellow-200 rounded-full opacity-20 animate-float ${pulseAnimation ? 'scale-110' : 'scale-100'} transition-transform duration-1000`}></div>
-        <div className={`absolute top-40 right-16 w-16 h-16 bg-orange-200 rounded-full opacity-20 animate-float delay-1000 ${pulseAnimation ? 'scale-90' : 'scale-100'} transition-transform duration-1000`}></div>
-        <div className={`absolute bottom-32 left-20 w-12 h-12 bg-green-200 rounded-full opacity-20 animate-float delay-2000 ${pulseAnimation ? 'scale-110' : 'scale-100'} transition-transform duration-1000`}></div>
-        <div className={`absolute bottom-20 right-10 w-24 h-24 bg-teal-200 rounded-full opacity-20 animate-float delay-3000 ${pulseAnimation ? 'scale-90' : 'scale-100'} transition-transform duration-1000`}></div>
+        <motion.div
+          className="absolute top-20 left-10 w-20 h-20 bg-brand-200 rounded-full opacity-30"
+          animate={{
+            scale: [1, 1.2, 1],
+            y: [0, -20, 0],
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute top-40 right-20 w-16 h-16 bg-accent-200 rounded-full opacity-30"
+          animate={{
+            scale: [1, 1.3, 1],
+            x: [0, 15, 0],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1
+          }}
+        />
+        <motion.div
+          className="absolute bottom-40 left-20 w-12 h-12 bg-sky-200 rounded-full opacity-30"
+          animate={{
+            scale: [1, 1.4, 1],
+            rotate: [0, 180, 360],
+          }}
+          transition={{
+            duration: 5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2
+          }}
+        />
       </div>
 
-      {/* Header with 3D Avatar and Coin System */}
-      <div className="relative z-10 text-center pt-8 pb-6 px-6">
-        {/* 3D Avatar */}
-        <div className="avatar-3d mb-6">
-          <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-teal-500 rounded-full flex items-center justify-center shadow-2xl mx-auto">
-            <div className="text-4xl">🧒</div>
+      {/* Header with user stats */}
+      <motion.header 
+        className="relative z-10 p-6"
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <motion.div
+              className="w-12 h-12 bg-gradient-to-br from-brand to-brand-dark rounded-full flex items-center justify-center shadow-candy"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <span className="text-white font-bold text-lg">👤</span>
+            </motion.div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">Level {userData.level}</h2>
+              <p className="text-sm text-gray-600">Explorer</p>
+            </div>
           </div>
-        </div>
-
-        {/* User Info */}
-        <div className="mb-4">
-          <h1 className="text-3xl font-bold gradient-text mb-2">
-            Backyard Brandon
-          </h1>
-          <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
-            <span>Level {userData.level}</span>
-            <span>•</span>
-            <span>{userData.uniqueSpeciesCount} species found</span>
-          </div>
-        </div>
-
-        {/* Coin Jar */}
-        <div className="coin-jar w-32 h-32 mx-auto mb-6 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-2xl mb-1">🪙</div>
-            <div className="coin-text text-lg">{userData.coins.toLocaleString()}</div>
-            <div className="text-xs text-yellow-700">$BRANDON coins</div>
-          </div>
-        </div>
-
-        {/* Progress Ring */}
-        <div className="progress-ring mx-auto mb-6">
-          <svg className="w-16 h-16" viewBox="0 0 36 36">
-            <path
-              d="M18 2.0845
-                a 15.9155 15.9155 0 0 1 0 31.831
-                a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="#e5e7eb"
-              strokeWidth="3"
-            />
-            <path
-              d="M18 2.0845
-                a 15.9155 15.9155 0 0 1 0 31.831
-                a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="#10b981"
-              strokeWidth="3"
-              strokeDasharray={`${(userData.totalCaptures / 10) * 100}, 100`}
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-sm font-bold text-gray-700">{userData.totalCaptures}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Scan Area */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 relative z-10">
-        {/* Scan Button with Enhanced Animation */}
-        <div className="relative mb-8">
-          {/* Outer pulse ring */}
-          {showScanRing && (
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-green-400 to-teal-500 animate-ping opacity-20"></div>
-          )}
           
-          {/* Inner pulse ring */}
-          {showScanRing && (
-            <div className="absolute inset-2 rounded-full bg-gradient-to-r from-green-400 to-teal-500 animate-pulse opacity-30"></div>
-          )}
+          <div className="flex items-center space-x-4">
+            <motion.div
+              className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-2xl px-4 py-2 shadow-candy"
+              whileHover={{ scale: 1.05 }}
+            >
+              <Coins className="w-5 h-5 text-accent" />
+              <span className="font-bold text-gray-800">{userData.coins}</span>
+            </motion.div>
+            
+            <motion.div
+              className="flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-2xl px-4 py-2 shadow-candy"
+              whileHover={{ scale: 1.05 }}
+            >
+              <Trophy className="w-5 h-5 text-brand" />
+              <span className="font-bold text-gray-800">{userData.uniqueSpeciesCount}</span>
+            </motion.div>
+          </div>
+        </div>
+      </motion.header>
 
-          <BigButton
-            onClick={handleScanClick}
-            disabled={isScanning}
-            className="relative w-40 h-40 rounded-full flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-green-400 via-teal-500 to-blue-600 shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-105"
-          >
-            {isScanning ? (
-              <>
-                <div className="animate-spin-slow">
-                  <Sparkles className="w-10 h-10 text-white" />
-                </div>
-                <span className="text-white font-semibold text-lg">Scanning...</span>
-                <span className="text-white/80 text-sm">Finding creatures!</span>
-              </>
-            ) : (
-              <>
-                <Camera className="w-12 h-12 text-white" />
-                <span className="text-white font-bold text-xl">SCAN</span>
-                <span className="text-white/80 text-sm">Tap to explore</span>
-              </>
+      {/* Main content */}
+      <main className="flex-1 flex flex-col items-center justify-center px-6 relative z-10">
+        <motion.div
+          className="text-center mb-8"
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">
+            🔍 Scan & Discover
+          </h1>
+          <p className="text-lg text-gray-600">
+            Take a photo to identify plants, bugs, and animals!
+          </p>
+        </motion.div>
+
+        {/* Scan button */}
+        <motion.div
+          className="relative mb-8"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.4, type: "spring", stiffness: 200 }}
+        >
+          {/* Scan ring animation */}
+          <AnimatePresence>
+            {showScanRing && (
+              <motion.div
+                className="absolute inset-0 rounded-full border-4 border-brand/30"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1.2, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ duration: 0.5 }}
+              />
             )}
-          </BigButton>
-        </div>
+          </AnimatePresence>
 
-        {/* Quick Actions */}
-        <div className="flex gap-4 mb-8">
-          <BigButton
-            onClick={() => router.push('/book')}
-            variant="ghost"
-            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/80 backdrop-blur-sm"
+          <motion.button
+            className={`w-32 h-32 rounded-full bg-gradient-to-br from-brand to-brand-dark shadow-candy-lg flex items-center justify-center ${
+              isScanning ? 'animate-pulse' : ''
+            }`}
+            onClick={handleCameraClick}
+            disabled={isScanning}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            animate={pulseAnimation ? {
+              boxShadow: [
+                "0 20px 60px rgba(74, 222, 128, 0.3)",
+                "0 20px 60px rgba(74, 222, 128, 0.6)",
+                "0 20px 60px rgba(74, 222, 128, 0.3)"
+              ]
+            } : {}}
+            transition={{ duration: 2, repeat: Infinity }}
           >
-            <BookOpen className="w-5 h-5" />
-            <span>Collection</span>
-          </BigButton>
-          <BigButton
-            onClick={() => router.push('/quest')}
-            variant="ghost"
-            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/80 backdrop-blur-sm"
-          >
-            <Trophy className="w-5 h-5" />
-            <span>Quests</span>
-          </BigButton>
-        </div>
+            <Camera className="w-12 h-12 text-white" />
+          </motion.button>
+        </motion.div>
 
-        {/* Tips Section */}
-        <div className="card-3d max-w-sm">
-          <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <Target className="w-5 h-5 text-green-500" />
-            Pro Tips
-          </h3>
-          <ul className="space-y-2 text-sm text-gray-600">
-            <li className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
-              <span>Get close to your subject</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 flex-shrink-0"></div>
-              <span>Make sure there&apos;s good lighting</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <div className="w-2 h-2 bg-teal-400 rounded-full mt-2 flex-shrink-0"></div>
-              <span>Hold your camera steady</span>
-            </li>
-          </ul>
-        </div>
-      </div>
+        {/* Action buttons */}
+        <motion.div
+          className="flex flex-col space-y-4 w-full max-w-sm"
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+        >
+          <BigButton
+            onClick={handleUploadClick}
+            variant="secondary"
+            size="lg"
+            disabled={isScanning}
+          >
+            <Upload className="w-6 h-6 mr-2" />
+            Upload Photo
+          </BigButton>
+
+          <div className="flex space-x-4">
+            <motion.button
+              className="flex-1 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-candy flex flex-col items-center"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => router.push('/book')}
+            >
+              <BookOpen className="w-6 h-6 text-brand mb-2" />
+              <span className="text-sm font-semibold text-gray-800">Collection</span>
+            </motion.button>
+
+            <motion.button
+              className="flex-1 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-candy flex flex-col items-center"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => router.push('/quest')}
+            >
+              <Target className="w-6 h-6 text-accent mb-2" />
+              <span className="text-sm font-semibold text-gray-800">Quests</span>
+            </motion.button>
+          </div>
+        </motion.div>
+
+        {/* Progress indicator */}
+        {isScanning && (
+          <motion.div
+            className="mt-8"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+          >
+            <ProgressRing progress={75} size={80} />
+            <p className="text-center mt-4 text-gray-600 font-medium">
+              Analyzing your photo...
+            </p>
+          </motion.div>
+        )}
+      </main>
 
       {/* Hidden file input */}
       <input
@@ -261,14 +325,19 @@ export default function ScanPage() {
         className="hidden"
       />
 
-      {/* Toast */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      {/* Toast notifications */}
+      <AnimatePresence>
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Confetti burst */}
+      <ConfettiBurst trigger={showConfetti} />
     </div>
   );
 }
