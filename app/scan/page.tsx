@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Camera, Upload, Sparkles, Search, BookOpen, Trophy, Coins, Target, X, RotateCcw, User, Cpu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BigButton from '@/components/BigButton';
@@ -16,6 +16,7 @@ import { Profile } from '@/types/profile';
 
 export default function ScanPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -65,15 +66,7 @@ export default function ScanPage() {
 
   // Load profile data
   useEffect(() => {
-    const profileManager = ProfileManager.getInstance();
-    const profile = profileManager.getCurrentProfile();
-    setCurrentProfile(profile);
-    setUserData({
-      coins: profile.coins,
-      level: profile.level,
-      totalCaptures: profile.totalCaptures,
-      uniqueSpeciesCount: profile.uniqueSpeciesCount,
-    });
+    refreshProfileData();
   }, []);
 
   // Ensure video plays when camera becomes active
@@ -82,6 +75,35 @@ export default function ScanPage() {
       videoRef.current.play().catch(console.error);
     }
   }, [cameraActive, stream]);
+
+  // Refresh profile data when page becomes visible (user returns from result page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        refreshProfileData();
+      }
+    };
+
+    const handleFocus = () => {
+      refreshProfileData();
+    };
+
+    // Refresh on page load and when returning from other pages
+    refreshProfileData();
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  // Refresh profile data when pathname changes (user navigates back)
+  useEffect(() => {
+    refreshProfileData();
+  }, [pathname]);
 
   // Initialize camera
   const startCamera = async () => {
@@ -240,6 +262,18 @@ export default function ScanPage() {
   };
 
   const handleProfileSwitch = (profile: Profile) => {
+    setCurrentProfile(profile);
+    setUserData({
+      coins: profile.coins,
+      level: profile.level,
+      totalCaptures: profile.totalCaptures,
+      uniqueSpeciesCount: profile.uniqueSpeciesCount,
+    });
+  };
+
+  const refreshProfileData = () => {
+    const profileManager = ProfileManager.getInstance();
+    const profile = profileManager.getCurrentProfile();
     setCurrentProfile(profile);
     setUserData({
       coins: profile.coins,

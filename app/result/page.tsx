@@ -113,16 +113,13 @@ export default function ResultPage() {
         const data = await response.json();
         setShowConfetti(true);
         
-        // Update local storage with new user data
-        const currentUserData = JSON.parse(localStorage.getItem('userData') || '{}');
-        const newUserData = {
-          ...currentUserData,
+        // Update profile data using ProfileManager
+        profileManager.updateProfile(currentProfile.id, {
           coins: data.newTotalCoins,
           level: data.newLevel,
           totalCaptures: data.userStats.totalCaptures,
           uniqueSpeciesCount: data.userStats.uniqueSpeciesCount,
-        };
-        localStorage.setItem('userData', JSON.stringify(newUserData));
+        });
 
         // Show badge popup for new species
         if (data.isNewSpecies) {
