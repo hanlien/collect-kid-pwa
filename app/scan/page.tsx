@@ -174,11 +174,11 @@ export default function ScanPage() {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
-              <span className="text-white font-bold text-lg">👤</span>
+              <span className="text-white font-bold text-lg">👦</span>
             </motion.div>
             <div>
               <h2 className="text-xl font-bold text-gray-800">Level {userData.level}</h2>
-              <p className="text-sm text-gray-600">Explorer</p>
+              <p className="text-sm text-gray-600">Brandon's Explorer</p>
             </div>
           </div>
           
@@ -211,7 +211,7 @@ export default function ScanPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
         >
           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            🔍 Scan & Discover
+            🐛 Buggies with Brandon
           </h1>
           <p className="text-lg text-gray-600">
             Take a photo to identify plants, bugs, and animals!
@@ -276,27 +276,15 @@ export default function ScanPage() {
             Upload Photo
           </BigButton>
 
-          <div className="flex space-x-4">
-            <motion.button
-              className="flex-1 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-candy flex flex-col items-center"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => router.push('/book')}
-            >
-              <BookOpen className="w-6 h-6 text-brand mb-2" />
-              <span className="text-sm font-semibold text-gray-800">Collection</span>
-            </motion.button>
-
-            <motion.button
-              className="flex-1 bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-candy flex flex-col items-center"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => router.push('/quest')}
-            >
-              <Target className="w-6 h-6 text-accent mb-2" />
-              <span className="text-sm font-semibold text-gray-800">Quests</span>
-            </motion.button>
-          </div>
+          <motion.button
+            className="w-full bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-candy flex flex-col items-center"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => router.push('/quest')}
+          >
+            <Target className="w-6 h-6 text-accent mb-2" />
+            <span className="text-sm font-semibold text-gray-800">Quests</span>
+          </motion.button>
         </motion.div>
 
         {/* Progress indicator */}
@@ -314,6 +302,25 @@ export default function ScanPage() {
           </motion.div>
         )}
       </main>
+
+      {/* Bottom Collection button for quick access */}
+      <motion.footer
+        className="relative z-10 p-6"
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.8 }}
+      >
+        <motion.button
+          className="w-full bg-gradient-to-r from-brand to-brand-dark text-white rounded-2xl p-4 shadow-candy-lg flex items-center justify-center space-x-3"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => router.push('/book')}
+        >
+          <BookOpen className="w-6 h-6" />
+          <span className="text-lg font-bold">My Collection</span>
+          <span className="text-sm opacity-90">({userData.uniqueSpeciesCount} species)</span>
+        </motion.button>
+      </motion.footer>
 
       {/* Hidden file input */}
       <input
