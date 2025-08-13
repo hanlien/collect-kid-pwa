@@ -813,38 +813,43 @@ export default function ScanPage() {
               </div>
             )}
 
-            {/* Bottom controls */}
-            <div className="absolute bottom-0 left-0 right-0 p-6">
-              <div className="flex justify-center items-center space-x-8">
+            {/* Bottom controls - Mobile optimized */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 pb-8">
+              <div className="flex justify-center items-center space-x-6">
                 <motion.button
-                  className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center"
+                  className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={handleUploadClick}
                 >
-                  <Upload className="w-6 h-6 text-white" />
+                  <Upload className="w-5 h-5 text-white" />
                 </motion.button>
 
                 <motion.button
-                  className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg"
+                  className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleCameraClick}
                   disabled={isScanning}
                 >
-                  <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center">
-                    <Camera className="w-8 h-8 text-white" />
+                  <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center">
+                    <Camera className="w-10 h-10 text-white" />
                   </div>
                 </motion.button>
 
                 <motion.button
-                  className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center"
+                  className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => router.push('/book')}
                 >
-                  <BookOpen className="w-6 h-6 text-white" />
+                  <BookOpen className="w-5 h-5 text-white" />
                 </motion.button>
+              </div>
+              
+              {/* Capture hint text */}
+              <div className="text-center mt-4">
+                <p className="text-white/80 text-sm font-medium">Tap to capture!</p>
               </div>
             </div>
           </div>

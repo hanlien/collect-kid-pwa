@@ -183,7 +183,7 @@ export default function ResultPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Collect API response data:', data);
+        console.log('Collect API response data:', JSON.stringify(data, null, 2));
         setShowConfetti(true);
         
         // Update profile data using ProfileManager
@@ -193,6 +193,11 @@ export default function ResultPage() {
           totalCaptures: data.userStats.totalCaptures,
           uniqueSpeciesCount: data.userStats.uniqueSpeciesCount,
         });
+
+        // Debug: Check what's in the profile after update
+        console.log('Profile after update:', profileManager.getCurrentProfile());
+        console.log('Captures after update:', profileManager.getCaptures());
+        console.log('Badges after update:', profileManager.getBadges());
 
         // Show badge popup for new species
         if (data.badge) {
