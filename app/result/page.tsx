@@ -115,6 +115,8 @@ export default function ResultPage() {
   const handleAccuracyFeedback = async (isCorrect: boolean, correction?: string) => {
     if (!result) return;
 
+    console.log('handleAccuracyFeedback called:', { isCorrect, correction });
+
     try {
       // Send feedback to training data
       const response = await fetch('/api/training-feedback', {
