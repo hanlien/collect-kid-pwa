@@ -73,17 +73,38 @@ export default function ResultPage() {
   const handleSpeak = () => {
     if (!result) return;
 
-    const text = `${result.commonName || result.canonicalName}. ${facts?.summary || 'This is a fascinating creature!'}`;
+    // Create more natural, kid-friendly text
+    const speciesName = result.commonName || result.canonicalName;
+    const summary = facts?.summary || 'This is a fascinating creature!';
+    
+    // Make it more engaging for kids
+    const text = `Wow! This is a ${speciesName}! ${summary} Isn't nature amazing?`;
     
     if ('speechSynthesis' in window) {
       setIsSpeaking(true);
+      
+      // Get available voices and select a better one
+      const voices = window.speechSynthesis.getVoices();
+      let selectedVoice = voices.find(voice => 
+        voice.lang.includes('en') && 
+        (voice.name.includes('Google') || voice.name.includes('Samantha') || voice.name.includes('Alex'))
+      ) || voices.find(voice => voice.lang.includes('en')) || voices[0];
+      
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.8;
-      utterance.pitch = 1.1;
+      
+      // Use better voice settings for more natural speech
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+      utterance.rate = 0.9; // Slightly faster
+      utterance.pitch = 1.2; // Slightly higher pitch for enthusiasm
+      utterance.volume = 0.9; // Good volume
       
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = () => setIsSpeaking(false);
       
+      // Cancel any existing speech
+      window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -122,7 +143,7 @@ export default function ResultPage() {
         });
 
         // Show badge popup for new species
-        if (data.isNewSpecies) {
+        if (data.badge) {
           setBadgeData({
             speciesName: result.commonName || result.canonicalName,
             category: result.category,
@@ -132,9 +153,7 @@ export default function ResultPage() {
         }
 
         // Show success message with coin reward
-        const coinMessage = data.isNewSpecies 
-          ? `New species! +${data.coinsEarned} $BRANDON coins! 🎉` 
-          : `+${data.coinsEarned} $BRANDON coins! 🎉`;
+        const coinMessage = `New species! +${data.coinsEarned} $BRANDON coins! 🎉`;
         
         setToast({
           message: coinMessage,
@@ -144,7 +163,15 @@ export default function ResultPage() {
         // Hide confetti after 3 seconds
         setTimeout(() => setShowConfetti(false), 3000);
       } else {
-        throw new Error('Failed to collect');
+        const errorData = await response.json();
+        if (errorData.alreadyCollected) {
+          setToast({
+            message: 'Species already collected!',
+            type: 'error',
+          });
+        } else {
+          throw new Error('Failed to collect');
+        }
       }
     } catch (error) {
       console.error('Collection error:', error);
@@ -420,6 +447,10 @@ export default function ResultPage() {
         <BadgePopup
           isOpen={showBadgePopup}
           onClose={() => setShowBadgePopup(false)}
+          onNavigate={() => {
+            setShowBadgePopup(false);
+            router.push('/book');
+          }}
           speciesName={badgeData.speciesName}
           category={badgeData.category}
           imageUrl={badgeData.imageUrl}

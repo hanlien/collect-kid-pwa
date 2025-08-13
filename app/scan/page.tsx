@@ -803,13 +803,14 @@ export default function ScanPage() {
                   <span className="font-bold">${userData.coins} BRANDON</span>
                 </motion.div>
                 
-                <motion.div
-                  className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-2xl px-4 py-2 shadow-lg"
+                <motion.button
+                  className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-2xl px-4 py-2 shadow-lg cursor-pointer"
                   whileHover={{ scale: 1.05, y: -2 }}
+                  onClick={() => router.push('/book')}
                 >
                   <Trophy className="w-5 h-5 text-yellow-500" />
                   <span className="font-bold text-gray-800">{userData.uniqueSpeciesCount}</span>
-                </motion.div>
+                </motion.button>
               </div>
             </div>
           </motion.header>

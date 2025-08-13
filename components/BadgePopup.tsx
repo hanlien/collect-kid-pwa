@@ -8,12 +8,13 @@ import Image from 'next/image';
 interface BadgePopupProps {
   isOpen: boolean;
   onClose: () => void;
+  onNavigate?: () => void;
   speciesName: string;
   category: string;
   imageUrl?: string;
 }
 
-export default function BadgePopup({ isOpen, onClose, speciesName, category, imageUrl }: BadgePopupProps) {
+export default function BadgePopup({ isOpen, onClose, onNavigate, speciesName, category, imageUrl }: BadgePopupProps) {
   const categoryEmoji = {
     flower: '🌸',
     bug: '🦋',
@@ -138,6 +139,18 @@ export default function BadgePopup({ isOpen, onClose, speciesName, category, ima
                   <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-full font-semibold">
                     🎉 Congratulations! 🎉
                   </div>
+                  
+                  {/* Navigation button */}
+                  {onNavigate && (
+                    <motion.button
+                      onClick={onNavigate}
+                      className="mt-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      View My Collection 📚
+                    </motion.button>
+                  )}
                 </motion.div>
 
                 {/* Floating stars */}
