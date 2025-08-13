@@ -3,17 +3,18 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trophy, BookOpen } from 'lucide-react';
+import Image from 'next/image';
 import BigButton from '@/components/BigButton';
 import Badge from '@/components/Badge';
 import ProfileManager from '@/lib/profileManager';
 import { Capture, Badge as BadgeType } from '@/types/profile';
 import { ALL_BADGES, getAllBadgesForCategory, getBadgeDefinition } from '@/lib/badgeDefinitions';
 
-type TabType = 'animals' | 'bugs' | 'flowers';
+type TabType = 'discoveries' | 'badges';
 
 export default function BookPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabType>('animals');
+  const [activeTab, setActiveTab] = useState<TabType>('discoveries');
   const [captures, setCaptures] = useState<Capture[]>([]);
   const [badges, setBadges] = useState<BadgeType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -105,23 +106,11 @@ export default function BookPage() {
     }
   };
 
-  const filteredCaptures = captures.filter(capture => {
-    if (activeTab === 'animals') return capture.category === 'animal';
-    if (activeTab === 'bugs') return capture.category === 'bug';
-    if (activeTab === 'flowers') return capture.category === 'flower';
-    return false;
-  });
-
-  // Get all possible badges for the current category
-  const allPossibleBadges = getAllBadgesForCategory(activeTab === 'animals' ? 'animal' : activeTab === 'bugs' ? 'bug' : 'flower');
-  
-  // Get user's earned badges for this category
-  const userBadges = badges.filter(badge => {
-    if (activeTab === 'animals') return badge.category === 'animal';
-    if (activeTab === 'bugs') return badge.category === 'bug';
-    if (activeTab === 'flowers') return badge.category === 'flower';
-    return false;
-  });
+  // For discoveries tab, show all captures
+  // For badges tab, show all badges
+  const filteredCaptures = activeTab === 'discoveries' ? captures : [];
+  const allPossibleBadges = ALL_BADGES; // Show all badges
+  const userBadges = badges; // Show all user badges
 
   // Create a map of earned badges for quick lookup
   const earnedBadgesMap = new Map();
@@ -141,9 +130,8 @@ export default function BookPage() {
   });
 
   const tabs: { id: TabType; label: string; emoji: string }[] = [
-    { id: 'animals', label: 'Animals', emoji: '🐦' },
-    { id: 'bugs', label: 'Bugs', emoji: '🦋' },
-    { id: 'flowers', label: 'Flowers', emoji: '🌸' },
+    { id: 'discoveries', label: 'Discoveries', emoji: '📸' },
+    { id: 'badges', label: 'Badges', emoji: '🏆' },
   ];
 
   if (isLoading) {
@@ -219,83 +207,108 @@ export default function BookPage() {
         </div>
       </div>
 
-      {/* Badges Section */}
-      <div className="mb-6">
-        <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-yellow-500" />
-          Badges ({filteredBadges.filter(b => b.isEarned).length}/{filteredBadges.length})
-        </h2>
-        <div className="grid grid-cols-3 gap-4">
-          {filteredBadges.map((badge) => (
-            <div key={badge.id} className={`text-center ${!badge.isEarned ? 'opacity-50' : ''}`}>
-              <div className={`relative ${!badge.isEarned ? 'grayscale' : ''}`}>
-                <Badge
-                  level={badge.isEarned ? badge.earnedLevel : 1}
-                  count={badge.earnedCount}
-                  className="mx-auto mb-2"
-                />
-                {!badge.isEarned && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-2xl">🔒</div>
-                  </div>
-                )}
-              </div>
-              <div className={`text-xs capitalize ${badge.isEarned ? 'text-gray-600' : 'text-gray-400'}`}>
-                {badge.name}
-              </div>
-              <div className={`text-xs ${badge.isEarned ? 'text-gray-400' : 'text-gray-300'}`}>
-                {badge.isEarned ? `Level ${badge.earnedLevel}` : 'Locked'}
-              </div>
+      {/* Content based on active tab */}
+      {activeTab === 'discoveries' ? (
+        <div className="flex-1">
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            📸 Discoveries ({filteredCaptures.length})
+          </h2>
+          
+          {filteredCaptures.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4 opacity-50">📸</div>
+              <h3 className="text-lg font-medium text-gray-600 mb-2">
+                No discoveries yet!
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Go out and scan some creatures to start your collection!
+              </p>
+              <BigButton
+                onClick={() => router.push('/scan')}
+                variant="primary"
+                size="md"
+              >
+                Start Scanning
+              </BigButton>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Captures Grid */}
-      <div className="flex-1">
-        <h2 className="text-lg font-bold text-gray-800 mb-4">
-          Discoveries
-        </h2>
-        
-        {filteredCaptures.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4 opacity-50">
-              {getCategoryEmoji(activeTab === 'animals' ? 'animal' : activeTab === 'bugs' ? 'bug' : 'flower')}
-            </div>
-            <h3 className="text-lg font-medium text-gray-600 mb-2">
-              No {getCategoryName(activeTab === 'animals' ? 'animal' : activeTab === 'bugs' ? 'bug' : 'flower')} found yet!
-            </h3>
-            <p className="text-sm text-gray-500 mb-6">
-              Go out and scan some {activeTab} to start your collection!
-            </p>
-            <BigButton
-              onClick={() => router.push('/scan')}
-              variant="primary"
-              size="md"
-            >
-              Start Scanning
-            </BigButton>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4">
-            {filteredCaptures.map((capture) => (
-              <div key={capture.id} className="card p-4">
-                <div className="text-center">
-                  <div className="text-3xl mb-2">
-                    {getCategoryEmoji(capture.category)}
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              {filteredCaptures.map((capture) => (
+                <div key={capture.id} className="card p-4">
+                  <div className="text-center">
+                    {capture.capturedImageUrl ? (
+                      <Image 
+                        src={capture.capturedImageUrl} 
+                        alt={capture.commonName || capture.canonicalName}
+                        width={200}
+                        height={96}
+                        className="w-full h-24 object-cover rounded-lg mb-2"
+                      />
+                    ) : (
+                      <div className="text-3xl mb-2">
+                        {getCategoryEmoji(capture.category)}
+                      </div>
+                    )}
+                    <h3 className="font-medium text-gray-800 text-sm mb-1">
+                      {capture.commonName || capture.canonicalName}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      {new Date(capture.createdAt).toLocaleDateString()}
+                    </p>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {capture.category} • {Math.round(capture.confidence * 100)}% confidence
+                    </div>
                   </div>
-                  <h3 className="font-medium text-gray-800 text-sm mb-1">
-                    {capture.commonName || capture.canonicalName}
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    {new Date(capture.createdAt).toLocaleDateString()}
-                  </p>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex-1">
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-yellow-500" />
+            Badges ({filteredBadges.filter(b => b.isEarned).length}/{filteredBadges.length})
+          </h2>
+          
+          {filteredBadges.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4 opacity-50">🏆</div>
+              <h3 className="text-lg font-medium text-gray-600 mb-2">
+                No badges available yet!
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Start collecting species to earn badges!
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-4">
+              {filteredBadges.map((badge) => (
+                <div key={badge.id} className={`text-center ${!badge.isEarned ? 'opacity-50' : ''}`}>
+                  <div className={`relative ${!badge.isEarned ? 'grayscale' : ''}`}>
+                    <Badge
+                      level={badge.isEarned ? badge.earnedLevel : 1}
+                      count={badge.earnedCount}
+                      className="mx-auto mb-2"
+                    />
+                    {!badge.isEarned && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-2xl">🔒</div>
+                      </div>
+                    )}
+                  </div>
+                  <div className={`text-xs capitalize ${badge.isEarned ? 'text-gray-600' : 'text-gray-400'}`}>
+                    {badge.name}
+                  </div>
+                  <div className={`text-xs ${badge.isEarned ? 'text-gray-400' : 'text-gray-300'}`}>
+                    {badge.isEarned ? `Level ${badge.earnedLevel}` : 'Locked'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Navigation */}
       <div className="flex gap-4 mt-6">
