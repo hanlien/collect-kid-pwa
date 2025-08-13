@@ -184,9 +184,15 @@ class ProfileManager {
     try {
       // Check if we're in a browser environment
       if (typeof window !== 'undefined' && window.localStorage) {
-        const stored = localStorage.getItem(`${STORAGE_KEYS.PROFILE_DATA}-captures-${this.getCurrentProfile().id}`);
+        const key = `${STORAGE_KEYS.PROFILE_DATA}-captures-${this.getCurrentProfile().id}`;
+        console.log('Loading captures with key:', key);
+        const stored = localStorage.getItem(key);
         if (stored) {
-          return JSON.parse(stored);
+          const captures = JSON.parse(stored);
+          console.log('Loaded captures:', captures);
+          return captures;
+        } else {
+          console.log('No captures found for key:', key);
         }
       }
     } catch (error) {
@@ -199,7 +205,11 @@ class ProfileManager {
     try {
       // Check if we're in a browser environment
       if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.setItem(`${STORAGE_KEYS.PROFILE_DATA}-captures-${this.getCurrentProfile().id}`, JSON.stringify(captures));
+        const key = `${STORAGE_KEYS.PROFILE_DATA}-captures-${this.getCurrentProfile().id}`;
+        console.log('Saving captures with key:', key);
+        console.log('Saving captures data:', captures);
+        localStorage.setItem(key, JSON.stringify(captures));
+        console.log('Captures saved successfully');
       }
     } catch (error) {
       console.error('Failed to save captures:', error);

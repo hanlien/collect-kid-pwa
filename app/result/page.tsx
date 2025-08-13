@@ -181,9 +181,10 @@ export default function ResultPage() {
 
       console.log('Collect response status:', response.status);
 
+      const data = await response.json();
+      console.log('Collect API response data:', JSON.stringify(data, null, 2));
+      
       if (response.ok) {
-        const data = await response.json();
-        console.log('Collect API response data:', JSON.stringify(data, null, 2));
         setShowConfetti(true);
         
         // Update profile data using ProfileManager
@@ -220,8 +221,10 @@ export default function ResultPage() {
         // Hide confetti after 3 seconds
         setTimeout(() => setShowConfetti(false), 3000);
       } else {
-        const errorData = await response.json();
-        if (errorData.alreadyCollected) {
+        console.log('Collection failed with status:', response.status);
+        console.log('Error response data:', JSON.stringify(data, null, 2));
+        
+        if (data.alreadyCollected) {
           setToast({
             message: 'Species already collected!',
             type: 'error',
