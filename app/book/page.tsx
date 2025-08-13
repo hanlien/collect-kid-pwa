@@ -11,10 +11,12 @@ import { Capture, Badge as BadgeType } from '@/types/profile';
 import { ALL_BADGES, getAllBadgesForCategory, getBadgeDefinition } from '@/lib/badgeDefinitions';
 
 type TabType = 'discoveries' | 'badges';
+type DiscoveryCategory = 'all' | 'animal' | 'bug' | 'flower';
 
 export default function BookPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('discoveries');
+  const [discoveryCategory, setDiscoveryCategory] = useState<DiscoveryCategory>('all');
   const [captures, setCaptures] = useState<Capture[]>([]);
   const [badges, setBadges] = useState<BadgeType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -106,9 +108,12 @@ export default function BookPage() {
     }
   };
 
-  // For discoveries tab, show all captures
-  // For badges tab, show all badges
-  const filteredCaptures = activeTab === 'discoveries' ? captures : [];
+  // Filter captures by discovery category
+  const filteredCaptures = activeTab === 'discoveries' 
+    ? discoveryCategory === 'all' 
+      ? captures 
+      : captures.filter(capture => capture.category === discoveryCategory)
+    : [];
   const allPossibleBadges = ALL_BADGES; // Show all badges
   const userBadges = badges; // Show all user badges
 
@@ -143,7 +148,7 @@ export default function BookPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col p-6 safe-area-top safe-area-bottom">
+    <div className="page-container flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <BigButton
@@ -213,6 +218,32 @@ export default function BookPage() {
           <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             📸 Discoveries ({filteredCaptures.length})
           </h2>
+          
+          {/* Discovery Category Filter */}
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+            {[
+              { id: 'all', label: 'All', emoji: '🌟', count: captures.length },
+              { id: 'animal', label: 'Animals', emoji: '🐦', count: captures.filter(c => c.category === 'animal').length },
+              { id: 'bug', label: 'Bugs', emoji: '🦋', count: captures.filter(c => c.category === 'bug').length },
+              { id: 'flower', label: 'Flowers', emoji: '🌸', count: captures.filter(c => c.category === 'flower').length },
+            ].map((category) => (
+              <button
+                key={category.id}
+                onClick={() => setDiscoveryCategory(category.id as DiscoveryCategory)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
+                  discoveryCategory === category.id
+                    ? 'bg-primary-500 text-white shadow-lg'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <span className="text-sm">{category.emoji}</span>
+                <span className="text-sm">{category.label}</span>
+                <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
+                  {category.count}
+                </span>
+              </button>
+            ))}
+          </div>
           
           {filteredCaptures.length === 0 ? (
             <div className="text-center py-12">

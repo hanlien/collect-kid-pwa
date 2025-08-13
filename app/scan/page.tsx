@@ -421,46 +421,106 @@ export default function ScanPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-sky-300 via-green-200 to-yellow-200 relative overflow-hidden">
+    <div className="page-container bg-gradient-to-b from-sky-300 via-green-200 to-yellow-200 relative overflow-hidden">
       {/* Animated Garden Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Moving Sun */}
+        {/* Bigger Moving Sun */}
         <motion.div
-          className="absolute top-8 right-8 w-16 h-16 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full shadow-lg"
+          className="absolute top-6 right-6 w-24 h-24 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full shadow-2xl"
           animate={{
-            x: [0, -20, 0],
-            y: [0, -10, 0],
-            scale: [1, 1.1, 1],
+            x: [0, -30, 0],
+            y: [0, -15, 0],
+            scale: [1, 1.15, 1],
+            rotate: [0, 5, -5, 0],
           }}
           transition={{
-            duration: 15,
+            duration: 20,
             repeat: Infinity,
             ease: "easeInOut"
           }}
         >
-          {/* Sun rays */}
-          {[...Array(8)].map((_, i) => (
+          {/* Enhanced Sun rays */}
+          {[...Array(12)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-1 h-3 bg-yellow-300 rounded-full"
+              className="absolute w-2 h-4 bg-yellow-300 rounded-full"
               style={{
                 left: '50%',
                 top: '50%',
-                transform: `translate(-50%, -50%) rotate(${i * 45}deg) translateY(-12px)`,
+                transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateY(-18px)`,
               }}
               animate={{
-                scaleY: [1, 1.5, 1],
+                scaleY: [1, 1.8, 1],
+                opacity: [0.6, 1, 0.6],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.15,
+              }}
+            />
+          ))}
+        </motion.div>
+
+        {/* House in Background */}
+        <div className="absolute bottom-20 left-8 w-16 h-12">
+          {/* House body */}
+          <div className="absolute bottom-0 w-full h-8 bg-gray-600 rounded-t-lg" />
+          {/* Roof */}
+          <div className="absolute top-0 left-0 right-0 h-4 bg-red-500 transform -skew-x-12" />
+          {/* Door */}
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-4 bg-brown-600 rounded-t" />
+          {/* Windows */}
+          <div className="absolute top-2 left-2 w-2 h-2 bg-blue-300 rounded" />
+          <div className="absolute top-2 right-2 w-2 h-2 bg-blue-300 rounded" />
+        </div>
+
+        {/* Street Lights */}
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="absolute bottom-0" style={{ left: `${25 + i * 50}%` }}>
+            {/* Pole */}
+            <div className="w-1 h-16 bg-gray-700 mx-auto" />
+            {/* Light */}
+            <motion.div
+              className="w-4 h-4 bg-yellow-300 rounded-full mx-auto -mt-1 shadow-lg"
+              animate={{
                 opacity: [0.7, 1, 0.7],
+                scale: [1, 1.1, 1],
               }}
               transition={{
                 duration: 2,
                 repeat: Infinity,
                 ease: "easeInOut",
-                delay: i * 0.2,
+                delay: i * 1,
               }}
             />
-          ))}
-        </motion.div>
+          </div>
+        ))}
+
+        {/* Cars */}
+        {[...Array(2)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute bottom-4 w-8 h-4"
+            style={{ left: `${15 + i * 60}%` }}
+            animate={{
+              x: [0, 100, 0],
+            }}
+            transition={{
+              duration: 15 + i * 5,
+              repeat: Infinity,
+              ease: "linear",
+              delay: i * 8,
+            }}
+          >
+            {/* Car body */}
+            <div className="w-full h-3 bg-blue-500 rounded-lg" />
+            {/* Wheels */}
+            <div className="absolute bottom-0 left-1 w-2 h-2 bg-black rounded-full" />
+            <div className="absolute bottom-0 right-1 w-2 h-2 bg-black rounded-full" />
+          </motion.div>
+        ))}
 
         {/* Floating Clouds */}
         <motion.div
@@ -616,31 +676,59 @@ export default function ScanPage() {
           </motion.div>
         ))}
 
-        {/* Flying Butterflies */}
-        {[...Array(4)].map((_, i) => (
+        {/* Bigger Flying Butterflies */}
+        {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-8 h-6"
+            className="absolute w-12 h-8"
             style={{
-              left: `${15 + i * 25}%`,
-              top: `${25 + (i % 2) * 15}%`,
+              left: `${10 + i * 20}%`,
+              top: `${20 + (i % 3) * 12}%`,
             }}
             animate={{
-              x: [0, 30, 0],
-              y: [0, -20, 0],
-              rotate: [0, 15, -15, 0],
+              x: [0, 50, 0],
+              y: [0, -30, 0],
+              rotate: [0, 20, -20, 0],
             }}
             transition={{
-              duration: 8 + i * 2,
+              duration: 12 + i * 3,
               repeat: Infinity,
               ease: "easeInOut",
-              delay: i * 1.5,
+              delay: i * 2,
             }}
           >
-            {/* Butterfly wings */}
-            <div className="absolute left-0 w-4 h-5 bg-purple-300 rounded-full" />
-            <div className="absolute right-0 w-4 h-5 bg-purple-300 rounded-full" />
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1 h-2 bg-black rounded-full" />
+            {/* Butterfly wings with flapping animation */}
+            <motion.div
+              className="absolute left-0 w-6 h-7 bg-gradient-to-br from-purple-400 to-pink-300 rounded-full"
+              animate={{
+                rotateY: [0, 15, 0],
+                scaleX: [1, 0.8, 1],
+              }}
+              transition={{
+                duration: 0.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.1,
+              }}
+            />
+            <motion.div
+              className="absolute right-0 w-6 h-7 bg-gradient-to-br from-purple-400 to-pink-300 rounded-full"
+              animate={{
+                rotateY: [0, -15, 0],
+                scaleX: [1, 0.8, 1],
+              }}
+              transition={{
+                duration: 0.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.1 + 0.25,
+              }}
+            />
+            {/* Butterfly body */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1 h-3 bg-black rounded-full" />
+            {/* Butterfly antennae */}
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-0.5 h-2 bg-black rounded-full rotate-12" />
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-0.5 h-2 bg-black rounded-full -rotate-12" />
           </motion.div>
         ))}
 
