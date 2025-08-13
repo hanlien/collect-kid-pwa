@@ -183,6 +183,7 @@ export default function ResultPage() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Collect API response data:', data);
         setShowConfetti(true);
         
         // Update profile data using ProfileManager

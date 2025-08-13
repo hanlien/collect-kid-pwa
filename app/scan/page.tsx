@@ -173,68 +173,71 @@ export default function ScanPage() {
       setStream(mediaStream);
       setCameraActive(true);
       
-      console.log('Setting up video element...');
-      // Set up video element with better error handling
-      if (videoRef.current) {
-        const video = videoRef.current;
-        
-        // Clear any existing srcObject
-        video.srcObject = null;
-        console.log('Cleared existing srcObject');
-        
-        // Set the new stream
-        video.srcObject = mediaStream;
-        console.log('Set new srcObject:', mediaStream);
-        
-        // Wait for metadata to load
-        video.onloadedmetadata = () => {
-          console.log('Video metadata loaded:', {
-            videoWidth: video.videoWidth,
-            videoHeight: video.videoHeight,
-            readyState: video.readyState
-          });
+      // Wait for the video element to be rendered before setting it up
+      setTimeout(() => {
+        console.log('Setting up video element...');
+        // Set up video element with better error handling
+        if (videoRef.current) {
+          const video = videoRef.current;
           
-          // Ensure video plays
-          const playPromise = video.play();
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                console.log('Video playing successfully');
-              })
-              .catch((error) => {
-                console.error('Video play failed:', error);
-                // Try again after a short delay
-                setTimeout(() => {
-                  video.play().catch(console.error);
-                }, 100);
-              });
-          }
-        };
+          // Clear any existing srcObject
+          video.srcObject = null;
+          console.log('Cleared existing srcObject');
+          
+          // Set the new stream
+          video.srcObject = mediaStream;
+          console.log('Set new srcObject:', mediaStream);
+          
+          // Wait for metadata to load
+          video.onloadedmetadata = () => {
+            console.log('Video metadata loaded:', {
+              videoWidth: video.videoWidth,
+              videoHeight: video.videoHeight,
+              readyState: video.readyState
+            });
+            
+            // Ensure video plays
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  console.log('Video playing successfully');
+                })
+                .catch((error) => {
+                  console.error('Video play failed:', error);
+                  // Try again after a short delay
+                  setTimeout(() => {
+                    video.play().catch(console.error);
+                  }, 100);
+                });
+            }
+          };
 
-        // Handle video errors
-        video.onerror = (error) => {
-          console.error('Video error:', error);
-          setToast({
-            message: 'Camera video error. Please try again.',
-            type: 'error',
-          });
-        };
+          // Handle video errors
+          video.onerror = (error) => {
+            console.error('Video error:', error);
+            setToast({
+              message: 'Camera video error. Please try again.',
+              type: 'error',
+            });
+          };
 
-        // Handle video loading
-        video.onloadstart = () => console.log('Video loading started');
-        video.oncanplay = () => console.log('Video can play');
-        video.onplaying = () => console.log('Video is playing');
-        
-        // Force a small delay to ensure video element is ready
-        setTimeout(() => {
-          if (video.srcObject !== mediaStream) {
-            console.log('Re-applying stream to video element');
-            video.srcObject = mediaStream;
-          }
-        }, 100);
-      } else {
-        console.error('Video ref is null!');
-      }
+          // Handle video loading
+          video.onloadstart = () => console.log('Video loading started');
+          video.oncanplay = () => console.log('Video can play');
+          video.onplaying = () => console.log('Video is playing');
+          
+          // Force a small delay to ensure video element is ready
+          setTimeout(() => {
+            if (video.srcObject !== mediaStream) {
+              console.log('Re-applying stream to video element');
+              video.srcObject = mediaStream;
+            }
+          }, 100);
+        } else {
+          console.error('Video ref is still null after delay!');
+        }
+      }, 100); // Wait 100ms for the video element to be rendered
     } catch (error) {
       console.error('Camera access failed:', error);
       
