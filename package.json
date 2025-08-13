@@ -16,6 +16,7 @@
     "@tensorflow/tfjs": "^4.22.0",
     "@tensorflow/tfjs-backend-cpu": "^4.22.0",
     "@tensorflow/tfjs-backend-webgl": "^4.22.0",
+    "axios": "^1.11.0",
     "canvas-confetti": "^1.9.3",
     "framer-motion": "^12.23.12",
     "howler": "^2.2.4",

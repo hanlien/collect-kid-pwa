@@ -407,6 +407,22 @@ export default function ResultPage() {
                     </div>
                   </div>
                   
+                  <div className="bg-gray-50 rounded-xl p-4 text-center">
+                    <div className="text-2xl mb-2">
+                      {result.provider === 'inaturalist' ? '🌿' : 
+                       result.provider === 'plantid' ? '🌱' : 
+                       result.provider === 'gcv' ? '🔍' : 
+                       result.provider === 'local' ? '🏠' : '🤖'}
+                    </div>
+                    <div className="text-sm text-gray-500">AI Engine</div>
+                    <div className="font-semibold text-gray-800">
+                      {result.provider === 'inaturalist' ? 'iNaturalist' : 
+                       result.provider === 'plantid' ? 'Plant.id' : 
+                       result.provider === 'gcv' ? 'Google Vision' : 
+                       result.provider === 'local' ? 'Local AI' : 'AI'}
+                    </div>
+                  </div>
+                  
                   {facts?.summary && (
                     <div className="bg-blue-50 rounded-xl p-4">
                       <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">

@@ -4,6 +4,7 @@ import { validateEnv, recognizeRequestSchema } from '@/lib/validation';
 import { supabaseAdmin } from '@/lib/supabase';
 import { SpeciesResult, Category, Provider } from '@/types/species';
 import { colorNameToHex, getBadgeSubtype } from '@/lib/utils';
+import { iNaturalistAPI } from '@/lib/inaturalistAPI';
 
 // Simple in-memory rate limiting (TODO: use Redis in production)
 const rateLimitCounts = {
@@ -86,6 +87,27 @@ export async function POST(request: NextRequest) {
     console.log('🔍 User hint:', validatedHint);
     console.log('🎨 Dominant colors:', colors.map(c => c.color));
 
+    // Try iNaturalist identification first (highest accuracy)
+    console.log('🌿 Trying iNaturalist identification...');
+    let iNaturalistResult = null;
+    try {
+      const imageBufferForINaturalist = Buffer.from(imageBuffer);
+      iNaturalistResult = await iNaturalistAPI.getBestIdentification(imageBufferForINaturalist);
+      
+      if (iNaturalistResult) {
+        console.log('✅ iNaturalist result:', {
+          commonName: iNaturalistResult.commonName,
+          scientificName: iNaturalistResult.scientificName,
+          category: iNaturalistResult.category,
+          confidence: iNaturalistResult.confidence
+        });
+      } else {
+        console.log('❌ iNaturalist no result');
+      }
+    } catch (error) {
+      console.error('❌ iNaturalist error:', error);
+    }
+
     // Extract color chips
     const colorChips = colors
       .slice(0, 5)
@@ -120,7 +142,20 @@ export async function POST(request: NextRequest) {
 
     let speciesResult: SpeciesResult;
 
-    if ((hasPlantLabels || validatedHint === 'flower') && rateLimitCounts.plantid < env.PLANT_MAX_DAY) {
+    // Priority 1: Use iNaturalist result if available and confident
+    if (iNaturalistResult && iNaturalistResult.confidence > 0.5) {
+      console.log('🌿 Using iNaturalist result (high confidence)');
+      speciesResult = {
+        category: iNaturalistResult.category as Category,
+        canonicalName: iNaturalistResult.scientificName,
+        commonName: iNaturalistResult.commonName,
+        rank: 'species',
+        confidence: iNaturalistResult.confidence,
+        provider: 'inaturalist' as Provider,
+        ui: { colorChips },
+        details: iNaturalistResult.details
+      };
+    } else if ((hasPlantLabels || validatedHint === 'flower') && rateLimitCounts.plantid < env.PLANT_MAX_DAY) {
       console.log('🌱 Using PLANT.ID API engine');
       // Call Plant.id API
       try {
@@ -365,6 +400,29 @@ export async function POST(request: NextRequest) {
         provider: 'gcv',
         ui: { colorChips },
       };
+    }
+
+    // Fallback to iNaturalist if confidence is low and we haven't used it yet
+    if (speciesResult.confidence < 0.6 && (!iNaturalistResult || speciesResult.provider !== 'inaturalist')) {
+      console.log('🔄 Trying iNaturalist as fallback...');
+      try {
+        const fallbackResult = await iNaturalistAPI.getBestIdentification(Buffer.from(imageBuffer));
+        if (fallbackResult && fallbackResult.confidence > 0.3) {
+          console.log('✅ Using iNaturalist fallback result');
+          speciesResult = {
+            category: fallbackResult.category as Category,
+            canonicalName: fallbackResult.scientificName,
+            commonName: fallbackResult.commonName,
+            rank: 'species',
+            confidence: fallbackResult.confidence,
+            provider: 'inaturalist' as Provider,
+            ui: { colorChips },
+            details: fallbackResult.details
+          };
+        }
+      } catch (error) {
+        console.error('❌ iNaturalist fallback error:', error);
+      }
     }
 
     // Check confidence threshold

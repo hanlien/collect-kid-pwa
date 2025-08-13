@@ -1,5 +1,5 @@
 export type Category = 'flower' | 'bug' | 'animal';
-export type Provider = 'plantid' | 'gcv' | 'local';
+export type Provider = 'plantid' | 'gcv' | 'local' | 'inaturalist';
 
 export type SpeciesResult = {
   category: Category;
@@ -17,6 +17,13 @@ export type SpeciesResult = {
     reasoning?: string;
     topK?: Array<{ labelId: string; prob: number }>;
     inferenceTime?: number;
+  };
+  details?: {
+    taxonId?: number;
+    rank?: string;
+    iconicTaxon?: string;
+    visionScore?: number;
+    frequencyScore?: number;
   };
   safety?: {
     dangerous?: boolean;
