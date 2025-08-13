@@ -154,23 +154,32 @@ export default function ResultPage() {
   const handleCollect = async () => {
     if (!result) return;
 
+    console.log('Starting collection process...');
+    console.log('Result to collect:', result);
+
     try {
       setIsCollecting(true);
 
       // Use profile manager instead of simple user ID
       const profileManager = ProfileManager.getInstance();
       const currentProfile = profileManager.getCurrentProfile();
+      console.log('Current profile for collection:', currentProfile);
+
+      const requestBody = {
+        userId: currentProfile.id,
+        result: result,
+      };
+      console.log('Sending collect request:', requestBody);
 
       const response = await fetch('/api/collect', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId: currentProfile.id,
-          result: result,
-        }),
+        body: JSON.stringify(requestBody),
       });
+
+      console.log('Collect response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();

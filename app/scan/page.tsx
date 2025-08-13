@@ -173,15 +173,18 @@ export default function ScanPage() {
       setStream(mediaStream);
       setCameraActive(true);
       
+      console.log('Setting up video element...');
       // Set up video element with better error handling
       if (videoRef.current) {
         const video = videoRef.current;
         
         // Clear any existing srcObject
         video.srcObject = null;
+        console.log('Cleared existing srcObject');
         
         // Set the new stream
         video.srcObject = mediaStream;
+        console.log('Set new srcObject:', mediaStream);
         
         // Wait for metadata to load
         video.onloadedmetadata = () => {
@@ -221,6 +224,16 @@ export default function ScanPage() {
         video.onloadstart = () => console.log('Video loading started');
         video.oncanplay = () => console.log('Video can play');
         video.onplaying = () => console.log('Video is playing');
+        
+        // Force a small delay to ensure video element is ready
+        setTimeout(() => {
+          if (video.srcObject !== mediaStream) {
+            console.log('Re-applying stream to video element');
+            video.srcObject = mediaStream;
+          }
+        }, 100);
+      } else {
+        console.error('Video ref is null!');
       }
     } catch (error) {
       console.error('Camera access failed:', error);

@@ -6,12 +6,17 @@ import ProfileManager from '@/lib/profileManager';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Collect API called');
     const body = await request.json();
+    console.log('Request body:', body);
+    
     const { userId, result: speciesResult } = collectRequestSchema.parse(body);
+    console.log('Parsed request:', { userId, speciesResult });
 
     // Use ProfileManager to check if this is a new species
     const profileManager = ProfileManager.getInstance();
     const currentProfile = profileManager.getCurrentProfile();
+    console.log('Current profile:', currentProfile);
     
     // Check if this is a new species for this profile
     const existingCaptures = profileManager.getCaptures();
