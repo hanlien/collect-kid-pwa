@@ -21,6 +21,27 @@ export default function BookPage() {
     loadCollection();
   }, []);
 
+  // Refresh collection when page becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadCollection();
+      }
+    };
+
+    const handleFocus = () => {
+      loadCollection();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   const loadCollection = async () => {
     try {
       const profileManager = ProfileManager.getInstance();
@@ -164,12 +185,12 @@ export default function BookPage() {
       </div>
 
       {/* Badges Section */}
-      {filteredBadges.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-yellow-500" />
-            Badges
-          </h2>
+      <div className="mb-6">
+        <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <Trophy className="w-5 h-5 text-yellow-500" />
+          Badges ({filteredBadges.length})
+        </h2>
+        {filteredBadges.length > 0 ? (
           <div className="grid grid-cols-3 gap-4">
             {filteredBadges.map((badge) => (
               <div key={badge.id} className="text-center">
@@ -181,11 +202,20 @@ export default function BookPage() {
                 <div className="text-xs text-gray-600 capitalize">
                   {badge.subtype}
                 </div>
+                <div className="text-xs text-gray-400">
+                  Level {badge.level}
+                </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="text-center py-8 bg-gray-50 rounded-lg">
+            <div className="text-4xl mb-2">🏆</div>
+            <p className="text-sm text-gray-600">No badges earned yet!</p>
+            <p className="text-xs text-gray-500">Scan new species to earn badges</p>
+          </div>
+        )}
+      </div>
 
       {/* Captures Grid */}
       <div className="flex-1">

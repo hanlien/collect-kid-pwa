@@ -72,7 +72,14 @@ export default function ScanPage() {
   // Ensure video plays when camera becomes active
   useEffect(() => {
     if (cameraActive && videoRef.current && stream) {
-      videoRef.current.play().catch(console.error);
+      const video = videoRef.current;
+      
+      // Add a small delay to ensure everything is set up
+      setTimeout(() => {
+        if (video.readyState >= 2) { // HAVE_CURRENT_DATA
+          video.play().catch(console.error);
+        }
+      }, 100);
     }
   }, [cameraActive, stream]);
 
@@ -105,34 +112,142 @@ export default function ScanPage() {
     refreshProfileData();
   }, [pathname]);
 
-  // Initialize camera
+  // Initialize camera with better error handling and fallbacks
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+      // First, try to get available video devices
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      
+      console.log('Available video devices:', videoDevices);
+      
+      // Try different camera configurations
+      const cameraConfigs = [
+        // Try back camera first (environment)
+        {
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 },
+            frameRate: { ideal: 30, min: 15 }
+          }
+        },
+        // Fallback to any camera
+        {
+          video: {
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 },
+            frameRate: { ideal: 30, min: 15 }
+          }
+        },
+        // Minimal requirements
+        {
+          video: {
+            width: { min: 320 },
+            height: { min: 240 }
+          }
         }
-      });
+      ];
+
+      let mediaStream = null;
+      let lastError = null;
+
+      // Try each configuration until one works
+      for (const config of cameraConfigs) {
+        try {
+          console.log('Trying camera config:', config);
+          mediaStream = await navigator.mediaDevices.getUserMedia(config);
+          console.log('Camera started successfully with config:', config);
+          break;
+        } catch (error) {
+          console.log('Camera config failed:', config, error);
+          lastError = error;
+          continue;
+        }
+      }
+
+      if (!mediaStream) {
+        throw lastError || new Error('No camera configuration worked');
+      }
+
       setStream(mediaStream);
       setCameraActive(true);
       
-      // Wait for video element to be ready
+      // Set up video element with better error handling
       if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.onloadedmetadata = () => {
-          if (videoRef.current) {
-            videoRef.current.play().catch(console.error);
+        const video = videoRef.current;
+        
+        // Clear any existing srcObject
+        video.srcObject = null;
+        
+        // Set the new stream
+        video.srcObject = mediaStream;
+        
+        // Wait for metadata to load
+        video.onloadedmetadata = () => {
+          console.log('Video metadata loaded:', {
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight,
+            readyState: video.readyState
+          });
+          
+          // Ensure video plays
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                console.log('Video playing successfully');
+              })
+              .catch((error) => {
+                console.error('Video play failed:', error);
+                // Try again after a short delay
+                setTimeout(() => {
+                  video.play().catch(console.error);
+                }, 100);
+              });
           }
         };
-        // Also try to play immediately
-        videoRef.current.play().catch(console.error);
+
+        // Handle video errors
+        video.onerror = (error) => {
+          console.error('Video error:', error);
+          setToast({
+            message: 'Camera video error. Please try again.',
+            type: 'error',
+          });
+        };
+
+        // Handle video loading
+        video.onloadstart = () => console.log('Video loading started');
+        video.oncanplay = () => console.log('Video can play');
+        video.onplaying = () => console.log('Video is playing');
       }
     } catch (error) {
-      console.error('Camera access denied:', error);
+      console.error('Camera access failed:', error);
+      
+      let errorMessage = 'Camera access required. Please allow camera permissions.';
+      
+      if (error instanceof DOMException) {
+        switch (error.name) {
+          case 'NotAllowedError':
+            errorMessage = 'Camera permission denied. Please allow camera access in your browser settings.';
+            break;
+          case 'NotFoundError':
+            errorMessage = 'No camera found. Please check your device has a camera.';
+            break;
+          case 'NotReadableError':
+            errorMessage = 'Camera is in use by another application. Please close other camera apps.';
+            break;
+          case 'OverconstrainedError':
+            errorMessage = 'Camera requirements not met. Please try again.';
+            break;
+          default:
+            errorMessage = `Camera error: ${error.message}`;
+        }
+      }
+      
       setToast({
-        message: 'Camera access required. Please allow camera permissions.',
+        message: errorMessage,
         type: 'error',
       });
     }
@@ -961,7 +1076,7 @@ export default function ScanPage() {
                   boxShadow: "0 10px 30px rgba(249, 115, 22, 0.4)"
                 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => router.push('/scan-local')}
+                onClick={() => router.push('/quest')}
                 animate={{
                   boxShadow: [
                     "0 5px 15px rgba(249, 115, 22, 0.3)",
