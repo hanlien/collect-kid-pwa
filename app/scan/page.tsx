@@ -844,30 +844,63 @@ export default function ScanPage() {
             onError={(e) => console.error('Video error:', e)}
           />
           
-          {/* Camera overlay */}
-          <div className="absolute inset-0 bg-black/20">
-            {/* Top controls */}
-            <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center">
-              <motion.button
-                className="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => {
-                  stopCamera();
-                  router.push('/scan');
-                }}
-              >
-                <X className="w-5 h-5 text-white" />
-              </motion.button>
-              
-              <div className="flex items-center space-x-4">
-                <div className="bg-black/50 rounded-full px-4 py-2">
-                  <span className="text-white text-sm font-medium">Level {userData.level}</span>
-                </div>
-                <div className="bg-black/50 rounded-full px-4 py-2">
-                  <span className="text-white text-sm font-medium">👦 Brandon</span>
+          {/* Modern Tech Camera Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/40">
+            {/* Top Tech Bar */}
+            <div className="absolute top-0 left-0 right-0 p-6">
+              <div className="flex justify-between items-center">
+                <motion.button
+                  className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg"
+                  whileHover={{ scale: 1.1, boxShadow: "0 0 20px rgba(239, 68, 68, 0.5)" }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => {
+                    stopCamera();
+                    router.push('/scan');
+                  }}
+                >
+                  <X className="w-6 h-6 text-white" />
+                </motion.button>
+                
+                <div className="flex items-center space-x-3">
+                  <motion.div 
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-full px-4 py-2 shadow-lg"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <span className="text-white text-sm font-bold">LEVEL {userData.level}</span>
+                  </motion.div>
+                  <motion.div 
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-full px-4 py-2 shadow-lg"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <span className="text-white text-sm font-bold">👦 BRANDON</span>
+                  </motion.div>
                 </div>
               </div>
+            </div>
+
+            {/* Tech Status Indicators */}
+            <div className="absolute top-20 left-6 space-y-2">
+              <motion.div 
+                className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-cyan-500/30"
+                animate={{ borderColor: ['rgba(34, 211, 238, 0.3)', 'rgba(34, 211, 238, 0.8)', 'rgba(34, 211, 238, 0.3)'] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+                  <span className="text-cyan-400 text-xs font-bold">CAMERA ACTIVE</span>
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-purple-500/30"
+                animate={{ borderColor: ['rgba(168, 85, 247, 0.3)', 'rgba(168, 85, 247, 0.8)', 'rgba(168, 85, 247, 0.3)'] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                  <span className="text-purple-400 text-xs font-bold">AI READY</span>
+                </div>
+              </motion.div>
             </div>
 
             {/* Scanning overlay */}
@@ -875,21 +908,39 @@ export default function ScanPage() {
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
                   <motion.div
-                    className="w-32 h-32 border-4 border-white/30 rounded-full flex items-center justify-center mb-4"
-                    animate={{
-                      scale: [1, 1.2, 1],
-                      borderColor: ['rgba(255,255,255,0.3)', 'rgba(74,222,128,0.8)', 'rgba(255,255,255,0.3)'],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
+                    className="relative w-40 h-40"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                   >
-                    <Search className="w-12 h-12 text-white" />
+                    {/* Outer scanning ring */}
+                    <div className="absolute inset-0 border-4 border-cyan-500/50 rounded-full"></div>
+                    
+                    {/* Middle scanning ring */}
+                    <div className="absolute inset-4 border-4 border-purple-500/50 rounded-full animate-pulse"></div>
+                    
+                    {/* Inner scanning ring */}
+                    <div className="absolute inset-8 border-4 border-pink-500/50 rounded-full animate-ping"></div>
+                    
+                    {/* Center icon */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.2, 1],
+                          rotate: [0, -360]
+                        }}
+                        transition={{ 
+                          duration: 2, 
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      >
+                        <Search className="w-12 h-12 text-white drop-shadow-lg" />
+                      </motion.div>
+                    </div>
                   </motion.div>
+                  
                   <motion.p
-                    className="text-white text-lg font-medium"
+                    className="text-white text-xl font-bold mt-6 drop-shadow-lg"
                     key={scanningText}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -897,6 +948,25 @@ export default function ScanPage() {
                   >
                     {scanningText}
                   </motion.p>
+                  
+                  {/* Progress dots */}
+                  <div className="flex justify-center space-x-2 mt-4">
+                    <motion.div
+                      className="w-3 h-3 bg-cyan-400 rounded-full"
+                      animate={{ scale: [1, 1.5, 1] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                    />
+                    <motion.div
+                      className="w-3 h-3 bg-purple-400 rounded-full"
+                      animate={{ scale: [1, 1.5, 1] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                    />
+                    <motion.div
+                      className="w-3 h-3 bg-pink-400 rounded-full"
+                      animate={{ scale: [1, 1.5, 1] }}
+                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -1079,60 +1149,96 @@ export default function ScanPage() {
               </motion.p>
             </motion.div>
 
-            {/* Camera button */}
+            {/* Modern Tech Camera Button */}
             <motion.div
               className="relative mb-8"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ duration: 0.6, delay: 0.4, type: "spring", stiffness: 200 }}
             >
-              {/* Glowing ring around camera button */}
+              {/* Tech scanning rings */}
               <motion.div
                 className="absolute inset-0 rounded-full"
-                animate={{
-                  boxShadow: [
-                    "0 0 30px rgba(255, 255, 255, 0.3)",
-                    "0 0 50px rgba(255, 255, 255, 0.6)",
-                    "0 0 30px rgba(255, 255, 255, 0.3)"
-                  ]
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
+                animate={{ rotate: 360 }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+              >
+                <div className="w-full h-full border-4 border-cyan-500/30 rounded-full"></div>
+              </motion.div>
+              
+              <motion.div
+                className="absolute inset-4 rounded-full"
+                animate={{ rotate: -360 }}
+                transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+              >
+                <div className="w-full h-full border-4 border-purple-500/40 rounded-full"></div>
+              </motion.div>
+              
+              <motion.div
+                className="absolute inset-8 rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+              >
+                <div className="w-full h-full border-4 border-pink-500/50 rounded-full"></div>
+              </motion.div>
               
               <motion.button
-                className={`w-36 h-36 rounded-full bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 shadow-2xl flex items-center justify-center ${
+                className={`w-36 h-36 rounded-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 shadow-2xl flex items-center justify-center border-4 border-cyan-500/50 ${
                   isScanning ? 'animate-pulse' : ''
                 }`}
                 onClick={handleCameraClick}
                 disabled={isScanning}
                 whileHover={{ 
                   scale: 1.1,
-                  rotate: 5,
-                  boxShadow: "0 25px 80px rgba(255, 255, 255, 0.4)"
+                  boxShadow: "0 25px 80px rgba(34, 211, 238, 0.4)"
                 }}
                 whileTap={{ scale: 0.95 }}
                 animate={{
                   boxShadow: [
-                    "0 20px 60px rgba(255, 255, 255, 0.2)",
-                    "0 20px 60px rgba(255, 255, 255, 0.4)",
-                    "0 20px 60px rgba(255, 255, 255, 0.2)"
+                    "0 20px 60px rgba(34, 211, 238, 0.2)",
+                    "0 20px 60px rgba(34, 211, 238, 0.4)",
+                    "0 20px 60px rgba(34, 211, 238, 0.2)"
                   ],
-                  y: [0, -5, 0]
+                  borderColor: [
+                    "rgba(34, 211, 238, 0.5)",
+                    "rgba(168, 85, 247, 0.8)",
+                    "rgba(236, 72, 153, 0.8)",
+                    "rgba(34, 211, 238, 0.5)"
+                  ]
                 }}
                 transition={{ 
                   duration: 3, 
                   repeat: Infinity, 
                   ease: "easeInOut",
-                  boxShadow: { duration: 2, repeat: Infinity }
+                  boxShadow: { duration: 2, repeat: Infinity },
+                  borderColor: { duration: 4, repeat: Infinity }
                 }}
               >
                 <motion.div
-                  animate={{ rotate: [0, 360] }}
-                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    rotate: [0, 360]
+                  }}
+                  transition={{ 
+                    duration: 3, 
+                    repeat: Infinity, 
+                    ease: "easeInOut",
+                    rotate: { duration: 4, repeat: Infinity, ease: "linear" }
+                  }}
                 >
-                  <Camera className="w-16 h-16 text-white drop-shadow-lg" />
+                  <Camera className="w-16 h-16 text-cyan-400 drop-shadow-lg" />
                 </motion.div>
               </motion.button>
+              
+              {/* Tech label */}
+              <motion.div
+                className="absolute -bottom-8 left-1/2 transform -translate-x-1/2"
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <span className="text-cyan-400 text-sm font-bold bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full border border-cyan-500/30">
+                  AI SCANNER
+                </span>
+              </motion.div>
             </motion.div>
 
             {/* Action buttons */}
@@ -1190,18 +1296,109 @@ export default function ScanPage() {
 
             </motion.div>
 
-            {/* Progress indicator */}
+            {/* Modern Tech-like Scanning UI */}
             {isScanning && (
               <motion.div
-                className="mt-8"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
               >
-                <ProgressRing progress={75} size={80} />
-                <p className="text-center mt-4 text-gray-600 font-medium">
-                  Analyzing your photo...
-                </p>
+                <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-3xl p-8 max-w-md w-full mx-4 border border-purple-500/20 shadow-2xl">
+                  {/* Scanning Ring */}
+                  <div className="flex justify-center mb-6">
+                    <div className="relative">
+                      {/* Outer ring */}
+                      <div className="w-32 h-32 rounded-full border-4 border-purple-500/30 animate-pulse"></div>
+                      
+                      {/* Middle ring */}
+                      <div className="absolute inset-2 w-28 h-28 rounded-full border-4 border-blue-500/50 animate-spin" style={{ animationDuration: '3s' }}></div>
+                      
+                      {/* Inner ring */}
+                      <div className="absolute inset-4 w-24 h-24 rounded-full border-4 border-cyan-500/70 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }}></div>
+                      
+                      {/* Center icon */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <motion.div
+                          animate={{ 
+                            scale: [1, 1.2, 1],
+                            rotate: [0, 360]
+                          }}
+                          transition={{ 
+                            duration: 2, 
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                        >
+                          <Cpu className="w-8 h-8 text-cyan-400" />
+                        </motion.div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mb-6">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-cyan-400 text-sm font-medium">AI Analysis</span>
+                      <span className="text-purple-400 text-sm font-bold">75%</span>
+                    </div>
+                    <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: "75%" }}
+                        transition={{ duration: 2, ease: "easeOut" }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Scanning Text */}
+                  <motion.div
+                    className="text-center"
+                    key={scanningText}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <p className="text-white font-semibold text-lg mb-2">
+                      {scanningText}
+                    </p>
+                    <div className="flex justify-center space-x-1">
+                      <motion.div
+                        className="w-2 h-2 bg-cyan-400 rounded-full"
+                        animate={{ scale: [1, 1.5, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                      />
+                      <motion.div
+                        className="w-2 h-2 bg-purple-400 rounded-full"
+                        animate={{ scale: [1, 1.5, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                      />
+                      <motion.div
+                        className="w-2 h-2 bg-pink-400 rounded-full"
+                        animate={{ scale: [1, 1.5, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* Tech Details */}
+                  <div className="mt-6 grid grid-cols-3 gap-4 text-center">
+                    <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                      <div className="text-cyan-400 text-xs font-medium">VISION</div>
+                      <div className="text-white text-sm font-bold">Active</div>
+                    </div>
+                    <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                      <div className="text-purple-400 text-xs font-medium">ML</div>
+                      <div className="text-white text-sm font-bold">Processing</div>
+                    </div>
+                    <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                      <div className="text-pink-400 text-xs font-medium">API</div>
+                      <div className="text-white text-sm font-bold">Connected</div>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
           </main>
