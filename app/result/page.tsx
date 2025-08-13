@@ -195,7 +195,19 @@ export default function ResultPage() {
         
         console.log('About to update profile with data:', data);
         
-        // Update profile data using ProfileManager
+        // Save capture to ProfileManager
+        if (data.capture) {
+          console.log('Saving capture to ProfileManager:', data.capture);
+          profileManager.addCapture(data.capture);
+        }
+        
+        // Save badge to ProfileManager
+        if (data.badge) {
+          console.log('Saving badge to ProfileManager:', data.badge);
+          profileManager.addBadge(data.badge);
+        }
+        
+        // Update profile stats
         profileManager.updateProfile(currentProfile.id, {
           coins: data.newTotalCoins,
           level: data.newLevel,

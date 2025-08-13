@@ -91,16 +91,8 @@ export async function POST(request: NextRequest) {
       console.log('All badges after creation:', allBadges);
     }
 
-    // Update profile stats
-    profileManager.updateProfile(currentProfile.id, {
-      coins: newCoins,
-      level: newLevel,
-      totalCaptures: newTotalCaptures,
-      uniqueSpeciesCount: newUniqueSpeciesCount,
-    });
-
-    // Add capture to profile collection
-    const newCapture = profileManager.addCapture({
+    // Create capture data (don't save to ProfileManager on server)
+    const newCapture = {
       category: speciesResult.category,
       provider: speciesResult.provider,
       canonicalName: speciesResult.canonicalName,
@@ -116,11 +108,20 @@ export async function POST(request: NextRequest) {
       coinsEarned: coinsEarned,
       isNewSpecies: isNewSpecies,
       capturedImageUrl: speciesResult.capturedImageUrl,
-    });
+    };
+
+    // Create badge data (don't save to ProfileManager on server)
+    const badgeData = isNewSpecies ? {
+      category: speciesResult.category,
+      subtype: badgeSubtype,
+      level: getBadgeLevel(1),
+      count: 1,
+      nextGoal: 3,
+    } : null;
 
     return NextResponse.json({
       capture: newCapture,
-      badge,
+      badge: badgeData,
       leveledUp,
       coinsEarned,
       isNewSpecies,
