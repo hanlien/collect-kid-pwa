@@ -7,6 +7,7 @@ import BigButton from '@/components/BigButton';
 import Badge from '@/components/Badge';
 import ProfileManager from '@/lib/profileManager';
 import { Capture, Badge as BadgeType } from '@/types/profile';
+import { ALL_BADGES, getAllBadgesForCategory, getBadgeDefinition } from '@/lib/badgeDefinitions';
 
 type TabType = 'animals' | 'bugs' | 'flowers';
 
@@ -98,11 +99,32 @@ export default function BookPage() {
     return false;
   });
 
-  const filteredBadges = badges.filter(badge => {
+  // Get all possible badges for the current category
+  const allPossibleBadges = getAllBadgesForCategory(activeTab === 'animals' ? 'animal' : activeTab === 'bugs' ? 'bug' : 'flower');
+  
+  // Get user's earned badges for this category
+  const userBadges = badges.filter(badge => {
     if (activeTab === 'animals') return badge.category === 'animal';
     if (activeTab === 'bugs') return badge.category === 'bug';
     if (activeTab === 'flowers') return badge.category === 'flower';
     return false;
+  });
+
+  // Create a map of earned badges for quick lookup
+  const earnedBadgesMap = new Map();
+  userBadges.forEach(badge => {
+    earnedBadgesMap.set(`${badge.category}-${badge.subtype}`, badge);
+  });
+
+  // Combine all possible badges with earned status
+  const filteredBadges = allPossibleBadges.map(badgeDef => {
+    const earnedBadge = earnedBadgesMap.get(`${badgeDef.category}-${badgeDef.subtype}`);
+    return {
+      ...badgeDef,
+      isEarned: !!earnedBadge,
+      earnedLevel: earnedBadge?.level || 0,
+      earnedCount: earnedBadge?.count || 0,
+    };
   });
 
   const tabs: { id: TabType; label: string; emoji: string }[] = [
@@ -171,13 +193,13 @@ export default function BookPage() {
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-secondary-600">
-              {filteredBadges.length}
+              {filteredBadges.filter(b => b.isEarned).length}
             </div>
             <div className="text-sm text-gray-600">Badges</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-yellow-600">
-              {filteredBadges.filter(b => b.level === 3).length}
+              {filteredBadges.filter(b => b.isEarned && b.earnedLevel === 3).length}
             </div>
             <div className="text-sm text-gray-600">Gold</div>
           </div>
@@ -188,33 +210,32 @@ export default function BookPage() {
       <div className="mb-6">
         <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
           <Trophy className="w-5 h-5 text-yellow-500" />
-          Badges ({filteredBadges.length})
+          Badges ({filteredBadges.filter(b => b.isEarned).length}/{filteredBadges.length})
         </h2>
-        {filteredBadges.length > 0 ? (
-          <div className="grid grid-cols-3 gap-4">
-            {filteredBadges.map((badge) => (
-              <div key={badge.id} className="text-center">
+        <div className="grid grid-cols-3 gap-4">
+          {filteredBadges.map((badge) => (
+            <div key={badge.id} className={`text-center ${!badge.isEarned ? 'opacity-50' : ''}`}>
+              <div className={`relative ${!badge.isEarned ? 'grayscale' : ''}`}>
                 <Badge
-                  level={badge.level}
-                  count={badge.count}
+                  level={badge.isEarned ? badge.earnedLevel : 1}
+                  count={badge.earnedCount}
                   className="mx-auto mb-2"
                 />
-                <div className="text-xs text-gray-600 capitalize">
-                  {badge.subtype}
-                </div>
-                <div className="text-xs text-gray-400">
-                  Level {badge.level}
-                </div>
+                {!badge.isEarned && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-2xl">🔒</div>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 bg-gray-50 rounded-lg">
-            <div className="text-4xl mb-2">🏆</div>
-            <p className="text-sm text-gray-600">No badges earned yet!</p>
-            <p className="text-xs text-gray-500">Scan new species to earn badges</p>
-          </div>
-        )}
+              <div className={`text-xs capitalize ${badge.isEarned ? 'text-gray-600' : 'text-gray-400'}`}>
+                {badge.name}
+              </div>
+              <div className={`text-xs ${badge.isEarned ? 'text-gray-400' : 'text-gray-300'}`}>
+                {badge.isEarned ? `Level ${badge.earnedLevel}` : 'Locked'}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Captures Grid */}

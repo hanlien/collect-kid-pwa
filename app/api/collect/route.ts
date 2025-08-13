@@ -41,18 +41,26 @@ export async function POST(request: NextRequest) {
 
     // Check if badge already exists for this species
     const existingBadges = profileManager.getBadges();
+    const badgeSubtype = getBadgeSubtype([speciesResult.commonName, speciesResult.canonicalName], speciesResult.category);
     const existingBadge = existingBadges.find(b => 
       b.category === speciesResult.category && 
-      b.subtype === getBadgeSubtype([speciesResult.commonName, speciesResult.canonicalName], speciesResult.category)
+      b.subtype === badgeSubtype
     );
+
+    console.log('Badge check:', {
+      category: speciesResult.category,
+      badgeSubtype,
+      existingBadges: existingBadges.length,
+      existingBadge: !!existingBadge,
+      isNewSpecies
+    });
 
     let badge: any = null;
     let leveledUp = false;
     let achievements: any[] = [];
 
-    // Only create badge if it's a new species AND badge doesn't exist
-    if (isNewSpecies && !existingBadge) {
-      const badgeSubtype = getBadgeSubtype([speciesResult.commonName, speciesResult.canonicalName], speciesResult.category);
+    // Create badge for new species (since we already checked it's new above)
+    if (isNewSpecies) {
       const badgeLevel = getBadgeLevel(1); // Level 1 for first capture
       
       badge = profileManager.addBadge({
@@ -62,6 +70,8 @@ export async function POST(request: NextRequest) {
         count: 1,
         nextGoal: 3, // Next goal is 3 for level 2
       });
+      
+      console.log('Created new badge:', badge);
     }
 
     // Update profile stats

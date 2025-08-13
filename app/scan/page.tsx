@@ -1068,27 +1068,7 @@ export default function ScanPage() {
                 <span className="text-lg font-bold">Quests</span>
               </motion.button>
 
-              <motion.button
-                className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl p-4 shadow-lg flex items-center justify-center space-x-3 backdrop-blur-sm"
-                whileHover={{ 
-                  scale: 1.05, 
-                  y: -2,
-                  boxShadow: "0 10px 30px rgba(249, 115, 22, 0.4)"
-                }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => router.push('/quest')}
-                animate={{
-                  boxShadow: [
-                    "0 5px 15px rgba(249, 115, 22, 0.3)",
-                    "0 10px 25px rgba(249, 115, 22, 0.5)",
-                    "0 5px 15px rgba(249, 115, 22, 0.3)"
-                  ]
-                }}
-                transition={{ duration: 2, repeat: Infinity, delay: 0.7 }}
-              >
-                <Cpu className="w-6 h-6" />
-                <span className="text-lg font-bold">Local AI</span>
-              </motion.button>
+
             </motion.div>
 
             {/* Progress indicator */}
