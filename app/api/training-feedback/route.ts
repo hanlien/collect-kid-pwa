@@ -12,7 +12,7 @@ const trainingFeedbackSchema = z.object({
     provider: z.string().optional(),
   }),
   isCorrect: z.boolean(),
-  correction: z.string().optional(),
+  correction: z.string().optional().nullable(),
   timestamp: z.string(),
 });
 
@@ -83,19 +83,34 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Training feedback error:', error);
     
-    // Fallback: Store in memory for now (will be lost on restart)
-    console.log('⚠️ Supabase unavailable, storing feedback in memory:', {
-      imageUrl: feedback.imageUrl,
-      originalResult: feedback.originalResult,
-      isCorrect: feedback.isCorrect,
-      correction: feedback.correction,
-      timestamp: feedback.timestamp,
-    });
+    // Check if it's a validation error
+    if (error instanceof Error && error.message.includes('ZodError')) {
+      return NextResponse.json({
+        error: 'Invalid feedback data format',
+        details: error.message
+      }, { status: 400 });
+    }
     
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Training feedback received (stored locally)',
-      warning: 'Database unavailable, feedback stored in memory only'
-    });
+    // Fallback: Store in memory for now (will be lost on restart)
+    if (feedback) {
+      console.log('⚠️ Supabase unavailable, storing feedback in memory:', {
+        imageUrl: feedback.imageUrl,
+        originalResult: feedback.originalResult,
+        isCorrect: feedback.isCorrect,
+        correction: feedback.correction,
+        timestamp: feedback.timestamp,
+      });
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Training feedback received (stored locally)',
+        warning: 'Database unavailable, feedback stored in memory only'
+      });
+    }
+    
+    return NextResponse.json({
+      error: 'Failed to process training feedback',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

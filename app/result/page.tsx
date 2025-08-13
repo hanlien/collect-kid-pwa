@@ -131,7 +131,7 @@ export default function ResultPage() {
             confidence: result.confidence,
           },
           isCorrect,
-          correction: correction || null,
+          correction: correction || undefined,
           timestamp: new Date().toISOString(),
         }),
       });
