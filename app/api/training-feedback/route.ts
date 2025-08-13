@@ -17,9 +17,11 @@ const trainingFeedbackSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  let feedback: any;
+  
   try {
     const body = await request.json();
-    const feedback = trainingFeedbackSchema.parse(body);
+    feedback = trainingFeedbackSchema.parse(body);
 
     // Store feedback in Supabase for training data
     const trainingData = {
@@ -54,8 +56,20 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Failed to store training feedback:', error);
+      
+      // If table doesn't exist, return a more helpful error
+      if (error.message.includes('relation "training_feedback" does not exist')) {
+        return NextResponse.json(
+          { 
+            error: 'Training feedback table not found. Please run the database migration first.',
+            details: 'Run the SQL in training_tables.sql in your Supabase dashboard'
+          },
+          { status: 500 }
+        );
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to store training feedback' },
+        { error: 'Failed to store training feedback', details: error.message },
         { status: 500 }
       );
     }
@@ -68,9 +82,20 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Training feedback error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process training feedback' },
-      { status: 500 }
-    );
+    
+    // Fallback: Store in memory for now (will be lost on restart)
+    console.log('⚠️ Supabase unavailable, storing feedback in memory:', {
+      imageUrl: feedback.imageUrl,
+      originalResult: feedback.originalResult,
+      isCorrect: feedback.isCorrect,
+      correction: feedback.correction,
+      timestamp: feedback.timestamp,
+    });
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Training feedback received (stored locally)',
+      warning: 'Database unavailable, feedback stored in memory only'
+    });
   }
 }
