@@ -63,6 +63,14 @@ export async function POST(request: NextRequest) {
     if (isNewSpecies) {
       const badgeLevel = getBadgeLevel(1); // Level 1 for first capture
       
+      console.log('Creating badge with data:', {
+        category: speciesResult.category,
+        subtype: badgeSubtype,
+        level: badgeLevel,
+        count: 1,
+        nextGoal: 3
+      });
+      
       badge = profileManager.addBadge({
         category: speciesResult.category,
         subtype: badgeSubtype,
@@ -72,6 +80,10 @@ export async function POST(request: NextRequest) {
       });
       
       console.log('Created new badge:', badge);
+      
+      // Verify badge was saved
+      const allBadges = profileManager.getBadges();
+      console.log('All badges after creation:', allBadges);
     }
 
     // Update profile stats

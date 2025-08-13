@@ -26,13 +26,19 @@ export default function BookPage() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
+        console.log('Page became visible, refreshing collection...');
         loadCollection();
       }
     };
 
     const handleFocus = () => {
+      console.log('Window focused, refreshing collection...');
       loadCollection();
     };
+
+    // Also refresh when the page loads
+    console.log('Book page loaded, refreshing collection...');
+    loadCollection();
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleFocus);
@@ -45,10 +51,14 @@ export default function BookPage() {
 
   const loadCollection = async () => {
     try {
+      console.log('Loading collection...');
       const profileManager = ProfileManager.getInstance();
       const currentProfile = profileManager.getCurrentProfile();
       
+      console.log('Current profile:', currentProfile);
+      
       if (!currentProfile) {
+        console.log('No current profile found');
         setIsLoading(false);
         return;
       }
@@ -56,6 +66,9 @@ export default function BookPage() {
       // Load captures and badges from profile
       const profileCaptures = profileManager.getCaptures();
       const profileBadges = profileManager.getBadges();
+
+      console.log('Profile captures:', profileCaptures);
+      console.log('Profile badges:', profileBadges);
 
       setCaptures(profileCaptures);
       setBadges(profileBadges);
