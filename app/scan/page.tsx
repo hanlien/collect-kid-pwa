@@ -297,20 +297,24 @@ export default function ScanPage() {
 
   const processImage = async (file: File) => {
     try {
+      console.log('Starting image processing...');
       setIsScanning(true);
       setShowScanRing(true);
 
       // Create a data URL for the original image
       const imageUrl = URL.createObjectURL(file);
+      console.log('Created image URL:', imageUrl);
 
       // Downscale image
       const processedImage = await downscaleImage(file, 1024);
+      console.log('Image downscaled');
 
       // Create FormData
       const formData = new FormData();
       formData.append('image', processedImage, 'image.jpg');
       formData.append('hint', 'auto');
 
+      console.log('Sending to /api/recognize...');
       // Call recognition API
       const response = await fetch('/api/recognize', {
         method: 'POST',
@@ -318,6 +322,7 @@ export default function ScanPage() {
       });
 
       const data = await response.json();
+      console.log('Recognition response:', data);
 
       if (!response.ok) {
         if (data.error === 'LOW_CONFIDENCE') {
@@ -348,6 +353,7 @@ export default function ScanPage() {
         ...data.result,
         capturedImageUrl: imageUrl, // Add the captured image URL
       };
+      console.log('Navigating to result page with result:', result);
       router.push(`/result?data=${encodeURIComponent(JSON.stringify(result))}`);
     } catch (error) {
       console.error('Scan error:', error);
@@ -728,6 +734,10 @@ export default function ScanPage() {
             playsInline
             muted
             className="w-full h-full object-cover"
+            onLoadedMetadata={() => console.log('Video metadata loaded')}
+            onCanPlay={() => console.log('Video can play')}
+            onPlaying={() => console.log('Video is playing')}
+            onError={(e) => console.error('Video error:', e)}
           />
           
           {/* Camera overlay */}
