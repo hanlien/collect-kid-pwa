@@ -464,13 +464,13 @@ export default function ScanPage() {
         </motion.div>
 
         {/* House in Background */}
-        <div className="absolute bottom-20 left-8 w-16 h-12">
+        <div className="absolute bottom-20 left-8 w-16 h-12 z-10">
           {/* House body */}
           <div className="absolute bottom-0 w-full h-8 bg-gray-600 rounded-t-lg" />
           {/* Roof */}
           <div className="absolute top-0 left-0 right-0 h-4 bg-red-500 transform -skew-x-12" />
           {/* Door */}
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-4 bg-brown-600 rounded-t" />
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-4 bg-amber-800 rounded-t" />
           {/* Windows */}
           <div className="absolute top-2 left-2 w-2 h-2 bg-blue-300 rounded" />
           <div className="absolute top-2 right-2 w-2 h-2 bg-blue-300 rounded" />
@@ -478,7 +478,7 @@ export default function ScanPage() {
 
         {/* Street Lights */}
         {[...Array(2)].map((_, i) => (
-          <div key={i} className="absolute bottom-0" style={{ left: `${25 + i * 50}%` }}>
+          <div key={i} className="absolute bottom-0 z-10" style={{ left: `${25 + i * 50}%` }}>
             {/* Pole */}
             <div className="w-1 h-16 bg-gray-700 mx-auto" />
             {/* Light */}
@@ -502,7 +502,7 @@ export default function ScanPage() {
         {[...Array(2)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute bottom-4 w-8 h-4"
+            className="absolute bottom-4 w-8 h-4 z-10"
             style={{ left: `${15 + i * 60}%` }}
             animate={{
               x: [0, 100, 0],
