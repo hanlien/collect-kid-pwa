@@ -447,8 +447,39 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check confidence threshold
+    // Check confidence threshold and queue for active learning if low
     if (speciesResult.confidence < 0.6) {
+      // Queue for active learning review
+      try {
+        const activeLearningResponse = await fetch(`${request.nextUrl.origin}/api/active-learning`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: userId || 'anonymous',
+            thumbUrl: speciesResult.capturedImageUrl,
+            providerSuggestion: {
+              provider: speciesResult.provider,
+              category: speciesResult.category,
+              canonicalName: speciesResult.canonicalName,
+              commonName: speciesResult.commonName,
+              confidence: speciesResult.confidence,
+            },
+            visionLabels: labels,
+            localModel: null, // Will be implemented later
+            hint: validatedHint,
+            locationHint: null, // Will be implemented with GPS later
+          }),
+        });
+
+        if (activeLearningResponse.ok) {
+          console.log('✅ Queued for active learning review');
+        }
+      } catch (error) {
+        console.error('❌ Failed to queue for active learning:', error);
+      }
+
       return NextResponse.json(
         {
           error: 'LOW_CONFIDENCE',

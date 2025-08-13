@@ -181,6 +181,14 @@ export default function ParentPage() {
       {/* Navigation */}
       <div className="flex gap-4 mt-6">
         <BigButton
+          onClick={() => router.push('/training')}
+          variant="outline"
+          size="sm"
+          className="flex-1"
+        >
+          📊 Training Dashboard
+        </BigButton>
+        <BigButton
           onClick={() => router.push('/scan')}
           variant="primary"
           size="sm"

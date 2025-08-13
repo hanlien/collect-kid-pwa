@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { supabaseAdmin } from '@/lib/supabase';
 
 const trainingFeedbackSchema = z.object({
   imageUrl: z.string().optional(),
@@ -8,6 +9,7 @@ const trainingFeedbackSchema = z.object({
     canonicalName: z.string(),
     commonName: z.string().optional(),
     confidence: z.number(),
+    provider: z.string().optional(),
   }),
   isCorrect: z.boolean(),
   correction: z.string().optional(),
@@ -19,22 +21,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const feedback = trainingFeedbackSchema.parse(body);
 
-    // Store feedback for training data
-    // This could be saved to a database or file system for later model training
-    console.log('Training feedback received:', {
-      ...feedback,
-      // Add any additional processing here
-    });
-
-    // For now, we'll just log the feedback
-    // In a real implementation, this would be stored in a training dataset
+    // Store feedback in Supabase for training data
     const trainingData = {
-      imageUrl: feedback.imageUrl,
-      originalPrediction: feedback.originalResult,
-      isCorrect: feedback.isCorrect,
+      image_url: feedback.imageUrl,
+      original_prediction: feedback.originalResult,
+      is_correct: feedback.isCorrect,
       correction: feedback.correction,
       timestamp: feedback.timestamp,
-      // Add metadata for training
       metadata: {
         source: 'user_feedback',
         confidence: feedback.originalResult.confidence,
@@ -42,9 +35,32 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    // TODO: Store this in a proper training dataset
-    // This could be saved to Supabase, a file, or sent to a training pipeline
-    console.log('Training data prepared:', trainingData);
+    // Insert into training_feedback table
+    const { data, error } = await supabaseAdmin
+      .from('training_feedback')
+      .insert({
+        image_url: feedback.imageUrl,
+        original_prediction: JSON.stringify(feedback.originalResult),
+        is_correct: feedback.isCorrect,
+        correction: feedback.correction || null,
+        confidence: feedback.originalResult.confidence,
+        category: feedback.originalResult.category,
+        provider: feedback.originalResult.provider || 'unknown',
+        created_at: new Date().toISOString(),
+        metadata: JSON.stringify(trainingData.metadata)
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Failed to store training feedback:', error);
+      return NextResponse.json(
+        { error: 'Failed to store training feedback' },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ Training feedback stored:', data);
 
     return NextResponse.json({ 
       success: true, 
