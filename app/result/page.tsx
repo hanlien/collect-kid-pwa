@@ -26,6 +26,7 @@ export default function ResultPage() {
   const [showBadgePopup, setShowBadgePopup] = useState(false);
   const [badgeData, setBadgeData] = useState<{ speciesName: string; category: string; imageUrl?: string } | null>(null);
   const [showAccuracyFeedback, setShowAccuracyFeedback] = useState(false);
+  const [showCorrectionInput, setShowCorrectionInput] = useState(false);
   const [correctionInput, setCorrectionInput] = useState('');
 
   useEffect(() => {
@@ -141,6 +142,8 @@ export default function ResultPage() {
           type: 'success',
         });
         setShowAccuracyFeedback(false);
+        setShowCorrectionInput(false);
+        setCorrectionInput('');
       }
     } catch (error) {
       console.error('Feedback error:', error);
@@ -583,14 +586,21 @@ export default function ResultPage() {
               </button>
               
               <button
-                onClick={() => setCorrectionInput('')}
+                onClick={() => setShowCorrectionInput(true)}
                 className="w-full bg-red-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-600 transition-colors"
               >
-                ❌ No, that&apos;s wrong
+                ❌ No, that&apos;s wrong (with correction)
+              </button>
+              
+              <button
+                onClick={() => handleAccuracyFeedback(false)}
+                className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
+              >
+                ❌ No, that&apos;s wrong (no correction)
               </button>
             </div>
 
-            {correctionInput !== '' && (
+            {showCorrectionInput && (
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   What is it actually?
@@ -610,7 +620,10 @@ export default function ResultPage() {
                     Submit Correction
                   </button>
                   <button
-                    onClick={() => setCorrectionInput('')}
+                    onClick={() => {
+                      setCorrectionInput('');
+                      setShowCorrectionInput(false);
+                    }}
                     className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg font-semibold hover:bg-gray-400 transition-colors"
                   >
                     Cancel
