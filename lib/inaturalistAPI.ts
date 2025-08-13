@@ -99,13 +99,140 @@ class iNaturalistAPI {
   private userAgent = 'BuggiesWithBrandon/1.0 (https://buggies-with-brandon.vercel.app)';
 
   /**
-   * Search for taxa by name (fallback method since direct image identification requires authentication)
+   * Identify species using Google Vision labels to search iNaturalist database
+   */
+  async identifySpeciesFromLabels(labels: string[], location?: { lat: number; lng: number }): Promise<iNaturalistIdentification[]> {
+    try {
+      console.log('🔍 Searching iNaturalist with labels:', labels);
+      
+      const results: iNaturalistIdentification[] = [];
+      
+      // Search for each relevant label
+      for (const label of labels) {
+        const taxa = await this.searchTaxa(label, {
+          per_page: 5,
+          rank: 'species'
+        });
+        
+        for (const taxon of taxa) {
+          // Calculate confidence based on label match and observation count
+          const labelMatchScore = this.calculateLabelMatchScore(label, taxon);
+          const observationScore = Math.min(taxon.observations_count / 1000, 1); // Normalize to 0-1
+          const confidence = (labelMatchScore + observationScore) / 2;
+          
+          if (confidence > 0.3) { // Only include reasonably confident matches
+            results.push({
+              taxon: {
+                id: taxon.id,
+                name: taxon.name,
+                preferred_common_name: taxon.preferred_common_name,
+                rank: taxon.rank,
+                iconic_taxon_name: taxon.iconic_taxon_name,
+                ancestor_ids: taxon.ancestor_ids
+              },
+              score: confidence,
+              vision_score: labelMatchScore,
+              frequency_score: observationScore,
+              category: this.getCategoryFromIconicTaxon(taxon.iconic_taxon_name)
+            });
+          }
+        }
+      }
+      
+      // Sort by confidence and remove duplicates
+      const uniqueResults = this.removeDuplicateTaxa(results);
+      const sortedResults = uniqueResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+      
+      console.log(`✅ Found ${sortedResults.length} iNaturalist matches`);
+      return sortedResults.slice(0, 10); // Return top 10 results
+      
+    } catch (error) {
+      console.error('iNaturalist label search error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Calculate how well a label matches a taxon
+   */
+  private calculateLabelMatchScore(label: string, taxon: iNaturalistTaxon): number {
+    const labelLower = label.toLowerCase();
+    const commonName = taxon.preferred_common_name?.toLowerCase() || '';
+    const scientificName = taxon.name.toLowerCase();
+    
+    // Exact match gets highest score
+    if (commonName === labelLower || scientificName === labelLower) {
+      return 1.0;
+    }
+    
+    // Partial match in common name
+    if (commonName.includes(labelLower) || labelLower.includes(commonName)) {
+      return 0.8;
+    }
+    
+    // Partial match in scientific name
+    if (scientificName.includes(labelLower) || labelLower.includes(scientificName)) {
+      return 0.6;
+    }
+    
+    // Word boundary match
+    const labelWords = labelLower.split(/\s+/);
+    const commonWords = commonName.split(/\s+/);
+    const scientificWords = scientificName.split(/\s+/);
+    
+    const commonWordMatches = labelWords.filter(word => 
+      commonWords.some(cw => cw.includes(word) || word.includes(cw))
+    ).length;
+    
+    const scientificWordMatches = labelWords.filter(word => 
+      scientificWords.some(sw => sw.includes(word) || word.includes(sw))
+    ).length;
+    
+    const wordMatchScore = Math.max(commonWordMatches, scientificWordMatches) / labelWords.length;
+    return wordMatchScore * 0.7;
+  }
+
+  /**
+   * Get category from iconic taxon name
+   */
+  private getCategoryFromIconicTaxon(iconicTaxonName?: string): string {
+    if (!iconicTaxonName) return 'unknown';
+    
+    switch (iconicTaxonName.toLowerCase()) {
+      case 'animalia':
+        return 'animal';
+      case 'plantae':
+        return 'flower';
+      case 'insecta':
+      case 'arachnida':
+      case 'mollusca':
+        return 'bug';
+      default:
+        return 'unknown';
+    }
+  }
+
+  /**
+   * Remove duplicate taxa from results
+   */
+  private removeDuplicateTaxa(results: iNaturalistIdentification[]): iNaturalistIdentification[] {
+    const seen = new Set<number>();
+    return results.filter(result => {
+      if (seen.has(result.taxon.id)) {
+        return false;
+      }
+      seen.add(result.taxon.id);
+      return true;
+    });
+  }
+
+  /**
+   * Legacy method - now uses label-based identification
    */
   async identifySpecies(imageBuffer: Buffer): Promise<iNaturalistIdentification[]> {
     try {
-      // For now, we'll use a fallback approach since direct image identification requires authentication
-      // This method will be enhanced later with proper image upload
-      console.log('iNaturalist image identification not yet implemented - using fallback');
+      // This method is now deprecated in favor of identifySpeciesFromLabels
+      console.log('iNaturalist direct image identification not implemented - use identifySpeciesFromLabels');
       return [];
     } catch (error) {
       console.error('iNaturalist identification error:', error);

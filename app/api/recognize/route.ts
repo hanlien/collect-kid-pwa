@@ -87,22 +87,40 @@ export async function POST(request: NextRequest) {
     console.log('🔍 User hint:', validatedHint);
     console.log('🎨 Dominant colors:', colors.map(c => c.color));
 
-    // Try iNaturalist identification first (highest accuracy)
-    console.log('🌿 Trying iNaturalist identification...');
+    // Try iNaturalist identification using Google Vision labels
+    console.log('🌿 Trying iNaturalist label-based identification...');
     let iNaturalistResult = null;
     try {
-      const imageBufferForINaturalist = Buffer.from(imageBuffer);
-      iNaturalistResult = await iNaturalistAPI.getBestIdentification(imageBufferForINaturalist);
-      
-      if (iNaturalistResult) {
-        console.log('✅ iNaturalist result:', {
-          commonName: iNaturalistResult.commonName,
-          scientificName: iNaturalistResult.scientificName,
-          category: iNaturalistResult.category,
-          confidence: iNaturalistResult.confidence
-        });
+      // Filter labels to relevant species terms
+      const speciesLabels = labels.filter(label => {
+        const lowerLabel = label.toLowerCase();
+        const speciesTerms = [
+          'butterfly', 'bee', 'ant', 'spider', 'fly', 'mosquito', 'beetle', 'grasshopper', 'cricket', 'dragonfly', 'ladybug',
+          'bird', 'dog', 'cat', 'squirrel', 'rabbit', 'deer', 'fox', 'raccoon', 'possum', 'skunk', 'chipmunk', 'groundhog', 'beaver', 'hedgehog', 'mole', 'mouse', 'rat', 'hamster',
+          'rose', 'daisy', 'tulip', 'sunflower', 'lily', 'orchid', 'dandelion', 'lavender', 'marigold', 'pansy', 'carnation', 'iris', 'peony', 'azalea', 'camellia', 'gardenia', 'hydrangea', 'geranium', 'zinnia'
+        ];
+        return speciesTerms.some(term => lowerLabel.includes(term) || term.includes(lowerLabel));
+      });
+
+      if (speciesLabels.length > 0) {
+        console.log('🔍 Relevant species labels found:', speciesLabels);
+        const iNaturalistIdentifications = await iNaturalistAPI.identifySpeciesFromLabels(speciesLabels);
+        
+        if (iNaturalistIdentifications.length > 0) {
+          const bestMatch = iNaturalistIdentifications[0];
+          iNaturalistResult = iNaturalistAPI.convertToAppFormat(bestMatch);
+          
+          console.log('✅ iNaturalist result:', {
+            commonName: iNaturalistResult.commonName,
+            scientificName: iNaturalistResult.scientificName,
+            category: iNaturalistResult.category,
+            confidence: iNaturalistResult.confidence
+          });
+        } else {
+          console.log('❌ iNaturalist no species matches found');
+        }
       } else {
-        console.log('❌ iNaturalist no result');
+        console.log('❌ iNaturalist no relevant species labels found');
       }
     } catch (error) {
       console.error('❌ iNaturalist error:', error);
@@ -406,19 +424,23 @@ export async function POST(request: NextRequest) {
     if (speciesResult.confidence < 0.6 && (!iNaturalistResult || speciesResult.provider !== 'inaturalist')) {
       console.log('🔄 Trying iNaturalist as fallback...');
       try {
-        const fallbackResult = await iNaturalistAPI.getBestIdentification(Buffer.from(imageBuffer));
-        if (fallbackResult && fallbackResult.confidence > 0.3) {
-          console.log('✅ Using iNaturalist fallback result');
-          speciesResult = {
-            category: fallbackResult.category as Category,
-            canonicalName: fallbackResult.scientificName,
-            commonName: fallbackResult.commonName,
-            rank: 'species',
-            confidence: fallbackResult.confidence,
-            provider: 'inaturalist' as Provider,
-            ui: { colorChips },
-            details: fallbackResult.details
-          };
+        // Use all labels for fallback search
+        const fallbackIdentifications = await iNaturalistAPI.identifySpeciesFromLabels(labels);
+        if (fallbackIdentifications.length > 0) {
+          const fallbackResult = iNaturalistAPI.convertToAppFormat(fallbackIdentifications[0]);
+          if (fallbackResult.confidence > 0.3) {
+            console.log('✅ Using iNaturalist fallback result');
+            speciesResult = {
+              category: fallbackResult.category as Category,
+              canonicalName: fallbackResult.scientificName,
+              commonName: fallbackResult.commonName,
+              rank: 'species',
+              confidence: fallbackResult.confidence,
+              provider: 'inaturalist' as Provider,
+              ui: { colorChips },
+              details: fallbackResult.details
+            };
+          }
         }
       } catch (error) {
         console.error('❌ iNaturalist fallback error:', error);

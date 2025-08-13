@@ -19,23 +19,28 @@ export async function POST(request: NextRequest) {
     console.log('🧪 Testing iNaturalist API...');
     console.log('📸 Image size:', imageBuffer.length, 'bytes');
 
-    // Test iNaturalist identification
-    const result = await iNaturalistAPI.getBestIdentification(imageBuffer);
-
-    if (result) {
+    // Test iNaturalist identification with sample labels
+    const sampleLabels = ['butterfly', 'monarch', 'insect'];
+    const identifications = await iNaturalistAPI.identifySpeciesFromLabels(sampleLabels);
+    
+    if (identifications.length > 0) {
+      const result = iNaturalistAPI.convertToAppFormat(identifications[0]);
       console.log('✅ iNaturalist test successful:', result);
       return NextResponse.json({
         success: true,
         result,
+        allIdentifications: identifications.map(id => iNaturalistAPI.convertToAppFormat(id)),
         message: 'iNaturalist API is working correctly!'
       });
     } else {
-      console.log('❌ iNaturalist test failed - no result');
+      console.log('❌ iNaturalist test failed - no results');
       return NextResponse.json({
         success: false,
         message: 'iNaturalist API returned no results'
       });
     }
+
+
 
   } catch (error) {
     console.error('❌ iNaturalist test error:', error);
