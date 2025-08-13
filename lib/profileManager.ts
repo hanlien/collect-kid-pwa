@@ -165,9 +165,15 @@ class ProfileManager {
       profileId: this.getCurrentProfile().id,
     };
 
+    console.log('Adding capture:', newCapture);
+
     const captures = this.getCaptures();
+    console.log('Current captures before adding:', captures);
+    
     captures.push(newCapture);
     this.saveCaptures(captures);
+    
+    console.log('Captures after saving:', this.getCaptures());
 
     // Update profile stats
     this.updateProfileStats(newCapture);
@@ -178,7 +184,7 @@ class ProfileManager {
     try {
       // Check if we're in a browser environment
       if (typeof window !== 'undefined' && window.localStorage) {
-        const stored = localStorage.getItem(`${STORAGE_KEYS.PROFILE_DATA}-${this.getCurrentProfile().id}`);
+        const stored = localStorage.getItem(`${STORAGE_KEYS.PROFILE_DATA}-captures-${this.getCurrentProfile().id}`);
         if (stored) {
           return JSON.parse(stored);
         }
@@ -193,7 +199,7 @@ class ProfileManager {
     try {
       // Check if we're in a browser environment
       if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.setItem(`${STORAGE_KEYS.PROFILE_DATA}-${this.getCurrentProfile().id}`, JSON.stringify(captures));
+        localStorage.setItem(`${STORAGE_KEYS.PROFILE_DATA}-captures-${this.getCurrentProfile().id}`, JSON.stringify(captures));
       }
     } catch (error) {
       console.error('Failed to save captures:', error);
@@ -208,9 +214,16 @@ class ProfileManager {
       unlockedAt: new Date().toISOString(),
     };
 
+    console.log('Adding badge:', newBadge);
+
     const badges = this.getBadges();
+    console.log('Current badges before adding:', badges);
+    
     badges.push(newBadge);
     this.saveBadges(badges);
+    
+    console.log('Badges after saving:', this.getBadges());
+    
     return newBadge;
   }
 
