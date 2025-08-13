@@ -164,6 +164,10 @@ export default function ResultPage() {
       const profileManager = ProfileManager.getInstance();
       const currentProfile = profileManager.getCurrentProfile();
       console.log('Current profile for collection:', currentProfile);
+      
+      // Test ProfileManager functionality
+      console.log('Testing ProfileManager - current captures:', profileManager.getCaptures());
+      console.log('Testing ProfileManager - current badges:', profileManager.getBadges());
 
       const requestBody = {
         userId: currentProfile.id,
@@ -183,9 +187,13 @@ export default function ResultPage() {
 
       const data = await response.json();
       console.log('Collect API response data:', JSON.stringify(data, null, 2));
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
       
       if (response.ok) {
         setShowConfetti(true);
+        
+        console.log('About to update profile with data:', data);
         
         // Update profile data using ProfileManager
         profileManager.updateProfile(currentProfile.id, {
