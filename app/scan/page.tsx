@@ -410,7 +410,7 @@ export default function ScanPage() {
       });
 
       // Store image in sessionStorage to avoid URL length limits
-      sessionStorage.setItem(result.capturedImageUrl, imageUrl);
+      sessionStorage.setItem(result.capturedImageUrl!, imageUrl);
       
       console.log('Navigating to result page with result:', result);
       router.push(`/result?data=${encodeURIComponent(JSON.stringify(result))}`);
