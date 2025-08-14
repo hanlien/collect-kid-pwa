@@ -6,13 +6,16 @@ import logger from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   const apiCall = logger.apiCall('/api/collect', 'POST');
+  let userId: string | undefined;
   
   try {
     logger.info('Collect API called');
     const body = await request.json();
     logger.debug('Request body', body);
     
-    const { userId, result: speciesResult } = collectRequestSchema.parse(body);
+    const parsed = collectRequestSchema.parse(body);
+    userId = parsed.userId;
+    const { result: speciesResult } = parsed;
     logger.info('Parsed request', { userId, speciesResult });
 
     // Use ProfileManager to check if this is a new species
@@ -144,7 +147,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(response);
   } catch (error) {
-    logger.collectionError(error as Error, { userId });
+    logger.collectionError(error as Error, { userId: userId || 'unknown' });
     apiCall.end(undefined, error as Error);
     
     return NextResponse.json(

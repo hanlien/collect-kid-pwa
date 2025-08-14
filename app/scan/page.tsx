@@ -331,6 +331,7 @@ export default function ScanPage() {
 
   const processImage = async (file: File) => {
     const startTime = Date.now();
+    let base64Image: string | undefined;
     try {
       console.log('Starting image processing...');
       setIsScanning(true);
@@ -345,7 +346,11 @@ export default function ScanPage() {
       console.log('Created persistent image URL (base64)');
 
       // Convert image to base64 for new multi-signal recognition
-      const base64Image = imageUrl.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+      base64Image = imageUrl.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+      
+      if (!base64Image) {
+        throw new Error('Failed to extract base64 image data');
+      }
 
       logger.recognitionStart(base64Image.length);
       logger.recognitionStep('sending_request', { imageSize: base64Image.length });

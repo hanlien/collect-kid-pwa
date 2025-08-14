@@ -10,7 +10,7 @@ export interface LogEntry {
   level: LogLevel;
   message: string;
   data?: any;
-  error?: Error;
+  error?: Error | undefined;
   userId?: string;
   sessionId?: string;
   requestId?: string;
