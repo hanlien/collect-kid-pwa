@@ -546,7 +546,7 @@ export default function ResultPage() {
             className="flex-1 flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600"
           >
             <Target className="w-5 h-5" />
-            <span>Train Brandon's AI</span>
+            <span>Train Brandon&apos;s AI</span>
           </BigButton>
         </div>
 
