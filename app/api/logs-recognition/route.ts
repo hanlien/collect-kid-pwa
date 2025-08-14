@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const level = searchParams.get('level');
 
     // Get recognition-specific logs
-    const logs = await logger.getRecognitionLogs(
+    const logs = logger.getRecognitionLogs(
       recognitionId || undefined,
       limit ? parseInt(limit) : undefined
     );

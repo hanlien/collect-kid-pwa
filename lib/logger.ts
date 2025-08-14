@@ -49,13 +49,13 @@ class Logger {
     }
   }
 
-  private async createLogEntry(
+  private createLogEntry(
     level: LogLevel,
     message: string,
     data?: any,
     error?: Error,
     context?: { userId?: string; sessionId?: string; requestId?: string; api?: string; duration?: number; recognitionId?: string }
-  ): Promise<LogEntry> {
+  ): LogEntry {
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
@@ -67,36 +67,39 @@ class Logger {
       ...context,
     };
 
-    // Add to in-memory logs (both dev and prod for immediate access)
+    // Add to in-memory logs immediately (non-blocking)
     this.logs.push(entry);
     if (this.logs.length > this.maxLogs) {
       this.logs.shift(); // Remove oldest log
     }
 
-    // Store in Supabase for persistence (production only)
+    // Store in Supabase for persistence (production only) - NON-BLOCKING
     if (this.isProduction && supabase) {
-      try {
-        await supabase
-          .from('logs')
-          .insert({
-            timestamp: entry.timestamp,
-            level: entry.level,
-            message: entry.message,
-            data: entry.data ? JSON.stringify(entry.data) : null,
-            error: entry.error ? entry.error.message : null,
-            user_id: entry.userId,
-            session_id: entry.sessionId,
-            request_id: entry.requestId,
-            api: entry.api,
-            duration: entry.duration,
-            environment: entry.environment,
-            deployment: entry.deployment,
-            recognition_id: entry.recognitionId
-          });
-      } catch (dbError) {
-        console.error('Failed to store log in database:', dbError);
-        // Continue with in-memory logging even if DB fails
-      }
+      // Fire and forget - don't await this
+      (async () => {
+        try {
+          await supabase
+            .from('logs')
+            .insert({
+              timestamp: entry.timestamp,
+              level: entry.level,
+              message: entry.message,
+              data: entry.data ? JSON.stringify(entry.data) : null,
+              error: entry.error ? entry.error.message : null,
+              user_id: entry.userId,
+              session_id: entry.sessionId,
+              request_id: entry.requestId,
+              api: entry.api,
+              duration: entry.duration,
+              environment: entry.environment,
+              deployment: entry.deployment,
+              recognition_id: entry.recognitionId
+            });
+        } catch (dbError: any) {
+          console.error('Failed to store log in database:', dbError);
+          // Continue with in-memory logging even if DB fails
+        }
+      })();
     }
 
     return entry;
@@ -138,37 +141,37 @@ class Logger {
     }
   }
 
-  async debug(message: string, data?: any, context?: any) {
+  debug(message: string, data?: any, context?: any) {
     if (!this.shouldLog(LogLevel.DEBUG)) return;
     
-    const entry = await this.createLogEntry(LogLevel.DEBUG, message, data, undefined, context);
+    const entry = this.createLogEntry(LogLevel.DEBUG, message, data, undefined, context);
     console.log(`🔍 [DEBUG] ${message}`, data || '');
     this.sendToExternalService(entry);
     return entry;
   }
 
-  async info(message: string, data?: any, context?: any) {
+  info(message: string, data?: any, context?: any) {
     if (!this.shouldLog(LogLevel.INFO)) return;
     
-    const entry = await this.createLogEntry(LogLevel.INFO, message, data, undefined, context);
+    const entry = this.createLogEntry(LogLevel.INFO, message, data, undefined, context);
     console.log(`ℹ️ [INFO] ${message}`, data || '');
     this.sendToExternalService(entry);
     return entry;
   }
 
-  async warn(message: string, data?: any, context?: any) {
+  warn(message: string, data?: any, context?: any) {
     if (!this.shouldLog(LogLevel.WARN)) return;
     
-    const entry = await this.createLogEntry(LogLevel.WARN, message, data, undefined, context);
+    const entry = this.createLogEntry(LogLevel.WARN, message, data, undefined, context);
     console.warn(`⚠️ [WARN] ${message}`, data || '');
     this.sendToExternalService(entry);
     return entry;
   }
 
-  async error(message: string, error?: Error, data?: any, context?: any) {
+  error(message: string, error?: Error, data?: any, context?: any) {
     if (!this.shouldLog(LogLevel.ERROR)) return;
     
-    const entry = await this.createLogEntry(LogLevel.ERROR, message, data, error, context);
+    const entry = this.createLogEntry(LogLevel.ERROR, message, data, error, context);
     console.error(`❌ [ERROR] ${message}`, error || '', data || '');
     this.sendToExternalService(entry);
     return entry;
@@ -192,9 +195,9 @@ class Logger {
   }
 
   // Recognition-specific logging with detailed pipeline tracking
-  async recognitionStart(imageSize?: number, context?: any) {
+  recognitionStart(imageSize?: number, context?: any) {
     const recognitionId = `rec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    await this.info('🚀 Recognition Pipeline Started', { 
+    this.info('🚀 Recognition Pipeline Started', { 
       imageSize, 
       recognitionId,
       timestamp: new Date().toISOString()
@@ -202,13 +205,13 @@ class Logger {
     return recognitionId;
   }
 
-  async recognitionStep(step: string, data?: any, context?: any) {
-    return await this.debug(`🔄 Recognition Step: ${step}`, data, { ...context, api: 'recognition' });
+  recognitionStep(step: string, data?: any, context?: any) {
+    return this.debug(`🔄 Recognition Step: ${step}`, data, { ...context, api: 'recognition' });
   }
 
   // Vision API logging
-  async visionResults(visionBundle: any, processingTime: number, context?: any) {
-    await this.info('🔍 Vision API Results', {
+  visionResults(visionBundle: any, processingTime: number, context?: any) {
+    this.info('🔍 Vision API Results', {
       labels: visionBundle.labels?.slice(0, 5) || [],
       cropLabels: visionBundle.cropLabels?.slice(0, 3) || [],
       webBestGuess: visionBundle.webBestGuess || [],
@@ -219,8 +222,8 @@ class Logger {
   }
 
   // Plant gate decision
-  async plantGateDecision(isPlant: boolean, confidence: number, context?: any) {
-    await this.info('🌱 Plant Gate Decision', {
+  plantGateDecision(isPlant: boolean, confidence: number, context?: any) {
+    this.info('🌱 Plant Gate Decision', {
       isPlant,
       confidence,
       decision: isPlant ? 'Will call Plant.id API' : 'Skipping Plant.id API'
@@ -228,8 +231,8 @@ class Logger {
   }
 
   // Provider results logging
-  async providerResults(provider: string, results: any[], processingTime: number, context?: any) {
-    await this.info(`📊 ${provider} Provider Results`, {
+  providerResults(provider: string, results: any[], processingTime: number, context?: any) {
+    this.info(`📊 ${provider} Provider Results`, {
       provider,
       resultCount: results.length,
       topResults: results.slice(0, 3).map(r => ({
@@ -243,8 +246,8 @@ class Logger {
   }
 
   // Knowledge Graph results
-  async kgResults(canonicalResults: any[], processingTime: number, context?: any) {
-    await this.info('🧠 Knowledge Graph Results', {
+  kgResults(canonicalResults: any[], processingTime: number, context?: any) {
+    this.info('🧠 Knowledge Graph Results', {
       resultCount: canonicalResults.length,
       topResults: canonicalResults.slice(0, 3).map(r => ({
         commonName: r.commonName,
@@ -258,8 +261,8 @@ class Logger {
   }
 
   // Candidate building and scoring
-  async candidateBuilding(candidates: any[], context?: any) {
-    await this.info('🏗️ Candidate Building', {
+  candidateBuilding(candidates: any[], context?: any) {
+    this.info('🏗️ Candidate Building', {
       totalCandidates: candidates.length,
       candidates: candidates.map(c => ({
         scientificName: c.scientificName,
