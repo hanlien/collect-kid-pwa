@@ -110,7 +110,7 @@ function calculateKidFriendlyBoost(commonName: string, _scientificName: string, 
   return 1.0; // No boost
 }
 
-function calculateEducationalValue(commonName: string, scientificName: string): number {
+function calculateEducationalValue(commonName: string, _scientificName: string): number {
   // High educational value: teaches specific identification
   const highValueTerms = [
     'daisy', 'butterfly', 'ladybug', 'cardinal', 'robin', 'maple', 'oak',
