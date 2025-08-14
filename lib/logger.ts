@@ -23,13 +23,20 @@ export interface LogEntry {
   recognitionId?: string; // Track individual recognition sessions
 }
 
-// Supabase client for persistent logging
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Supabase client for persistent logging (only create if environment variables are available)
+let supabase: any = null;
 
-const supabase = supabaseUrl && supabaseServiceKey 
-  ? createClient(supabaseUrl, supabaseServiceKey)
-  : null;
+try {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (supabaseUrl && supabaseServiceKey) {
+    supabase = createClient(supabaseUrl, supabaseServiceKey);
+  }
+} catch (error) {
+  console.warn('Supabase client creation failed:', error);
+  supabase = null;
+}
 
 class Logger {
   private logs: LogEntry[] = [];
@@ -382,7 +389,7 @@ class Logger {
           const { data: dbLogs, error } = await query;
           if (!error && dbLogs) {
             // Convert database format to LogEntry format
-            const convertedLogs = dbLogs.map(dbLog => ({
+            const convertedLogs = dbLogs.map((dbLog: any) => ({
               timestamp: dbLog.timestamp,
               level: dbLog.level,
               message: dbLog.message,
@@ -417,8 +424,51 @@ class Logger {
   }
 
   // Get recognition-specific logs (works in both dev and prod)
-  getRecognitionLogs(recognitionId?: string, limit?: number): LogEntry[] {
-    // First get in-memory logs
+  async getRecognitionLogs(recognitionId?: string, limit?: number): Promise<LogEntry[]> {
+    // Always try to get from Supabase first (both dev and prod)
+    if (supabase) {
+      try {
+        let query = supabase
+          .from('logs')
+          .select('*')
+          .eq('api', 'recognition')
+          .order('timestamp', { ascending: false });
+
+        if (recognitionId) {
+          query = query.eq('recognition_id', recognitionId);
+        }
+        if (limit) {
+          query = query.limit(limit);
+        }
+
+        const { data: dbLogs, error } = await query;
+        if (!error && dbLogs && dbLogs.length > 0) {
+          // Convert database format to LogEntry format
+          const convertedLogs = dbLogs.map((dbLog: any) => ({
+            timestamp: dbLog.timestamp,
+            level: dbLog.level,
+            message: dbLog.message,
+            data: dbLog.data ? JSON.parse(dbLog.data) : undefined,
+            error: dbLog.error ? new Error(dbLog.error) : undefined,
+            userId: dbLog.user_id,
+            sessionId: dbLog.session_id,
+            requestId: dbLog.request_id,
+            api: dbLog.api,
+            duration: dbLog.duration,
+            environment: dbLog.environment,
+            deployment: dbLog.deployment,
+            recognitionId: dbLog.recognition_id
+          }));
+
+          return convertedLogs;
+        }
+      } catch (error) {
+        console.error('Failed to fetch recognition logs from database:', error);
+        // Fall back to in-memory logs
+      }
+    }
+
+    // Fallback to in-memory logs
     let filtered = this.logs.filter(log => log.api === 'recognition');
     
     if (recognitionId) {
@@ -427,58 +477,6 @@ class Logger {
     
     if (limit) {
       filtered = filtered.slice(-limit);
-    }
-
-    // In production, also fetch from database (non-blocking)
-    if (this.isProduction && supabase) {
-      // Fire and forget - don't block the response
-      (async () => {
-        try {
-          let query = supabase
-            .from('logs')
-            .select('*')
-            .eq('api', 'recognition')
-            .order('timestamp', { ascending: false });
-
-          if (recognitionId) {
-            query = query.eq('recognition_id', recognitionId);
-          }
-          if (limit) {
-            query = query.limit(limit);
-          }
-
-          const { data: dbLogs, error } = await query;
-          if (!error && dbLogs) {
-            // Convert database format to LogEntry format
-            const convertedLogs = dbLogs.map(dbLog => ({
-              timestamp: dbLog.timestamp,
-              level: dbLog.level,
-              message: dbLog.message,
-              data: dbLog.data ? JSON.parse(dbLog.data) : undefined,
-              error: dbLog.error ? new Error(dbLog.error) : undefined,
-              userId: dbLog.user_id,
-              sessionId: dbLog.session_id,
-              requestId: dbLog.request_id,
-              api: dbLog.api,
-              duration: dbLog.duration,
-              environment: dbLog.environment,
-              deployment: dbLog.deployment,
-              recognitionId: dbLog.recognition_id
-            }));
-
-            // Merge with in-memory logs, removing duplicates
-            const allLogs = [...filtered, ...convertedLogs];
-            const uniqueLogs = allLogs.filter((log, index, self) => 
-              index === self.findIndex(l => l.timestamp === log.timestamp && l.message === log.message)
-            );
-
-            // Update the in-memory logs with database results
-            this.logs = [...this.logs.filter(log => log.api !== 'recognition'), ...uniqueLogs];
-          }
-        } catch (error) {
-          console.error('Failed to fetch recognition logs from database:', error);
-        }
-      })();
     }
 
     return filtered;
@@ -495,8 +493,8 @@ class Logger {
   }
 
   // Export recognition logs specifically (works in both dev and prod)
-  exportRecognitionLogs(recognitionId?: string): string {
-    const recognitionLogs = this.getRecognitionLogs(recognitionId);
+  async exportRecognitionLogs(recognitionId?: string): Promise<string> {
+    const recognitionLogs = await this.getRecognitionLogs(recognitionId);
     return JSON.stringify(recognitionLogs, null, 2);
   }
 

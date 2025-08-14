@@ -232,57 +232,148 @@ export default function DebugPage() {
           </div>
         </Card>
 
-        {/* Session Summaries */}
-        <Card className="mb-6 p-4">
-          <Typography variant="h2" className="mb-4">
-            📊 Recognition Sessions ({sessionSummaries.length})
+        {/* Stats Overview */}
+        <Card className="mb-6 p-6">
+          <Typography variant="h2" className="mb-6 text-center">
+            📈 Recognition Performance Overview
           </Typography>
           
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white text-center">
+              <div className="text-2xl font-bold">{sessionSummaries.length}</div>
+              <div className="text-sm">Total Sessions</div>
+            </div>
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white text-center">
+              <div className="text-2xl font-bold">{logs.length}</div>
+              <div className="text-sm">Log Entries</div>
+            </div>
+            <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 text-white text-center">
+              <div className="text-2xl font-bold">
+                {sessionSummaries.filter(s => s.status === 'success').length}
+              </div>
+              <div className="text-sm">Successful</div>
+            </div>
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg p-4 text-white text-center">
+              <div className="text-2xl font-bold">
+                {sessionSummaries.filter(s => s.status === 'failed').length}
+              </div>
+              <div className="text-sm">Failed</div>
+            </div>
+          </div>
+
+          {/* Average Performance */}
+          {sessionSummaries.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="bg-gray-50 rounded-lg p-3 text-center">
+                <div className="text-lg font-semibold text-gray-900">
+                  {Math.round(sessionSummaries.reduce((sum, s) => sum + (s.duration || 0), 0) / sessionSummaries.length)}ms
+                </div>
+                <div className="text-sm text-gray-600">Avg Response Time</div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 text-center">
+                <div className="text-lg font-semibold text-gray-900">
+                  {Math.round(sessionSummaries.reduce((sum, s) => sum + (s.visionLabels || 0), 0) / sessionSummaries.length)}
+                </div>
+                <div className="text-sm text-gray-600">Avg Vision Labels</div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 text-center">
+                <div className="text-lg font-semibold text-gray-900">
+                  {Math.round(sessionSummaries.reduce((sum, s) => sum + (s.imageSize || 0), 0) / sessionSummaries.length).toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-600">Avg Image Size</div>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* Session Summaries */}
+        <Card className="mb-6 p-6">
+          <div className="flex justify-between items-center mb-6">
+            <Typography variant="h2">
+              🔍 Recent Recognition Sessions ({sessionSummaries.length})
+            </Typography>
+            <div className="text-sm text-gray-500">
+              Showing last 20 sessions
+            </div>
+          </div>
+          
           {sessionSummaries.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No recognition sessions found. Try scanning an image first!
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🔍</div>
+              <Typography variant="h3" className="text-gray-500 mb-2">
+                No Recognition Sessions Found
+              </Typography>
+              <Typography variant="body" className="text-gray-400">
+                Try scanning an image to see recognition results here!
+              </Typography>
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {sessionSummaries.map((session) => (
+              {sessionSummaries.slice(0, 20).map((session, index) => (
                 <Card 
                   key={session.sessionId} 
-                  className={`p-4 cursor-pointer transition-colors ${
-                    selectedSession === session.sessionId ? 'ring-2 ring-primary-500' : ''
+                  className={`p-4 cursor-pointer transition-all hover:shadow-lg ${
+                    selectedSession === session.sessionId ? 'ring-2 ring-primary-500 bg-primary-50' : 'hover:bg-gray-50'
                   }`}
                   onClick={() => fetchSessionLogs(session.sessionId)}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <Typography variant="h3" className="text-sm font-mono">
-                      {session.sessionId.slice(-8)}
-                    </Typography>
-                    <span className={`px-2 py-1 rounded text-xs ${
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">#{index + 1}</span>
+                      <Typography variant="h3" className="text-sm font-mono text-gray-600">
+                        {session.sessionId.slice(-6)}
+                      </Typography>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       session.status === 'success' ? 'bg-green-100 text-green-800' :
                       session.status === 'failed' ? 'bg-red-100 text-red-800' :
                       'bg-yellow-100 text-yellow-800'
                     }`}>
-                      {session.status}
+                      {session.status === 'success' ? '✅ Success' : 
+                       session.status === 'failed' ? '❌ Failed' : '⏳ Processing'}
                     </span>
                   </div>
                   
-                  <div className="space-y-1 text-sm">
-                    <div>🕒 {new Date(session.startTime).toLocaleTimeString()}</div>
-                    {session.duration && <div>⏱️ {session.duration}ms</div>}
-                    <div>📏 {session.imageSize?.toLocaleString()} bytes</div>
-                    <div>🏷️ {session.visionLabels} labels</div>
-                    <div>🎯 {session.decision || 'N/A'}</div>
-                    <div>📝 {session.logCount} logs</div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">🕒 Time:</span>
+                      <span className="font-medium">{new Date(session.startTime).toLocaleTimeString()}</span>
+                    </div>
+                    {session.duration && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">⏱️ Duration:</span>
+                        <span className={`font-medium ${session.duration > 5000 ? 'text-red-600' : session.duration > 3000 ? 'text-yellow-600' : 'text-green-600'}`}>
+                          {session.duration}ms
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">📏 Size:</span>
+                      <span className="font-medium">{(session.imageSize / 1024).toFixed(1)}KB</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">🏷️ Labels:</span>
+                      <span className="font-medium">{session.visionLabels}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">🎯 Decision:</span>
+                      <span className="font-medium">{session.decision || 'N/A'}</span>
+                    </div>
                   </div>
 
                   {session.error && (
-                    <div className="mt-2 p-2 bg-red-50 text-red-700 text-xs rounded">
-                      ❌ {session.error}
+                    <div className="mt-3 p-2 bg-red-50 text-red-700 text-xs rounded border border-red-200">
+                      <div className="font-semibold">❌ Error:</div>
+                      <div className="truncate">{session.error}</div>
                     </div>
                   )}
 
                   {session.finalResult && (
-                    <div className="mt-2 p-2 bg-green-50 text-green-700 text-xs rounded">
-                      ✅ {session.finalResult.commonName || session.finalResult.canonicalName}
+                    <div className="mt-3 p-2 bg-green-50 text-green-700 text-xs rounded border border-green-200">
+                      <div className="font-semibold">✅ Result:</div>
+                      <div className="truncate">
+                        {session.finalResult.commonName || session.finalResult.canonicalName}
+                      </div>
                     </div>
                   )}
                 </Card>
@@ -293,38 +384,57 @@ export default function DebugPage() {
 
         {/* Detailed Session Logs */}
         {selectedSession && (
-          <Card className="mb-6 p-4">
-            <Typography variant="h2" className="mb-4">
-              📋 Session Details: {selectedSession.slice(-8)}
-            </Typography>
-            
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {sessionLogs.map((log, index) => (
-                <div key={`${log.timestamp}-${index}`} className="border-l-4 border-gray-200 pl-4 py-2">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm">{getLevelIcon(log.level)}</span>
-                    <span className={`text-sm font-medium ${getLevelColor(log.level)}`}>
-                      {new Date(log.timestamp).toLocaleTimeString()}
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      {log.message}
-                    </span>
-                  </div>
-                  
-                  {log.data && (
-                    <pre className="text-xs bg-gray-50 p-2 rounded mt-1 overflow-x-auto">
-                      {JSON.stringify(log.data, null, 2)}
-                    </pre>
-                  )}
-                  
-                  {log.error && (
-                    <div className="text-xs text-red-600 mt-1">
-                      Error: {log.error}
-                    </div>
-                  )}
-                </div>
-              ))}
+          <Card className="mb-6 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <Typography variant="h2">
+                🔍 Session Analysis: {selectedSession.slice(-8)}
+              </Typography>
+              <button
+                onClick={() => setSelectedSession(null)}
+                className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
+              >
+                ✕ Close
+              </button>
             </div>
+            
+            {sessionLogs.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <div className="text-4xl mb-2">📝</div>
+                <div>No detailed logs found for this session</div>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {sessionLogs.map((log, index) => (
+                  <div key={`${log.timestamp}-${index}`} className="border-l-4 border-blue-200 pl-4 py-3 bg-blue-50 rounded-r-lg">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-lg">{getLevelIcon(log.level)}</span>
+                      <span className={`text-sm font-semibold ${getLevelColor(log.level)}`}>
+                        {new Date(log.timestamp).toLocaleTimeString()}
+                      </span>
+                      <span className="text-sm text-gray-700 font-medium">
+                        {log.message}
+                      </span>
+                    </div>
+                    
+                    {log.data && (
+                      <div className="bg-white p-3 rounded border border-blue-200">
+                        <div className="text-xs font-semibold text-gray-600 mb-2">📊 Data:</div>
+                        <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto max-h-32 overflow-y-auto">
+                          {JSON.stringify(log.data, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                    
+                    {log.error && (
+                      <div className="bg-red-50 p-3 rounded border border-red-200">
+                        <div className="text-xs font-semibold text-red-700 mb-1">❌ Error:</div>
+                        <div className="text-xs text-red-600">{log.error}</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
         )}
 

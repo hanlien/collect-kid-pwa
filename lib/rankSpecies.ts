@@ -89,18 +89,40 @@ function calculateKidFriendlyBoost(commonName: string, _scientificName: string, 
     'cardinal', 'robin', 'sparrow', 'goldfinch', 'hummingbird',
     'ladybug', 'firefly', 'dragonfly', 'butterfly', 'bee', 'ant',
     'dandelion', 'sunflower', 'rose', 'tulip', 'daffodil', 'lily',
-    'maple tree', 'oak tree', 'pine tree', 'birch tree'
+    'maple tree', 'oak tree', 'pine tree', 'birch tree',
+    'shih tzu', 'golden retriever', 'labrador retriever', 'german shepherd',
+    'bulldog', 'poodle', 'beagle', 'chihuahua', 'pomeranian', 'yorkshire terrier'
   ];
 
   // Check if this is a perfect kid-friendly name
   if (perfectKidNames.includes(commonName)) {
-    return 1.4; // 40% boost for perfect kid names
+    return 1.5; // 50% boost for perfect kid names (increased from 40%)
+  }
+
+  // Penalize generic terms more heavily
+  const genericTerms = [
+    'toy dog', 'dog', 'cat', 'bird', 'fish', 'flower', 'plant', 'tree',
+    'animal', 'pet', 'creature', 'thing', 'object'
+  ];
+  
+  if (genericTerms.includes(commonName.toLowerCase())) {
+    return 0.3; // 70% penalty for generic terms
+  }
+
+  // Boost specific breed names (2+ words, not generic)
+  const isSpecificBreed = 
+    commonName.includes(' ') && 
+    commonName.split(' ').length >= 2 &&
+    !genericTerms.some(term => commonName.toLowerCase().includes(term));
+
+  if (isSpecificBreed) {
+    return 1.3; // 30% boost for specific breeds
   }
 
   // Good kid-friendly patterns
   const hasGoodPattern = 
     (commonName.includes(' ') && commonName.split(' ').length <= 3) || // 2-3 word names
-    (commonName.length >= 4 && commonName.length <= 12) || // Good length
+    (commonName.length >= 4 && commonName.length <= 15) || // Good length (increased max)
     (scores.provider || 0) > 0.6; // High confidence from specialized providers
 
   if (hasGoodPattern) {
