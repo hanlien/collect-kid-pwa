@@ -1,3 +1,5 @@
+import { createClient } from '@supabase/supabase-js';
+
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
@@ -21,6 +23,14 @@ export interface LogEntry {
   recognitionId?: string; // Track individual recognition sessions
 }
 
+// Supabase client for persistent logging
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabase = supabaseUrl && supabaseServiceKey 
+  ? createClient(supabaseUrl, supabaseServiceKey)
+  : null;
+
 class Logger {
   private logs: LogEntry[] = [];
   private maxLogs = 1000; // Keep last 1000 logs in memory
@@ -39,13 +49,13 @@ class Logger {
     }
   }
 
-  private createLogEntry(
+  private async createLogEntry(
     level: LogLevel,
     message: string,
     data?: any,
     error?: Error,
     context?: { userId?: string; sessionId?: string; requestId?: string; api?: string; duration?: number; recognitionId?: string }
-  ): LogEntry {
+  ): Promise<LogEntry> {
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
@@ -61,6 +71,32 @@ class Logger {
     this.logs.push(entry);
     if (this.logs.length > this.maxLogs) {
       this.logs.shift(); // Remove oldest log
+    }
+
+    // Store in Supabase for persistence (production only)
+    if (this.isProduction && supabase) {
+      try {
+        await supabase
+          .from('logs')
+          .insert({
+            timestamp: entry.timestamp,
+            level: entry.level,
+            message: entry.message,
+            data: entry.data ? JSON.stringify(entry.data) : null,
+            error: entry.error ? entry.error.message : null,
+            user_id: entry.userId,
+            session_id: entry.sessionId,
+            request_id: entry.requestId,
+            api: entry.api,
+            duration: entry.duration,
+            environment: entry.environment,
+            deployment: entry.deployment,
+            recognition_id: entry.recognitionId
+          });
+      } catch (dbError) {
+        console.error('Failed to store log in database:', dbError);
+        // Continue with in-memory logging even if DB fails
+      }
     }
 
     return entry;
@@ -102,37 +138,37 @@ class Logger {
     }
   }
 
-  debug(message: string, data?: any, context?: any) {
+  async debug(message: string, data?: any, context?: any) {
     if (!this.shouldLog(LogLevel.DEBUG)) return;
     
-    const entry = this.createLogEntry(LogLevel.DEBUG, message, data, undefined, context);
+    const entry = await this.createLogEntry(LogLevel.DEBUG, message, data, undefined, context);
     console.log(`🔍 [DEBUG] ${message}`, data || '');
     this.sendToExternalService(entry);
     return entry;
   }
 
-  info(message: string, data?: any, context?: any) {
+  async info(message: string, data?: any, context?: any) {
     if (!this.shouldLog(LogLevel.INFO)) return;
     
-    const entry = this.createLogEntry(LogLevel.INFO, message, data, undefined, context);
+    const entry = await this.createLogEntry(LogLevel.INFO, message, data, undefined, context);
     console.log(`ℹ️ [INFO] ${message}`, data || '');
     this.sendToExternalService(entry);
     return entry;
   }
 
-  warn(message: string, data?: any, context?: any) {
+  async warn(message: string, data?: any, context?: any) {
     if (!this.shouldLog(LogLevel.WARN)) return;
     
-    const entry = this.createLogEntry(LogLevel.WARN, message, data, undefined, context);
+    const entry = await this.createLogEntry(LogLevel.WARN, message, data, undefined, context);
     console.warn(`⚠️ [WARN] ${message}`, data || '');
     this.sendToExternalService(entry);
     return entry;
   }
 
-  error(message: string, error?: Error, data?: any, context?: any) {
+  async error(message: string, error?: Error, data?: any, context?: any) {
     if (!this.shouldLog(LogLevel.ERROR)) return;
     
-    const entry = this.createLogEntry(LogLevel.ERROR, message, data, error, context);
+    const entry = await this.createLogEntry(LogLevel.ERROR, message, data, error, context);
     console.error(`❌ [ERROR] ${message}`, error || '', data || '');
     this.sendToExternalService(entry);
     return entry;
@@ -156,9 +192,9 @@ class Logger {
   }
 
   // Recognition-specific logging with detailed pipeline tracking
-  recognitionStart(imageSize?: number, context?: any) {
+  async recognitionStart(imageSize?: number, context?: any) {
     const recognitionId = `rec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    this.info('🚀 Recognition Pipeline Started', { 
+    await this.info('🚀 Recognition Pipeline Started', { 
       imageSize, 
       recognitionId,
       timestamp: new Date().toISOString()
@@ -166,13 +202,13 @@ class Logger {
     return recognitionId;
   }
 
-  recognitionStep(step: string, data?: any, context?: any) {
-    return this.debug(`🔄 Recognition Step: ${step}`, data, { ...context, api: 'recognition' });
+  async recognitionStep(step: string, data?: any, context?: any) {
+    return await this.debug(`🔄 Recognition Step: ${step}`, data, { ...context, api: 'recognition' });
   }
 
   // Vision API logging
-  visionResults(visionBundle: any, processingTime: number, context?: any) {
-    this.info('🔍 Vision API Results', {
+  async visionResults(visionBundle: any, processingTime: number, context?: any) {
+    await this.info('🔍 Vision API Results', {
       labels: visionBundle.labels?.slice(0, 5) || [],
       cropLabels: visionBundle.cropLabels?.slice(0, 3) || [],
       webBestGuess: visionBundle.webBestGuess || [],
@@ -183,8 +219,8 @@ class Logger {
   }
 
   // Plant gate decision
-  plantGateDecision(isPlant: boolean, confidence: number, context?: any) {
-    this.info('🌱 Plant Gate Decision', {
+  async plantGateDecision(isPlant: boolean, confidence: number, context?: any) {
+    await this.info('🌱 Plant Gate Decision', {
       isPlant,
       confidence,
       decision: isPlant ? 'Will call Plant.id API' : 'Skipping Plant.id API'
@@ -192,8 +228,8 @@ class Logger {
   }
 
   // Provider results logging
-  providerResults(provider: string, results: any[], processingTime: number, context?: any) {
-    this.info(`📊 ${provider} Provider Results`, {
+  async providerResults(provider: string, results: any[], processingTime: number, context?: any) {
+    await this.info(`📊 ${provider} Provider Results`, {
       provider,
       resultCount: results.length,
       topResults: results.slice(0, 3).map(r => ({
@@ -207,8 +243,8 @@ class Logger {
   }
 
   // Knowledge Graph results
-  kgResults(canonicalResults: any[], processingTime: number, context?: any) {
-    this.info('🧠 Knowledge Graph Results', {
+  async kgResults(canonicalResults: any[], processingTime: number, context?: any) {
+    await this.info('🧠 Knowledge Graph Results', {
       resultCount: canonicalResults.length,
       topResults: canonicalResults.slice(0, 3).map(r => ({
         commonName: r.commonName,
@@ -222,8 +258,8 @@ class Logger {
   }
 
   // Candidate building and scoring
-  candidateBuilding(candidates: any[], context?: any) {
-    this.info('🏗️ Candidate Building', {
+  async candidateBuilding(candidates: any[], context?: any) {
+    await this.info('🏗️ Candidate Building', {
       totalCandidates: candidates.length,
       candidates: candidates.map(c => ({
         scientificName: c.scientificName,
@@ -313,7 +349,8 @@ class Logger {
   }
 
   // Get logs for debugging (works in both dev and prod)
-  getLogs(level?: LogLevel, limit?: number): LogEntry[] {
+  async getLogs(level?: LogLevel, limit?: number): Promise<LogEntry[]> {
+    // First get in-memory logs
     let filtered = this.logs;
     if (level !== undefined) {
       filtered = filtered.filter(log => log.level >= level);
@@ -321,11 +358,60 @@ class Logger {
     if (limit) {
       filtered = filtered.slice(-limit);
     }
+
+    // In production, also fetch from database
+    if (this.isProduction && supabase) {
+      try {
+        let query = supabase
+          .from('logs')
+          .select('*')
+          .order('timestamp', { ascending: false });
+
+        if (level !== undefined) {
+          query = query.gte('level', level);
+        }
+        if (limit) {
+          query = query.limit(limit);
+        }
+
+        const { data: dbLogs, error } = await query;
+        if (!error && dbLogs) {
+          // Convert database format to LogEntry format
+          const convertedLogs = dbLogs.map(dbLog => ({
+            timestamp: dbLog.timestamp,
+            level: dbLog.level,
+            message: dbLog.message,
+            data: dbLog.data ? JSON.parse(dbLog.data) : undefined,
+            error: dbLog.error ? new Error(dbLog.error) : undefined,
+            userId: dbLog.user_id,
+            sessionId: dbLog.session_id,
+            requestId: dbLog.request_id,
+            api: dbLog.api,
+            duration: dbLog.duration,
+            environment: dbLog.environment,
+            deployment: dbLog.deployment,
+            recognitionId: dbLog.recognition_id
+          }));
+
+          // Merge with in-memory logs, removing duplicates
+          const allLogs = [...filtered, ...convertedLogs];
+          const uniqueLogs = allLogs.filter((log, index, self) => 
+            index === self.findIndex(l => l.timestamp === log.timestamp && l.message === log.message)
+          );
+
+          return uniqueLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        }
+      } catch (error) {
+        console.error('Failed to fetch logs from database:', error);
+      }
+    }
+
     return filtered;
   }
 
   // Get recognition-specific logs (works in both dev and prod)
-  getRecognitionLogs(recognitionId?: string, limit?: number): LogEntry[] {
+  async getRecognitionLogs(recognitionId?: string, limit?: number): Promise<LogEntry[]> {
+    // First get in-memory logs
     let filtered = this.logs.filter(log => log.api === 'recognition');
     
     if (recognitionId) {
@@ -335,7 +421,55 @@ class Logger {
     if (limit) {
       filtered = filtered.slice(-limit);
     }
-    
+
+    // In production, also fetch from database
+    if (this.isProduction && supabase) {
+      try {
+        let query = supabase
+          .from('logs')
+          .select('*')
+          .eq('api', 'recognition')
+          .order('timestamp', { ascending: false });
+
+        if (recognitionId) {
+          query = query.eq('recognition_id', recognitionId);
+        }
+        if (limit) {
+          query = query.limit(limit);
+        }
+
+        const { data: dbLogs, error } = await query;
+        if (!error && dbLogs) {
+          // Convert database format to LogEntry format
+          const convertedLogs = dbLogs.map(dbLog => ({
+            timestamp: dbLog.timestamp,
+            level: dbLog.level,
+            message: dbLog.message,
+            data: dbLog.data ? JSON.parse(dbLog.data) : undefined,
+            error: dbLog.error ? new Error(dbLog.error) : undefined,
+            userId: dbLog.user_id,
+            sessionId: dbLog.session_id,
+            requestId: dbLog.request_id,
+            api: dbLog.api,
+            duration: dbLog.duration,
+            environment: dbLog.environment,
+            deployment: dbLog.deployment,
+            recognitionId: dbLog.recognition_id
+          }));
+
+          // Merge with in-memory logs, removing duplicates
+          const allLogs = [...filtered, ...convertedLogs];
+          const uniqueLogs = allLogs.filter((log, index, self) => 
+            index === self.findIndex(l => l.timestamp === log.timestamp && l.message === log.message)
+          );
+
+          return uniqueLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        }
+      } catch (error) {
+        console.error('Failed to fetch recognition logs from database:', error);
+      }
+    }
+
     return filtered;
   }
 
