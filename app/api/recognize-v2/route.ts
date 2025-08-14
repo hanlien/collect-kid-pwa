@@ -154,25 +154,31 @@ export async function POST(request: NextRequest) {
     // Wait for all parallel API calls to complete
     const parallelResults = await Promise.all(parallelPromises);
     
-    // Extract results
+    // Extract results - track which API is which
     let canonicalResults: Canonical[] = [];
     let plantResults: ProviderHit[] = [];
     let inatResults: ProviderHit[] = [];
     
-    if (candidateStrings.length > 0 && parallelResults[0]) {
-      canonicalResults = parallelResults[0].results || [];
-      logger.kgResults(canonicalResults, parallelResults[0].processingTime || 0, { recognitionId });
+    let resultIndex = 0;
+    
+    // Knowledge Graph results (always first if candidateStrings exist)
+    if (candidateStrings.length > 0 && parallelResults[resultIndex]) {
+      canonicalResults = parallelResults[resultIndex].results || [];
+      logger.kgResults(canonicalResults, parallelResults[resultIndex].processingTime || 0, { recognitionId });
+      resultIndex++;
     }
     
-    if (isPlant && parallelResults[1]) {
-      plantResults = parallelResults[1].results || [];
-      logger.providerResults('Plant.id', plantResults, parallelResults[1].processingTime || 0, { recognitionId });
+    // Plant.id results (if plant detected)
+    if (isPlant && parallelResults[resultIndex]) {
+      plantResults = parallelResults[resultIndex].results || [];
+      logger.providerResults('Plant.id', plantResults, parallelResults[resultIndex].processingTime || 0, { recognitionId });
+      resultIndex++;
     }
 
-    // iNaturalist results (last in parallel array)
-    if (candidateStrings.length > 0 && parallelResults[parallelResults.length - 1]) {
-      inatResults = parallelResults[parallelResults.length - 1].results || [];
-      logger.providerResults('iNaturalist', inatResults, parallelResults[parallelResults.length - 1].processingTime || 0, { recognitionId });
+    // iNaturalist results (always last)
+    if (candidateStrings.length > 0 && parallelResults[resultIndex]) {
+      inatResults = parallelResults[resultIndex].results || [];
+      logger.providerResults('iNaturalist', inatResults, parallelResults[resultIndex].processingTime || 0, { recognitionId });
     }
 
     logger.recognitionStep('parallel_api_complete', {

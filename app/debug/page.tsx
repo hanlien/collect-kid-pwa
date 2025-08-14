@@ -162,6 +162,187 @@ export default function DebugPage() {
     }
   };
 
+  // Helper functions to extract API results
+  const extractApiPerformance = (logs: any[]) => {
+    const apis = [
+      { name: 'Google Vision', pattern: 'Vision API Results', color: 'green' },
+      { name: 'Knowledge Graph', pattern: 'Knowledge Graph Results', color: 'purple' },
+      { name: 'Plant.id', pattern: 'Plant.id Provider Results', color: 'emerald' },
+      { name: 'iNaturalist', pattern: 'iNaturalist Provider Results', color: 'orange' }
+    ];
+
+    return apis.map(api => {
+      const log = logs.find(l => l.message.includes(api.pattern));
+      if (log) {
+        return {
+          name: api.name,
+          time: log.data?.processingTime || 0,
+          status: log.data?.processingTime ? '✅ Success' : '❌ Failed',
+          color: api.color
+        };
+      }
+      return {
+        name: api.name,
+        time: 0,
+        status: '⏭️ Skipped',
+        color: api.color
+      };
+    });
+  };
+
+  const extractVisionResults = (logs: any[]) => {
+    const visionLog = logs.find(l => l.message.includes('Vision API Results'));
+    if (!visionLog?.data) return <div className="text-gray-500">No Vision results found</div>;
+
+    const { labels, webBestGuess, processingTime } = visionLog.data;
+    
+    return (
+      <div className="space-y-3">
+        <div className="text-sm text-gray-600">Processing Time: <span className="font-semibold">{processingTime}ms</span></div>
+        
+        <div>
+          <div className="text-sm font-semibold text-gray-700 mb-2">Top Labels:</div>
+          <div className="space-y-1">
+            {labels?.slice(0, 5).map((label: any, index: number) => (
+              <div key={index} className="flex justify-between text-xs">
+                <span>{label.desc}</span>
+                <span className="font-semibold">{(label.score * 100).toFixed(1)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-sm font-semibold text-gray-700 mb-2">Web Best Guesses:</div>
+          <div className="space-y-1">
+            {webBestGuess?.slice(0, 3).map((guess: string, index: number) => (
+              <div key={index} className="text-xs text-gray-600">• {guess}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const extractKGResults = (logs: any[]) => {
+    const kgLog = logs.find(l => l.message.includes('Knowledge Graph Results'));
+    if (!kgLog?.data) return <div className="text-gray-500">No Knowledge Graph results found</div>;
+
+    const { topResults, processingTime } = kgLog.data;
+    
+    return (
+      <div className="space-y-3">
+        <div className="text-sm text-gray-600">Processing Time: <span className="font-semibold">{processingTime}ms</span></div>
+        
+        <div>
+          <div className="text-sm font-semibold text-gray-700 mb-2">Top Results:</div>
+          <div className="space-y-1">
+            {topResults?.slice(0, 5).map((result: any, index: number) => (
+              <div key={index} className="text-xs">
+                <div className="font-semibold">{result.commonName}</div>
+                {result.scientificName && <div className="text-gray-500 italic">{result.scientificName}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const extractPlantIdResults = (logs: any[]) => {
+    const plantLog = logs.find(l => l.message.includes('Plant.id Provider Results'));
+    if (!plantLog?.data) return <div className="text-gray-500">No Plant.id results found</div>;
+
+    const { topResults, processingTime } = plantLog.data;
+    
+    return (
+      <div className="space-y-3">
+        <div className="text-sm text-gray-600">Processing Time: <span className="font-semibold">{processingTime}ms</span></div>
+        
+        <div>
+          <div className="text-sm font-semibold text-gray-700 mb-2">Top Results:</div>
+          <div className="space-y-1">
+            {topResults?.slice(0, 3).map((result: any, index: number) => (
+              <div key={index} className="flex justify-between text-xs">
+                <span>{result.name}</span>
+                <span className="font-semibold">{(result.confidence * 100).toFixed(1)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const extractINatResults = (logs: any[]) => {
+    const inatLog = logs.find(l => l.message.includes('iNaturalist Provider Results'));
+    if (!inatLog?.data) return <div className="text-gray-500">No iNaturalist results found</div>;
+
+    const { topResults, processingTime } = inatLog.data;
+    
+    return (
+      <div className="space-y-3">
+        <div className="text-sm text-gray-600">Processing Time: <span className="font-semibold">{processingTime}ms</span></div>
+        
+        <div>
+          <div className="text-sm font-semibold text-gray-700 mb-2">Top Results:</div>
+          <div className="space-y-1">
+            {topResults?.slice(0, 3).map((result: any, index: number) => (
+              <div key={index} className="flex justify-between text-xs">
+                <span>{result.name}</span>
+                <span className="font-semibold">{(result.confidence * 100).toFixed(1)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const extractScoringBreakdown = (logs: any[]) => {
+    const decisionLog = logs.find(l => l.message.includes('Decision Making'));
+    const candidateLog = logs.find(l => l.message.includes('Candidate Building'));
+    
+    if (!decisionLog?.data) return <div className="text-gray-500">No scoring breakdown found</div>;
+
+    const { mode, topCandidates, decisionReason } = decisionLog.data;
+    const candidates = candidateLog?.data?.candidates || [];
+    
+    return (
+      <div className="space-y-4">
+        <div className="bg-white p-3 rounded border">
+          <div className="text-sm font-semibold text-gray-700 mb-2">Final Decision:</div>
+          <div className="text-sm">
+            <span className="font-semibold">Mode:</span> {mode} | 
+            <span className="font-semibold ml-2">Reason:</span> {decisionReason}
+          </div>
+        </div>
+
+        <div>
+          <div className="text-sm font-semibold text-gray-700 mb-2">Top Candidates & Scores:</div>
+          <div className="space-y-2">
+            {topCandidates?.slice(0, 3).map((candidate: any, index: number) => (
+              <div key={index} className="bg-white p-3 rounded border">
+                <div className="text-sm font-semibold text-gray-900 mb-1">
+                  #{index + 1}: {candidate.commonName}
+                </div>
+                <div className="text-xs text-gray-600 mb-2">{candidate.scientificName}</div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>Vision: <span className="font-semibold">{(candidate.scores.vision * 100).toFixed(1)}%</span></div>
+                  <div>Web: <span className="font-semibold">{(candidate.scores.webGuess * 100).toFixed(1)}%</span></div>
+                  <div>KG: <span className="font-semibold">{(candidate.scores.kgMatch * 100).toFixed(1)}%</span></div>
+                  <div>Provider: <span className="font-semibold">{(candidate.scores.provider * 100).toFixed(1)}%</span></div>
+                  <div>Crop: <span className="font-semibold">{(candidate.scores.cropAgree * 100).toFixed(1)}%</span></div>
+                  <div>Total: <span className="font-semibold text-green-600">{((candidate.totalScore || 0) * 100).toFixed(1)}%</span></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Authentication screen
   if (!isAuthorized) {
     return (
@@ -382,12 +563,12 @@ export default function DebugPage() {
           )}
         </Card>
 
-        {/* Detailed Session Logs */}
+        {/* API Results Analysis */}
         {selectedSession && (
           <Card className="mb-6 p-6">
             <div className="flex justify-between items-center mb-6">
               <Typography variant="h2">
-                🔍 Session Analysis: {selectedSession.slice(-8)}
+                🔬 API Results Analysis: {selectedSession.slice(-8)}
               </Typography>
               <button
                 onClick={() => setSelectedSession(null)}
@@ -403,36 +584,95 @@ export default function DebugPage() {
                 <div>No detailed logs found for this session</div>
               </div>
             ) : (
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {sessionLogs.map((log, index) => (
-                  <div key={`${log.timestamp}-${index}`} className="border-l-4 border-blue-200 pl-4 py-3 bg-blue-50 rounded-r-lg">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-lg">{getLevelIcon(log.level)}</span>
-                      <span className={`text-sm font-semibold ${getLevelColor(log.level)}`}>
-                        {new Date(log.timestamp).toLocaleTimeString()}
-                      </span>
-                      <span className="text-sm text-gray-700 font-medium">
-                        {log.message}
-                      </span>
-                    </div>
-                    
-                    {log.data && (
-                      <div className="bg-white p-3 rounded border border-blue-200">
-                        <div className="text-xs font-semibold text-gray-600 mb-2">📊 Data:</div>
-                        <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto max-h-32 overflow-y-auto">
-                          {JSON.stringify(log.data, null, 2)}
-                        </pre>
+              <div className="space-y-6">
+                {/* API Performance Summary */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+                  <Typography variant="h3" className="mb-3 text-blue-900">
+                    ⚡ API Performance Summary
+                  </Typography>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {extractApiPerformance(sessionLogs).map((api, index) => (
+                      <div key={index} className="bg-white p-3 rounded border">
+                        <div className="text-sm font-semibold text-gray-700">{api.name}</div>
+                        <div className={`text-lg font-bold ${api.time > 2000 ? 'text-red-600' : api.time > 1000 ? 'text-yellow-600' : 'text-green-600'}`}>
+                          {api.time}ms
+                        </div>
+                        <div className="text-xs text-gray-500">{api.status}</div>
                       </div>
-                    )}
-                    
-                    {log.error && (
-                      <div className="bg-red-50 p-3 rounded border border-red-200">
-                        <div className="text-xs font-semibold text-red-700 mb-1">❌ Error:</div>
-                        <div className="text-xs text-red-600">{log.error}</div>
-                      </div>
-                    )}
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                {/* API Results Breakdown */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Google Vision Results */}
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                    <Typography variant="h3" className="mb-3 text-green-900">
+                      🔍 Google Vision Results
+                    </Typography>
+                    {extractVisionResults(sessionLogs)}
+                  </div>
+
+                  {/* Knowledge Graph Results */}
+                  <div className="bg-gradient-to-r from-purple-50 to-violet-50 p-4 rounded-lg border border-purple-200">
+                    <Typography variant="h3" className="mb-3 text-purple-900">
+                      🧠 Knowledge Graph Results
+                    </Typography>
+                    {extractKGResults(sessionLogs)}
+                  </div>
+
+                  {/* Plant.id Results */}
+                  <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-lg border border-emerald-200">
+                    <Typography variant="h3" className="mb-3 text-emerald-900">
+                      🌱 Plant.id Results
+                    </Typography>
+                    {extractPlantIdResults(sessionLogs)}
+                  </div>
+
+                  {/* iNaturalist Results */}
+                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-lg border border-orange-200">
+                    <Typography variant="h3" className="mb-3 text-orange-900">
+                      🌿 iNaturalist Results
+                    </Typography>
+                    {extractINatResults(sessionLogs)}
+                  </div>
+                </div>
+
+                {/* Scoring Breakdown */}
+                <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-lg border border-indigo-200">
+                  <Typography variant="h3" className="mb-3 text-indigo-900">
+                    🎯 Scoring Breakdown & Final Decision
+                  </Typography>
+                  {extractScoringBreakdown(sessionLogs)}
+                </div>
+
+                {/* Raw Logs */}
+                <div className="bg-gray-50 p-4 rounded-lg border">
+                  <Typography variant="h3" className="mb-3 text-gray-900">
+                    📋 Raw Logs
+                  </Typography>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {sessionLogs.map((log, index) => (
+                      <div key={`${log.timestamp}-${index}`} className="border-l-4 border-gray-300 pl-3 py-2 bg-white rounded-r">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm">{getLevelIcon(log.level)}</span>
+                          <span className={`text-xs font-semibold ${getLevelColor(log.level)}`}>
+                            {new Date(log.timestamp).toLocaleTimeString()}
+                          </span>
+                          <span className="text-xs text-gray-600">
+                            {log.message}
+                          </span>
+                        </div>
+                        
+                        {log.data && (
+                          <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto max-h-20 overflow-y-auto">
+                            {JSON.stringify(log.data, null, 2)}
+                          </pre>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </Card>
