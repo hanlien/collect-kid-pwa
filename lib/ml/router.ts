@@ -160,7 +160,7 @@ export class MLRouter {
     if (hasBug) return 'bug';
     if (hasAnimal) return 'animal';
     
-    return 'unknown';
+    return 'mysterious';
   }
 
   private hasLocalCoverage(category: string): boolean {
@@ -171,7 +171,7 @@ export class MLRouter {
   }
 
   private createVisionFallbackResult(visionLabels: string[], category: string): SpeciesResult {
-    const topLabel = visionLabels[0] || 'Unknown';
+    const topLabel = visionLabels[0] || 'Mysterious!';
     
     return {
       category: category as any,

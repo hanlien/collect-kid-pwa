@@ -55,7 +55,7 @@ def test_model_integration():
     
     # Test 2: Top-K predictions (like TypeScript getTopK)
     print("\n🧪 Test 2: Top-K Predictions")
-    classes = [cls for cls in label_map['classes'] if cls['id'] != 'unknown']
+    classes = [cls for cls in label_map['classes'] if cls['id'] != 'mysterious']
     
     top_indices = np.argsort(probs)[-5:][::-1]
     top_predictions = []

@@ -61,7 +61,7 @@ export function getBadgeSubtype(labels: (string | undefined)[], category: Catego
     return 'animal';
   }
   
-  return 'unknown';
+  return 'mysterious';
 }
 
 // Badge level calculation

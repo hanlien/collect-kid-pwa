@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
             
             speciesResult = {
               category: 'flower',
-              canonicalName: suggestion.plant_name || 'Unknown Plant',
+              canonicalName: suggestion.plant_name || 'Mysterious Plant',
               commonName: suggestion.plant_details?.common_names?.[0],
               rank: suggestion.plant_details?.taxonomy?.rank || 'species',
               confidence: suggestion.probability || 0.5,
@@ -407,7 +407,7 @@ export async function POST(request: NextRequest) {
     } else {
       console.log('❓ Using GENERIC GOOGLE VISION fallback engine');
       // Generic result
-      const topLabel = labels[0] || 'Unknown';
+      const topLabel = labels[0] || 'Mysterious!';
       speciesResult = {
         category: 'flower',
         canonicalName: topLabel,

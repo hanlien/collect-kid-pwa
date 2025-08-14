@@ -24,7 +24,7 @@ def create_synthetic_dataset(label_map, num_samples_per_class=50):
     """Create a synthetic dataset for training"""
     print("🎨 Creating synthetic dataset...")
     
-    classes = [cls for cls in label_map['classes'] if cls['id'] != 'unknown']
+    classes = [cls for cls in label_map['classes'] if cls['id'] != 'mysterious']
     num_classes = len(classes)
     
     # Create synthetic images (colored rectangles with text)

@@ -1,6 +1,6 @@
 export interface BadgeDefinition {
   id: string;
-  category: 'flower' | 'bug' | 'animal';
+  category: 'flower' | 'bug' | 'animal' | 'mysterious';
   subtype: string;
   name: string;
   description: string;
@@ -824,6 +824,21 @@ export const ALL_BADGES: BadgeDefinition[] = [
       { level: 1, count: 1, nextGoal: 3, name: 'Bronze Animal', color: 'bronze' },
       { level: 2, count: 3, nextGoal: 7, name: 'Silver Animal', color: 'silver' },
       { level: 3, count: 7, nextGoal: 0, name: 'Gold Animal', color: 'gold' }
+    ]
+  },
+  
+  // Mysterious Badge
+  {
+    id: 'mysterious-general',
+    category: 'mysterious',
+    subtype: 'mysterious',
+    name: 'Mysterious Explorer',
+    description: 'Discover mysterious and unidentifiable species',
+    emoji: '❓',
+    levels: [
+      { level: 1, count: 1, nextGoal: 3, name: 'Bronze Mysterious', color: 'bronze' },
+      { level: 2, count: 3, nextGoal: 7, name: 'Silver Mysterious', color: 'silver' },
+      { level: 3, count: 7, nextGoal: 0, name: 'Gold Mysterious', color: 'gold' }
     ]
   }
 ];

@@ -20,7 +20,7 @@ export const recognizeRequestSchema = z.object({
 export const collectRequestSchema = z.object({
   userId: z.string().min(1), // Changed from UUID to any non-empty string for profile IDs
   result: z.object({
-    category: z.enum(['flower', 'bug', 'animal', 'unknown']),
+    category: z.enum(['flower', 'bug', 'animal', 'mysterious']),
     canonicalName: z.string(),
     commonName: z.string().optional(),
     rank: z.enum(['species', 'genus', 'family']).optional(),

@@ -5,7 +5,7 @@ export interface Species {
   canonicalName: string;
   commonName?: string;
   scientificName: string;
-  category: 'flower' | 'bug' | 'animal' | 'unknown';
+  category: 'flower' | 'bug' | 'animal' | 'mysterious';
   confidence: number;
   imageUrl?: string;
   facts?: SpeciesFacts;

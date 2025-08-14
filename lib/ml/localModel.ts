@@ -118,7 +118,7 @@ class LocalModel {
     indexed.sort((a, b) => b.prob - a.prob);
     
     return indexed.slice(0, k).map(({ prob, index }) => ({
-      labelId: this.labelMap?.classes?.[index]?.id || 'unknown',
+      labelId: this.labelMap?.classes?.[index]?.id || 'mysterious',
       prob
     }));
   }
@@ -134,7 +134,7 @@ class LocalModel {
 
   getCategory(labelId: string): string {
     const classInfo = this.labelMap.classes.find((c: any) => c.id === labelId);
-    return classInfo?.category || 'unknown';
+    return classInfo?.category || 'mysterious';
   }
 
   getLabelInfo(labelId: string) {

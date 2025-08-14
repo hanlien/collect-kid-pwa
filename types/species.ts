@@ -1,4 +1,4 @@
-export type Category = 'flower' | 'bug' | 'animal' | 'unknown';
+export type Category = 'flower' | 'bug' | 'animal' | 'mysterious';
 export type Provider = 'plantid' | 'gcv' | 'local' | 'inaturalist';
 
 export type SpeciesResult = {

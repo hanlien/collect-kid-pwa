@@ -346,7 +346,7 @@ export default function ResultPage() {
     flower: '🌸',
     bug: '🦋',
     animal: '🐾',
-    unknown: '❓',
+    mysterious: '❓',
   }[result.category];
 
   return (
@@ -467,7 +467,7 @@ export default function ResultPage() {
                     <div className="bg-gray-50 rounded-xl p-4 text-center">
                       <div className="text-2xl mb-2">🔬</div>
                       <div className="text-sm text-gray-500">Rank</div>
-                      <div className="font-semibold text-gray-800 capitalize">{result.rank || 'Unknown'}</div>
+                      <div className="font-semibold text-gray-800 capitalize">{result.rank || 'Mysterious!'}</div>
                     </div>
                     <div className="bg-gray-50 rounded-xl p-4 text-center">
                       <div className="text-2xl mb-2">🎯</div>

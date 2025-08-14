@@ -83,8 +83,8 @@ def run_inference(interpreter, image):
 
 def get_top_predictions(probs, label_map, top_k=5):
     """Get top K predictions"""
-    # Get classes excluding 'unknown'
-    classes = [cls for cls in label_map['classes'] if cls['id'] != 'unknown']
+    # Get classes excluding 'mysterious'
+classes = [cls for cls in label_map['classes'] if cls['id'] != 'mysterious']
     
     # Get top K indices
     top_indices = np.argsort(probs)[-top_k:][::-1]

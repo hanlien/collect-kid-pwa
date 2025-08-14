@@ -3,12 +3,12 @@
   "updated": "2024-01-15",
   "classes": [
     {
-      "id": "unknown",
-      "category": "unknown",
-      "genus": "Unknown",
-      "species": "Unknown",
-      "commonName": "Unknown",
-      "description": "Unknown or unidentifiable species"
+      "id": "mysterious",
+"category": "mysterious",
+"genus": "Mysterious!",
+"species": "Mysterious!",
+"commonName": "Mysterious!",
+"description": "Mysterious or unidentifiable species"
     },
     {
       "id": "rose_garden",

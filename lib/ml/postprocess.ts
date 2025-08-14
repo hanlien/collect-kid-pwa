@@ -8,14 +8,14 @@ export function postprocessLocalResult(localResult: LocalModelResult): SpeciesRe
   if (!labelInfo) {
     return {
       category: 'flower',
-      canonicalName: 'Unknown',
-      commonName: 'Unknown',
+      canonicalName: 'Mysterious!',
+commonName: 'Mysterious!',
       rank: 'species',
       confidence: localResult.topK[0]?.prob || 0,
       provider: 'local',
       meta: {
         modelVersion: 'v001',
-        reasoning: 'Local model - unknown label'
+        reasoning: 'Local model - mysterious label'
       }
     };
   }

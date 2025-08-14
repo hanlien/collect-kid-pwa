@@ -196,7 +196,7 @@ class iNaturalistAPI {
    * Get category from iconic taxon name
    */
   private getCategoryFromIconicTaxon(iconicTaxonName?: string): string {
-    if (!iconicTaxonName) return 'unknown';
+    if (!iconicTaxonName) return 'mysterious';
     
     switch (iconicTaxonName.toLowerCase()) {
       case 'animalia':
@@ -208,7 +208,7 @@ class iNaturalistAPI {
       case 'mollusca':
         return 'bug';
       default:
-        return 'unknown';
+        return 'mysterious';
     }
   }
 
@@ -402,7 +402,7 @@ class iNaturalistAPI {
     const taxon = iNaturalistResult.taxon;
     
     // Determine category based on iconic taxon
-    let category = 'unknown';
+    let category = 'mysterious';
     switch (taxon.iconic_taxon_name?.toLowerCase()) {
       case 'animalia':
         category = 'animal';
