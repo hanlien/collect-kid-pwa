@@ -80,9 +80,9 @@ export async function POST(request: NextRequest) {
     console.log('🧠 Step 2: Building candidate strings...');
 
     const candidateStrings = [
-      ...visionBundle.labels.map(l => l.desc),
-      ...visionBundle.webBestGuess,
-      ...visionBundle.cropLabels.map(l => l.desc),
+      ...(visionBundle.labels || []).map(l => l.desc),
+      ...(visionBundle.webBestGuess || []),
+      ...(visionBundle.cropLabels || []).map(l => l.desc),
     ].filter(Boolean);
 
     logger.recognitionStep('candidate_strings_complete', {
