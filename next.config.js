@@ -9,6 +9,32 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
   
+  // Fix build trace collection issues
+  outputFileTracing: true,
+  
+  // Exclude problematic directories from build traces
+  excludeDefaultMomentLocales: true,
+  
+  // Webpack configuration to handle large dependency trees
+  webpack: (config, { isServer }) => {
+    // Ignore Python/ML directories during build
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: [
+        '**/node_modules/**',
+        '**/.git/**',
+        '**/.next/**',
+        '**/ml_env/**',
+        '**/.venv/**',
+        '**/ml/dataset/**',
+        '**/ml/metrics/**',
+        '**/__pycache__/**',
+      ],
+    };
+
+    return config;
+  },
+  
   // Compress and optimize images
   images: {
     domains: ['upload.wikimedia.org', 'api.gbif.org'],

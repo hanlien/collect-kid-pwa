@@ -1,0 +1,39 @@
+# Python virtual environments
+ml_env/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ML training data and models
+ml/dataset/
+ml/metrics/
+ml/models/
+
+# Large files and directories
+node_modules/
+.next/
+.git/
+
+# Development files
+*.log
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build artifacts
+*.tsbuildinfo
+dist/
+build/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
