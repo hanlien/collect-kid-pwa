@@ -35,9 +35,31 @@ export default function DebugPage() {
   const [loading, setLoading] = useState(false);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [sessionLogs, setSessionLogs] = useState<LogEntry[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [password, setPassword] = useState('');
+
+  // Simple password protection for production
+  const DEBUG_PASSWORD = process.env.NEXT_PUBLIC_DEBUG_PASSWORD || 'brandon2024';
+
+  const checkAuth = () => {
+    if (process.env.NODE_ENV === 'development') {
+      setIsAuthorized(true);
+    } else {
+      // In production, require password
+      setIsAuthorized(password === DEBUG_PASSWORD);
+    }
+  };
+
+  useEffect(() => {
+    checkAuth();
+  }, [password]);
 
   const fetchLogs = async () => {
+    if (!isAuthorized) return;
+    
     setLoading(true);
+    setError(null);
     try {
       const response = await fetch('/api/logs/recognition');
       const data = await response.json();
@@ -45,15 +67,20 @@ export default function DebugPage() {
       if (data.success) {
         setLogs(data.logs || []);
         setSessionSummaries(data.sessionSummaries || []);
+      } else {
+        setError(data.error || 'Failed to fetch logs');
       }
     } catch (error) {
       console.error('Failed to fetch logs:', error);
+      setError('Failed to fetch logs');
     } finally {
       setLoading(false);
     }
   };
 
   const fetchSessionLogs = async (sessionId: string) => {
+    if (!isAuthorized) return;
+    
     try {
       const response = await fetch(`/api/logs/recognition?recognitionId=${sessionId}`);
       const data = await response.json();
@@ -61,25 +88,39 @@ export default function DebugPage() {
       if (data.success) {
         setSessionLogs(data.logs || []);
         setSelectedSession(sessionId);
+      } else {
+        setError(data.error || 'Failed to fetch session logs');
       }
     } catch (error) {
       console.error('Failed to fetch session logs:', error);
+      setError('Failed to fetch session logs');
     }
   };
 
   const clearLogs = async () => {
+    if (!isAuthorized) return;
+    
     try {
-      await fetch('/api/logs/recognition', { method: 'DELETE' });
-      setLogs([]);
-      setSessionSummaries([]);
-      setSessionLogs([]);
-      setSelectedSession(null);
+      const response = await fetch('/api/logs/recognition', { method: 'DELETE' });
+      const data = await response.json();
+      
+      if (data.success) {
+        setLogs([]);
+        setSessionSummaries([]);
+        setSessionLogs([]);
+        setSelectedSession(null);
+      } else {
+        setError(data.error || 'Failed to clear logs');
+      }
     } catch (error) {
       console.error('Failed to clear logs:', error);
+      setError('Failed to clear logs');
     }
   };
 
   const exportLogs = async () => {
+    if (!isAuthorized) return;
+    
     try {
       const response = await fetch('/api/logs/recognition?export=true');
       const blob = await response.blob();
@@ -91,12 +132,15 @@ export default function DebugPage() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Failed to export logs:', error);
+      setError('Failed to export logs');
     }
   };
 
   useEffect(() => {
-    fetchLogs();
-  }, []);
+    if (isAuthorized) {
+      fetchLogs();
+    }
+  }, [isAuthorized]);
 
   const getLevelColor = (level: number) => {
     switch (level) {
@@ -118,12 +162,57 @@ export default function DebugPage() {
     }
   };
 
+  // Authentication screen
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center p-4">
+        <Card className="p-8 max-w-md w-full">
+          <Typography variant="h1" className="text-center mb-6">
+            🔐 Debug Access
+          </Typography>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="Enter debug password"
+              />
+            </div>
+            
+            <Button onClick={checkAuth} className="w-full">
+              🔓 Access Debug Panel
+            </Button>
+          </div>
+          
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-3 bg-blue-50 text-blue-700 text-sm rounded">
+              💡 Development mode: No password required
+            </div>
+          )}
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 p-4">
       <div className="max-w-7xl mx-auto">
         <Typography variant="h1" className="text-center mb-8">
           🐛 Recognition Pipeline Debug
         </Typography>
+
+        {/* Error Display */}
+        {error && (
+          <Card className="mb-6 p-4 bg-red-50 border-red-200">
+            <Typography variant="body" className="text-red-700">
+              ❌ {error}
+            </Typography>
+          </Card>
+        )}
 
         {/* Controls */}
         <Card className="mb-6 p-4">
@@ -137,6 +226,9 @@ export default function DebugPage() {
             <Button onClick={exportLogs} variant="outline">
               📥 Export Logs
             </Button>
+            <div className="text-sm text-gray-600">
+              Environment: {process.env.NODE_ENV}
+            </div>
           </div>
         </Card>
 
@@ -146,51 +238,57 @@ export default function DebugPage() {
             📊 Recognition Sessions ({sessionSummaries.length})
           </Typography>
           
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {sessionSummaries.map((session) => (
-              <Card 
-                key={session.sessionId} 
-                className={`p-4 cursor-pointer transition-colors ${
-                  selectedSession === session.sessionId ? 'ring-2 ring-primary-500' : ''
-                }`}
-                onClick={() => fetchSessionLogs(session.sessionId)}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <Typography variant="h3" className="text-sm font-mono">
-                    {session.sessionId.slice(-8)}
-                  </Typography>
-                  <span className={`px-2 py-1 rounded text-xs ${
-                    session.status === 'success' ? 'bg-green-100 text-green-800' :
-                    session.status === 'failed' ? 'bg-red-100 text-red-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {session.status}
-                  </span>
-                </div>
-                
-                <div className="space-y-1 text-sm">
-                  <div>🕒 {new Date(session.startTime).toLocaleTimeString()}</div>
-                  {session.duration && <div>⏱️ {session.duration}ms</div>}
-                  <div>📏 {session.imageSize?.toLocaleString()} bytes</div>
-                  <div>🏷️ {session.visionLabels} labels</div>
-                  <div>🎯 {session.decision || 'N/A'}</div>
-                  <div>📝 {session.logCount} logs</div>
-                </div>
-
-                {session.error && (
-                  <div className="mt-2 p-2 bg-red-50 text-red-700 text-xs rounded">
-                    ❌ {session.error}
+          {sessionSummaries.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No recognition sessions found. Try scanning an image first!
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {sessionSummaries.map((session) => (
+                <Card 
+                  key={session.sessionId} 
+                  className={`p-4 cursor-pointer transition-colors ${
+                    selectedSession === session.sessionId ? 'ring-2 ring-primary-500' : ''
+                  }`}
+                  onClick={() => fetchSessionLogs(session.sessionId)}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <Typography variant="h3" className="text-sm font-mono">
+                      {session.sessionId.slice(-8)}
+                    </Typography>
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      session.status === 'success' ? 'bg-green-100 text-green-800' :
+                      session.status === 'failed' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {session.status}
+                    </span>
                   </div>
-                )}
-
-                {session.finalResult && (
-                  <div className="mt-2 p-2 bg-green-50 text-green-700 text-xs rounded">
-                    ✅ {session.finalResult.commonName || session.finalResult.canonicalName}
+                  
+                  <div className="space-y-1 text-sm">
+                    <div>🕒 {new Date(session.startTime).toLocaleTimeString()}</div>
+                    {session.duration && <div>⏱️ {session.duration}ms</div>}
+                    <div>📏 {session.imageSize?.toLocaleString()} bytes</div>
+                    <div>🏷️ {session.visionLabels} labels</div>
+                    <div>🎯 {session.decision || 'N/A'}</div>
+                    <div>📝 {session.logCount} logs</div>
                   </div>
-                )}
-              </Card>
-            ))}
-          </div>
+
+                  {session.error && (
+                    <div className="mt-2 p-2 bg-red-50 text-red-700 text-xs rounded">
+                      ❌ {session.error}
+                    </div>
+                  )}
+
+                  {session.finalResult && (
+                    <div className="mt-2 p-2 bg-green-50 text-green-700 text-xs rounded">
+                      ✅ {session.finalResult.commonName || session.finalResult.canonicalName}
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* Detailed Session Logs */}

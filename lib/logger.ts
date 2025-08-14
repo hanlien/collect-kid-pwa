@@ -57,12 +57,10 @@ class Logger {
       ...context,
     };
 
-    // Add to in-memory logs (development only)
-    if (!this.isProduction) {
-      this.logs.push(entry);
-      if (this.logs.length > this.maxLogs) {
-        this.logs.shift(); // Remove oldest log
-      }
+    // Add to in-memory logs (both dev and prod for immediate access)
+    this.logs.push(entry);
+    if (this.logs.length > this.maxLogs) {
+      this.logs.shift(); // Remove oldest log
     }
 
     return entry;
@@ -314,13 +312,8 @@ class Logger {
     return this.error('Collection failed', error, speciesData, { ...context, api: 'collect' });
   }
 
-  // Get logs for debugging (development only)
+  // Get logs for debugging (works in both dev and prod)
   getLogs(level?: LogLevel, limit?: number): LogEntry[] {
-    if (this.isProduction) {
-      console.warn('Log retrieval not available in production');
-      return [];
-    }
-
     let filtered = this.logs;
     if (level !== undefined) {
       filtered = filtered.filter(log => log.level >= level);
@@ -331,13 +324,8 @@ class Logger {
     return filtered;
   }
 
-  // Get recognition-specific logs
+  // Get recognition-specific logs (works in both dev and prod)
   getRecognitionLogs(recognitionId?: string, limit?: number): LogEntry[] {
-    if (this.isProduction) {
-      console.warn('Log retrieval not available in production');
-      return [];
-    }
-
     let filtered = this.logs.filter(log => log.api === 'recognition');
     
     if (recognitionId) {
@@ -351,28 +339,18 @@ class Logger {
     return filtered;
   }
 
-  // Clear logs (development only)
+  // Clear logs (works in both dev and prod)
   clearLogs() {
-    if (this.isProduction) {
-      console.warn('Log clearing not available in production');
-      return;
-    }
     this.logs = [];
   }
 
-  // Export logs for debugging (development only)
+  // Export logs for debugging (works in both dev and prod)
   exportLogs(): string {
-    if (this.isProduction) {
-      return JSON.stringify({ error: 'Log export not available in production' });
-    }
     return JSON.stringify(this.logs, null, 2);
   }
 
-  // Export recognition logs specifically
+  // Export recognition logs specifically (works in both dev and prod)
   exportRecognitionLogs(recognitionId?: string): string {
-    if (this.isProduction) {
-      return JSON.stringify({ error: 'Log export not available in production' });
-    }
     const recognitionLogs = this.getRecognitionLogs(recognitionId);
     return JSON.stringify(recognitionLogs, null, 2);
   }
