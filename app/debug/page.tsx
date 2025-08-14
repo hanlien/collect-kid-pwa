@@ -349,7 +349,7 @@ export default function DebugPage() {
                     )}
                     <div className="flex justify-between">
                       <span className="text-gray-600">📏 Size:</span>
-                      <span className="font-medium">{(session.imageSize / 1024).toFixed(1)}KB</span>
+                      <span className="font-medium">{session.imageSize ? (session.imageSize / 1024).toFixed(1) : '0'}KB</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">🏷️ Labels:</span>
