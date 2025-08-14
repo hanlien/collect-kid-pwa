@@ -136,21 +136,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // iNaturalist API call (in parallel)
+    if (candidateStrings.length > 0) {
+      parallelPromises.push(
+        fetch(`${request.nextUrl.origin}/api/inat/search`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ queries: candidateStrings.slice(0, 5) }),
+        }).then(res => res.ok ? res.json() : { results: [] })
+          .catch(error => {
+            console.error('iNaturalist API error:', error);
+            return { results: [] };
+          })
+      );
+    }
+
     // Wait for all parallel API calls to complete
     const parallelResults = await Promise.all(parallelPromises);
     
     // Extract results
     let canonicalResults: Canonical[] = [];
     let plantResults: ProviderHit[] = [];
+    let inatResults: ProviderHit[] = [];
     
     if (candidateStrings.length > 0 && parallelResults[0]) {
       canonicalResults = parallelResults[0].results || [];
       logger.kgResults(canonicalResults, parallelResults[0].processingTime || 0, { recognitionId });
     }
     
-    if (isPlant && parallelResults[parallelResults.length - 1]) {
-      plantResults = parallelResults[parallelResults.length - 1].results || [];
-      logger.providerResults('Plant.id', plantResults, parallelResults[parallelResults.length - 1].processingTime || 0, { recognitionId });
+    if (isPlant && parallelResults[1]) {
+      plantResults = parallelResults[1].results || [];
+      logger.providerResults('Plant.id', plantResults, parallelResults[1].processingTime || 0, { recognitionId });
+    }
+
+    // iNaturalist results (last in parallel array)
+    if (candidateStrings.length > 0 && parallelResults[parallelResults.length - 1]) {
+      inatResults = parallelResults[parallelResults.length - 1].results || [];
+      logger.providerResults('iNaturalist', inatResults, parallelResults[parallelResults.length - 1].processingTime || 0, { recognitionId });
     }
 
     logger.recognitionStep('parallel_api_complete', {
@@ -159,51 +181,7 @@ export async function POST(request: NextRequest) {
       totalTime: Date.now() - startTime
     }, { recognitionId });
 
-    // Step 5: iNaturalist search (only if we have canonical results)
-    let inatResults: ProviderHit[] = [];
-    if (canonicalResults.length > 0) {
-      logger.recognitionStep('inaturalist_call', { step: 'Calling iNaturalist' }, { recognitionId });
-      console.log('🌿 Step 5: Searching iNaturalist...');
-
-      try {
-        const inatQueries = canonicalResults
-          .map(c => [c.commonName, c.scientificName])
-          .flat()
-          .filter(Boolean)
-          .slice(0, 10); // Limit to top 10 queries for performance
-
-        logger.recognitionStep('inaturalist_queries', {
-          queryCount: inatQueries.length,
-          topQueries: inatQueries.slice(0, 5)
-        }, { recognitionId });
-
-        const inatResponse = await fetch(`${request.nextUrl.origin}/api/inat/search`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ queries: inatQueries }),
-        });
-
-        if (inatResponse.ok) {
-          const inatData = await inatResponse.json();
-          inatResults = inatData.results || [];
-
-          // Log iNaturalist results
-          logger.providerResults('iNaturalist', inatResults, inatData.processingTime || 0, { recognitionId });
-          logger.recognitionStep('inaturalist_complete', {
-            resultCount: inatResults.length,
-            processingTime: inatData.processingTime || 0
-          }, { recognitionId });
-
-        } else {
-          logger.recognitionStep('inaturalist_error', { status: inatResponse.status }, { recognitionId });
-        }
-      } catch (error) {
-        console.error('iNaturalist API error:', error);
-        logger.recognitionStep('inaturalist_error', { error: error instanceof Error ? error.message : 'Unknown error' }, { recognitionId });
-      }
-    } else {
-      logger.recognitionStep('inaturalist_skipped', { reason: 'No canonical results' }, { recognitionId });
-    }
+    // Step 5: iNaturalist search is now done in parallel above
 
     // Step 6: Merge and deduplicate candidates
     logger.recognitionStep('candidate_merging', { step: 'Merging candidates' }, { recognitionId });
