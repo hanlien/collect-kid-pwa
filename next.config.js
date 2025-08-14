@@ -7,6 +7,21 @@ const nextConfig = {
   // Performance optimizations
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
+    // Use the supported excludes API to avoid micromatch stack overflows on Vercel
+    outputFileTracingExcludes: {
+      '*': [
+        '**/ml/**',
+        '**/ml_env/**',
+        '**/.venv/**',
+        '**/__pycache__/**',
+        '**/*.py',
+        // Heavy browser-only packages that shouldn't be traced for server output
+        '**/node_modules/@tensorflow/**',
+        '**/node_modules/canvas/**',
+        '**/node_modules/canvas-confetti/**',
+        '**/node_modules/lottie-react/**',
+      ],
+    },
   },
   
   // Fix build trace collection issues
@@ -31,6 +46,27 @@ const nextConfig = {
         '**/__pycache__/**',
       ],
     };
+
+    // Externalize heavy browser-only libs from server bundles
+    if (isServer) {
+      const externals = config.externals || [];
+      config.externals = [
+        ...externals,
+        ({ request }, callback) => {
+          const externalsList = [
+            '@tensorflow/tfjs',
+            '@tensorflow/tfjs-backend-webgl',
+            '@tensorflow/tfjs-backend-cpu',
+            'canvas-confetti',
+            'lottie-react',
+          ];
+          if (request && externalsList.includes(request)) {
+            return callback(null, 'commonjs ' + request);
+          }
+          callback();
+        },
+      ];
+    }
 
     return config;
   },
