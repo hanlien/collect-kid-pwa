@@ -12,7 +12,8 @@ const WEIGHTS = {
 export function score(candidate: Candidate): number {
   const scores = candidate.scores;
   
-  const weightedSum = 
+  // Base weighted sum
+  let weightedSum = 
     (scores.vision || 0) * WEIGHTS.vision +
     (scores.webGuess || 0) * WEIGHTS.webGuess +
     (scores.kgMatch || 0) * WEIGHTS.kgMatch +
@@ -20,6 +21,34 @@ export function score(candidate: Candidate): number {
     (scores.cropAgree || 0) * WEIGHTS.cropAgree +
     (scores.habitatTime || 0) * WEIGHTS.habitatTime;
 
+  // Penalize generic terms and boost specific species
+  const commonName = candidate.commonName?.toLowerCase() || '';
+  const scientificName = candidate.scientificName?.toLowerCase() || '';
+  
+  // Generic terms to penalize
+  const genericTerms = [
+    'flower', 'petal', 'leaf', 'plant', 'color', 'yellow', 'white', 'red', 'blue',
+    'close-up', 'image', 'photo', 'picture', 'object', 'thing', 'item'
+  ];
+  
+  // Check if this is a generic term
+  const isGeneric = genericTerms.some(term => 
+    commonName.includes(term) || scientificName.includes(term)
+  );
+  
+  // Check if this is a specific species (has scientific name format or specific common name)
+  const isSpecificSpecies = 
+    scientificName.includes(' ') || // Scientific names have spaces (genus species)
+    (commonName.includes(' ') && !genericTerms.some(term => commonName.includes(term))) ||
+    (scores.provider || 0) > 0.5; // High provider confidence indicates specific species
+  
+  // Apply penalties/boosts
+  if (isGeneric) {
+    weightedSum *= 0.6; // Penalize generic terms by 40%
+  } else if (isSpecificSpecies) {
+    weightedSum *= 1.3; // Boost specific species by 30%
+  }
+  
   return Math.min(1.0, Math.max(0.0, weightedSum));
 }
 
