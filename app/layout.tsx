@@ -48,10 +48,19 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Preload critical resources */}
+        <link rel="preload" href="/icons/icon-192x192.png" as="image" type="image/png" />
+        <link rel="preconnect" href="https://api.inaturalist.org" />
+        <link rel="preconnect" href="https://upload.wikimedia.org" />
+        <link rel="dns-prefetch" href="//api.gbif.org" />
+        
+        {/* Icons and PWA */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icons/icon-192x192.png" type="image/png" sizes="192x192" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
         <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png" />
+        
+        {/* PWA Meta */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Backyard Brandon" />

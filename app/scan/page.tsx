@@ -8,7 +8,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 // import { ProgressRing } from '@/components/ui/ProgressRing'; // TODO: Use when needed
 import { ConfettiBurst } from '@/components/anim/ConfettiBurst';
 import Toast from '@/components/Toast';
-import ProfileSelector from '@/components/ProfileSelector';
+import dynamic from 'next/dynamic';
+
+// Lazy load ProfileSelector
+const LazyProfileSelector = dynamic(() => import('@/components/lazy/LazyProfileSelector'), { ssr: false });
 import ProfileManager from '@/lib/profileManager';
 import { downscaleImage } from '@/lib/utils';
 import { SpeciesResult } from '@/types/species';
@@ -1492,7 +1495,7 @@ export default function ScanPage() {
       <ConfettiBurst trigger={showConfetti} />
 
       {/* Profile Selector */}
-      <ProfileSelector
+      <LazyProfileSelector
         isOpen={showProfileSelector}
         onClose={() => setShowProfileSelector(false)}
         onProfileSwitch={handleProfileSwitch}

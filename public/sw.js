@@ -1,18 +1,28 @@
-const CACHE_NAME = 'collect-kid-v1';
-const STATIC_CACHE = 'collect-kid-static-v1';
-const DYNAMIC_CACHE = 'collect-kid-dynamic-v1';
+const CACHE_NAME = 'collect-kid-v2';
+const STATIC_CACHE = 'collect-kid-static-v2';
+const DYNAMIC_CACHE = 'collect-kid-dynamic-v2';
+const IMAGE_CACHE = 'collect-kid-images-v2';
 
-// Files to cache immediately
+// Files to cache immediately (critical path)
 const STATIC_FILES = [
   '/',
   '/scan',
   '/book',
-  '/quest',
+  '/quest', 
   '/parent',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
+  '/apple-touch-icon.png',
+  '/favicon.ico'
 ];
+
+// Cache durations
+const CACHE_DURATION = {
+  STATIC: 30 * 24 * 60 * 60 * 1000, // 30 days
+  DYNAMIC: 7 * 24 * 60 * 60 * 1000, // 7 days  
+  IMAGES: 60 * 24 * 60 * 60 * 1000, // 60 days
+};
 
 // Install event - cache static files
 self.addEventListener('install', (event) => {
@@ -55,13 +65,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Handle API requests
+  // Handle different types of requests
   if (url.pathname.startsWith('/api/')) {
+    // API requests - network first with cache fallback
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Cache successful API responses for recent results
-          if (response.ok && url.pathname === '/api/facts') {
+          // Cache successful API responses for offline access
+          if (response.ok && (url.pathname === '/api/facts' || url.pathname === '/api/recognize')) {
             const responseClone = response.clone();
             caches.open(DYNAMIC_CACHE).then((cache) => {
               cache.put(request, responseClone);
@@ -73,6 +84,27 @@ self.addEventListener('fetch', (event) => {
           // Return cached response if available
           return caches.match(request);
         })
+    );
+    return;
+  }
+
+  // Handle images - cache first with network fallback
+  if (request.destination === 'image') {
+    event.respondWith(
+      caches.match(request).then((response) => {
+        if (response) {
+          return response;
+        }
+        return fetch(request).then((response) => {
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(IMAGE_CACHE).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return response;
+        });
+      })
     );
     return;
   }

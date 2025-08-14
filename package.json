@@ -23,6 +23,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "analyze": "ANALYZE=true next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
@@ -63,6 +64,7 @@
     "zustand": "^5.0.7"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.4.6",
     "@types/canvas-confetti": "^1.6.4",
     "@types/node": "^20.10.5",
     "@types/react": "^18.2.45",

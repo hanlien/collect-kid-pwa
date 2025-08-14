@@ -6,9 +6,12 @@ import { Volume2, Heart, ArrowLeft, RotateCcw, Star, MapPin, Award, BookOpen, Bo
 import Image from 'next/image';
 import BigButton from '@/components/BigButton';
 // import ColorChips from '@/components/ColorChips'; // TODO: Use when needed
-import Confetti from '@/components/Confetti';
 import Toast from '@/components/Toast';
-import BadgePopup from '@/components/BadgePopup';
+import dynamic from 'next/dynamic';
+
+// Lazy load heavy components
+const LazyBadgePopup = dynamic(() => import('@/components/lazy/LazyBadgePopup'), { ssr: false });
+const LazyConfetti = dynamic(() => import('@/components/lazy/LazyConfetti'), { ssr: false });
 import { isDangerousSpecies } from '@/lib/utils';
 import ProfileManager from '@/lib/profileManager';
 import { SpeciesResult } from '@/types/species';
@@ -602,7 +605,7 @@ export default function ResultPage() {
       </div>
 
       {/* Confetti */}
-      <Confetti trigger={showConfetti} />
+      <LazyConfetti trigger={showConfetti} />
 
       {/* Toast */}
       {toast && (
@@ -615,7 +618,7 @@ export default function ResultPage() {
 
       {/* Badge Popup */}
       {badgeData && (
-        <BadgePopup
+        <LazyBadgePopup
           isOpen={showBadgePopup}
           onClose={() => setShowBadgePopup(false)}
           onNavigate={() => {
