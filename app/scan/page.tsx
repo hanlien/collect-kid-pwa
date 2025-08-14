@@ -10,6 +10,7 @@ import { ConfettiBurst } from '@/components/anim/ConfettiBurst';
 import Toast from '@/components/Toast';
 import { FloatingElements, AnimalSilhouettes } from '@/components/decorative/AnimalPatterns';
 import { Button } from '@/components/ui/Button';
+import Logo from '@/components/Logo';
 import dynamic from 'next/dynamic';
 
 // Lazy load ProfileSelector
@@ -1168,14 +1169,9 @@ export default function ScanPage() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <motion.h1 
-                className="text-5xl font-bold text-gray-800 mb-4 drop-shadow-2xl"
-                style={{
-                  textShadow: "2px 2px 4px rgba(0,0,0,0.3)"
-                }}
-              >
-                🐛 Buggies with Brandon
-              </motion.h1>
+              <div className="flex justify-center mb-4">
+                <Logo size="lg" />
+              </div>
               <motion.p 
                 className="text-xl text-gray-700 drop-shadow-lg"
                 style={{
