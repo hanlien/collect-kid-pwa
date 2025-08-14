@@ -4,19 +4,17 @@
   "description": "Explore your backyard and discover amazing creatures with Brandon!",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fef7ee",
-  "theme_color": "#ed7516",
+  "background_color": "#22c55e",
+  "theme_color": "#16a34a",
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
-  "categories": ["education", "kids", "nature"],
+  "categories": [
+    "education",
+    "kids",
+    "nature"
+  ],
   "icons": [
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
@@ -26,7 +24,7 @@
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png", 
+      "type": "image/png",
       "purpose": "any"
     },
     {
@@ -34,32 +32,6 @@
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Scan",
-      "short_name": "Scan",
-      "description": "Take a photo to identify",
-      "url": "/scan",
-      "icons": [
-        {
-          "src": "/icons/scan-96x96.png",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "Collection",
-      "short_name": "Collection",
-      "description": "View your collection",
-      "url": "/book",
-      "icons": [
-        {
-          "src": "/icons/book-96x96.png",
-          "sizes": "96x96"
-        }
-      ]
     }
   ]
 }
