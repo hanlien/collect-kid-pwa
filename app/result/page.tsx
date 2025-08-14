@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Volume2, Heart, ArrowLeft, RotateCcw, Star, MapPin, Calendar, Users, Award, BookOpen, Bookmark, Target } from 'lucide-react';
+import { Volume2, Heart, ArrowLeft, RotateCcw, Star, MapPin, Calendar, Users, Award, BookOpen, Bookmark } from 'lucide-react';
 import Image from 'next/image';
 import BigButton from '@/components/BigButton';
 import ColorChips from '@/components/ColorChips';
@@ -36,6 +36,11 @@ export default function ResultPage() {
         const parsedResult = JSON.parse(decodeURIComponent(data));
         setResult(parsedResult);
         fetchFacts(parsedResult);
+        
+        // Automatically show accuracy feedback after 2 seconds to collect training data
+        setTimeout(() => {
+          setShowAccuracyFeedback(true);
+        }, 2000);
       } catch (error) {
         console.error('Failed to parse result data:', error);
         router.push('/scan');
@@ -139,8 +144,17 @@ export default function ResultPage() {
       });
 
       if (response.ok) {
+        let message = '';
+        if (isCorrect) {
+          message = '🎉 Great! Brandon\'s AI learned from your confirmation!';
+        } else if (correction) {
+          message = '🚀 Amazing! You just taught Brandon\'s AI something new!';
+        } else {
+          message = '✅ Thanks! Brandon\'s AI noted this was incorrect.';
+        }
+        
         setToast({
-          message: isCorrect ? 'Thanks for confirming!' : 'Thanks for the correction!',
+          message,
           type: 'success',
         });
         setShowAccuracyFeedback(false);
@@ -416,15 +430,13 @@ export default function ResultPage() {
                     <div className="text-2xl mb-2">
                       {result.provider === 'inaturalist' ? '🌿' : 
                        result.provider === 'plantid' ? '🌱' : 
-                       result.provider === 'gcv' ? '🔍' : 
-                       result.provider === 'local' ? '🏠' : '🤖'}
+                       result.provider === 'gcv' ? '🔍' : '🤖'}
                     </div>
                     <div className="text-sm text-gray-500">AI Engine</div>
                     <div className="font-semibold text-gray-800">
                       {result.provider === 'inaturalist' ? 'iNaturalist' : 
                        result.provider === 'plantid' ? 'Plant.id' : 
-                       result.provider === 'gcv' ? 'Google Vision' : 
-                       result.provider === 'local' ? 'Local AI' : 'AI'}
+                       result.provider === 'gcv' ? 'Google Vision' : 'Brandon\'s AI'}
                     </div>
                   </div>
                   
@@ -520,15 +532,7 @@ export default function ResultPage() {
           </BigButton>
         </div>
 
-        <div className="flex gap-4 mb-4">
-          <BigButton
-            onClick={() => setShowAccuracyFeedback(true)}
-            className="flex-1 flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600"
-          >
-            <Target className="w-5 h-5" />
-            <span>Feedback</span>
-          </BigButton>
-        </div>
+
 
         {/* Collection Button */}
         <BigButton
@@ -570,56 +574,68 @@ export default function ResultPage() {
 
       {/* Accuracy Feedback Modal */}
       {showAccuracyFeedback && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">
-              Is this result correct?
-            </h3>
-            <p className="text-gray-600 mb-4">
-              We found: <strong>{result?.commonName || result?.canonicalName}</strong>
-            </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full border-4 border-purple-500 shadow-2xl">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">🤖</div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">
+                Help Train Brandon&apos;s AI!
+              </h3>
+              <p className="text-purple-600 font-semibold text-sm mb-2">
+                Your feedback helps make our AI smarter! 🧠✨
+              </p>
+            </div>
+            <div className="bg-purple-50 rounded-lg p-3 mb-4">
+              <p className="text-gray-700 text-sm">
+                We identified: <strong className="text-purple-700">{result?.commonName || result?.canonicalName}</strong>
+              </p>
+            </div>
             
             <div className="space-y-3">
               <button
                 onClick={() => handleAccuracyFeedback(true)}
-                className="w-full bg-green-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-600 transition-colors"
+                className="w-full bg-green-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
               >
-                ✅ Yes, that&apos;s correct!
+                ✅ Yes, perfect! Help AI learn this!
               </button>
               
               <button
                 onClick={() => setShowCorrectionInput(true)}
-                className="w-full bg-red-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-600 transition-colors"
+                className="w-full bg-blue-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
               >
-                ❌ No, that&apos;s wrong (with correction)
+                🔧 No, let me teach the AI the right answer
               </button>
               
               <button
                 onClick={() => handleAccuracyFeedback(false)}
-                className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
+                className="w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
               >
-                ❌ No, that&apos;s wrong (no correction)
+                ❌ No, that&apos;s wrong (mark as incorrect)
               </button>
             </div>
 
             {showCorrectionInput && (
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  What is it actually?
-                </label>
+              <div className="mt-4 bg-blue-50 rounded-lg p-4">
+                <div className="text-center mb-3">
+                  <div className="text-2xl mb-1">🎓</div>
+                  <label className="block text-sm font-medium text-blue-800 mb-2">
+                    Teach Brandon&apos;s AI the correct answer!
+                  </label>
+                </div>
                 <input
                   type="text"
                   value={correctionInput}
                   onChange={(e) => setCorrectionInput(e.target.value)}
-                  placeholder="Enter the correct name..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter the correct species name..."
+                  className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-3"
                 />
-                <div className="mt-3 flex gap-2">
+                <div className="flex gap-2">
                   <button
                     onClick={() => handleAccuracyFeedback(false, correctionInput)}
-                    className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+                    disabled={!correctionInput.trim()}
+                    className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
-                    Submit Correction
+                    🚀 Train AI with this!
                   </button>
                   <button
                     onClick={() => {
@@ -636,9 +652,9 @@ export default function ResultPage() {
 
             <button
               onClick={() => setShowAccuracyFeedback(false)}
-              className="mt-4 w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              className="mt-4 w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors text-sm"
             >
-              Skip
+              Maybe later (Skip for now)
             </button>
           </div>
         </div>

@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Camera, Upload, Sparkles, Search, BookOpen, Trophy, Coins, Target, X, RotateCcw, User, Heart, Star } from 'lucide-react';
+import { Camera, Upload, Sparkles, Search, BookOpen, Trophy, Coins, Target, X, RotateCcw, User, Cpu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BigButton from '@/components/BigButton';
+import { ProgressRing } from '@/components/ui/ProgressRing';
+import { ConfettiBurst } from '@/components/anim/ConfettiBurst';
 import Toast from '@/components/Toast';
 import ProfileSelector from '@/components/ProfileSelector';
 import ProfileManager from '@/lib/profileManager';
@@ -19,7 +21,9 @@ export default function ScanPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [showScanRing, setShowScanRing] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'info' } | null>(null);
+  const [pulseAnimation, setPulseAnimation] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -51,6 +55,14 @@ export default function ScanPage() {
       return () => clearInterval(interval);
     }
   }, [isScanning]);
+
+  // Animated background elements
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPulseAnimation(prev => !prev);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Load profile data
   useEffect(() => {
@@ -95,46 +107,96 @@ export default function ScanPage() {
     };
   }, []);
 
-  const refreshProfileData = () => {
-    const profileManager = ProfileManager.getInstance();
-    const profile = profileManager.getCurrentProfile();
-    setCurrentProfile(profile);
-    setUserData({
-      coins: profile.coins,
-      level: profile.level,
-      totalCaptures: profile.totalCaptures,
-      uniqueSpeciesCount: profile.uniqueSpeciesCount,
-    });
-  };
-
-  const handleProfileSwitch = (profile: Profile) => {
-    const profileManager = ProfileManager.getInstance();
-    profileManager.switchProfile(profile.id);
+  // Refresh profile data when pathname changes (user navigates back)
+  useEffect(() => {
     refreshProfileData();
-    setShowProfileSelector(false);
-  };
+  }, [pathname]);
 
-  // Start camera
+  // Initialize camera with better error handling and fallbacks
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
+      // First, try to get available video devices
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      
+      console.log('Available video devices:', videoDevices);
+      
+      // Try different camera configurations
+      const cameraConfigs = [
+        // Try back camera first (environment)
+        {
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 },
+            frameRate: { ideal: 30, min: 15 }
+          }
+        },
+        // Fallback to any camera
+        {
+          video: {
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 },
+            frameRate: { ideal: 30, min: 15 }
+          }
+        },
+        // Minimal requirements
+        {
+          video: {
+            width: { min: 320 },
+            height: { min: 240 }
+          }
         }
-      });
+      ];
+
+      let mediaStream = null;
+      let lastError = null;
+
+      // Try each configuration until one works
+      for (const config of cameraConfigs) {
+        try {
+          console.log('Trying camera config:', config);
+          mediaStream = await navigator.mediaDevices.getUserMedia(config);
+          console.log('Camera started successfully with config:', config);
+          break;
+        } catch (error) {
+          console.log('Camera config failed:', config, error);
+          lastError = error;
+          continue;
+        }
+      }
+
+      if (!mediaStream) {
+        throw lastError || new Error('No camera configuration worked');
+      }
 
       setStream(mediaStream);
       setCameraActive(true);
-
-      // Wait for video element to be rendered
+      
+      // Wait for the video element to be rendered before setting it up
       setTimeout(() => {
+        console.log('Setting up video element...');
+        // Set up video element with better error handling
         if (videoRef.current) {
           const video = videoRef.current;
+          
+          // Clear any existing srcObject
+          video.srcObject = null;
+          console.log('Cleared existing srcObject');
+          
+          // Set the new stream
           video.srcObject = mediaStream;
+          console.log('Set new srcObject:', mediaStream);
+          
+          // Wait for metadata to load
           video.onloadedmetadata = () => {
-            console.log('Video metadata loaded');
+            console.log('Video metadata loaded:', {
+              videoWidth: video.videoWidth,
+              videoHeight: video.videoHeight,
+              readyState: video.readyState
+            });
+            
+            // Ensure video plays
             const playPromise = video.play();
             if (playPromise !== undefined) {
               playPromise
@@ -236,86 +298,94 @@ export default function ScanPage() {
     // Convert to blob
     canvas.toBlob(async (blob) => {
       if (blob) {
-        await processImage(blob);
+        const file = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
+        await processImage(file);
       }
-    }, 'image/jpeg', 0.8);
+    }, 'image/jpeg', 0.9);
   };
 
-  // Handle file selection
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      await processImage(file);
-    }
+    if (!file) return;
+
+    await processImage(file);
   };
 
-  // Process image for recognition
-  const processImage = async (file: File | Blob) => {
+  const processImage = async (file: File) => {
     try {
-      setIsScanning(true);
       console.log('Starting image processing...');
+      setIsScanning(true);
+      setShowScanRing(true);
 
-      // Convert to blob if it's a File
-      const blob = file instanceof File ? file : file;
-      
-      // Create URL for the image
-      const imageUrl = URL.createObjectURL(blob);
+      // Create a data URL for the original image
+      const imageUrl = URL.createObjectURL(file);
       console.log('Created image URL:', imageUrl);
 
-             // Downscale image for better performance
-       const downscaledBlob = await downscaleImage(file instanceof File ? file : new File([blob], 'image.jpg', { type: 'image/jpeg' }), 1024);
+      // Downscale image
+      const processedImage = await downscaleImage(file, 1024);
       console.log('Image downscaled');
 
-      // Convert to base64 for API
-      const base64 = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = reader.result as string;
-          resolve(result.split(',')[1]); // Remove data:image/jpeg;base64, prefix
-        };
-        reader.readAsDataURL(downscaledBlob);
-      });
+      // Create FormData
+      const formData = new FormData();
+      formData.append('image', processedImage, 'image.jpg');
+      formData.append('hint', 'auto');
 
-      // Send to recognition API
       console.log('Sending to /api/recognize...');
+      // Call recognition API
       const response = await fetch('/api/recognize', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image: base64,
-          hint: 'auto' as RecognitionHint,
-        }),
+        body: formData,
       });
 
       const data = await response.json();
       console.log('Recognition response:', data);
 
-      if (response.ok && data.result) {
-        // Add captured image URL to result
-        const resultWithImage: SpeciesResult = {
-          ...data.result,
-          capturedImageUrl: imageUrl,
-        };
-
-        console.log('Navigating to result page with result:', resultWithImage);
-        router.push(`/result?data=${encodeURIComponent(JSON.stringify(resultWithImage))}`);
-      } else {
+      if (!response.ok) {
+        if (data.error === 'LOW_CONFIDENCE') {
+          setToast({
+            message: data.message || 'Try getting closer, holding steady, or finding better lighting!',
+            type: 'error',
+          });
+          return;
+        }
         throw new Error(data.error || 'Recognition failed');
       }
+
+      // Show confetti for successful scan
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 2000);
+
+      // Add scan record to profile
+      const profileManager = ProfileManager.getInstance();
+      profileManager.addScanRecord({
+        speciesName: data.result.commonName || data.result.canonicalName,
+        category: data.result.category,
+        confidence: data.result.confidence,
+        imageUrl: imageUrl,
+      });
+
+      // Navigate to result page with data and image
+      const result: SpeciesResult = {
+        ...data.result,
+        capturedImageUrl: imageUrl, // Add the captured image URL
+      };
+      console.log('Navigating to result page with result:', result);
+      router.push(`/result?data=${encodeURIComponent(JSON.stringify(result))}`);
     } catch (error) {
-      console.error('Image processing error:', error);
+      console.error('Scan error:', error);
       setToast({
-        message: error instanceof Error ? error.message : 'Failed to process image',
+        message: 'Something went wrong. Please try again!',
         type: 'error',
       });
     } finally {
       setIsScanning(false);
+      setShowScanRing(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
-  // Handle camera button click
   const handleCameraClick = () => {
     if (cameraActive) {
       capturePhoto();
@@ -324,149 +394,438 @@ export default function ScanPage() {
     }
   };
 
-  // Handle file upload click
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-200 via-green-100 to-yellow-100 relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0">
-        {/* Sky */}
-        <div className="absolute inset-0 bg-gradient-to-b from-sky-300 to-sky-200"></div>
-        
-        {/* Clouds */}
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={`cloud-${i}`}
-            className="absolute w-16 h-8 bg-white rounded-full opacity-80"
-            style={{
-              left: `${10 + i * 15}%`,
-              top: `${5 + i * 8}%`,
-            }}
-            animate={{
-              x: [0, 20, 0],
-              y: [0, -5, 0],
-            }}
-            transition={{
-              duration: 8 + i * 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: i * 1,
-            }}
-          />
-        ))}
+  const handleProfileSwitch = (profile: Profile) => {
+    setCurrentProfile(profile);
+    setUserData({
+      coins: profile.coins,
+      level: profile.level,
+      totalCaptures: profile.totalCaptures,
+      uniqueSpeciesCount: profile.uniqueSpeciesCount,
+    });
+  };
 
-        {/* Sun */}
+  const refreshProfileData = () => {
+    const profileManager = ProfileManager.getInstance();
+    const profile = profileManager.getCurrentProfile();
+    setCurrentProfile(profile);
+    setUserData({
+      coins: profile.coins,
+      level: profile.level,
+      totalCaptures: profile.totalCaptures,
+      uniqueSpeciesCount: profile.uniqueSpeciesCount,
+    });
+  };
+
+  return (
+    <div className="page-container bg-gradient-to-b from-sky-300 via-green-200 to-yellow-200 relative overflow-hidden">
+      {/* Animated Garden Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Bigger Moving Sun */}
         <motion.div
-          className="absolute top-8 right-8 w-20 h-20 bg-yellow-300 rounded-full flex items-center justify-center"
+          className="absolute top-6 right-6 w-24 h-24 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full shadow-2xl"
           animate={{
-            rotate: 360,
-            scale: [1, 1.1, 1],
+            x: [0, -30, 0],
+            y: [0, -15, 0],
+            scale: [1, 1.15, 1],
+            rotate: [0, 5, -5, 0],
           }}
           transition={{
-            rotate: { duration: 20, repeat: Infinity, ease: "linear" },
-            scale: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut"
           }}
         >
-          <div className="text-2xl">☀️</div>
+          {/* Enhanced Sun rays */}
+          {[...Array(12)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-4 bg-yellow-300 rounded-full"
+              style={{
+                left: '50%',
+                top: '50%',
+                transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateY(-18px)`,
+              }}
+              animate={{
+                scaleY: [1, 1.8, 1],
+                opacity: [0.6, 1, 0.6],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.15,
+              }}
+            />
+          ))}
         </motion.div>
 
-        {/* Hills */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-green-400 to-green-300 rounded-t-full"></div>
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-green-500 to-green-400 rounded-t-full transform translate-y-4"></div>
-
-        {/* House */}
-        <motion.div
-          className="absolute bottom-20 left-8 w-16 h-12"
-          animate={{ y: [0, -2, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        >
+        {/* House in Background */}
+        <div className="absolute bottom-20 left-8 w-16 h-12 z-10">
           {/* House body */}
-          <div className="w-full h-8 bg-blue-300 rounded-t-lg"></div>
+          <div className="absolute bottom-0 w-full h-8 bg-gray-600 rounded-t-lg" />
           {/* Roof */}
-          <div className="w-full h-4 bg-orange-400 rounded-t-lg transform -translate-y-1"></div>
+          <div className="absolute top-0 left-0 right-0 h-4 bg-red-500 transform -skew-x-12" />
           {/* Door */}
-          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-4 bg-amber-800 rounded-t"></div>
+          <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-4 bg-amber-800 rounded-t" />
           {/* Windows */}
-          <div className="absolute top-2 left-1 w-2 h-2 bg-yellow-200 rounded"></div>
-          <div className="absolute top-2 right-1 w-2 h-2 bg-yellow-200 rounded"></div>
-        </motion.div>
+          <div className="absolute top-2 left-2 w-2 h-2 bg-blue-300 rounded" />
+          <div className="absolute top-2 right-2 w-2 h-2 bg-blue-300 rounded" />
+        </div>
 
-        {/* Trees */}
-        {[...Array(3)].map((_, i) => (
+        {/* Street Lights */}
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="absolute bottom-0 z-10" style={{ left: `${25 + i * 50}%` }}>
+            {/* Pole */}
+            <div className="w-1 h-16 bg-gray-700 mx-auto" />
+            {/* Light */}
+            <motion.div
+              className="w-4 h-4 bg-yellow-300 rounded-full mx-auto -mt-1 shadow-lg"
+              animate={{
+                opacity: [0.7, 1, 0.7],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 1,
+              }}
+            />
+          </div>
+        ))}
+
+        {/* Cars */}
+        {[...Array(2)].map((_, i) => (
           <motion.div
-            key={`tree-${i}`}
-            className="absolute bottom-0 w-8 h-12"
-            style={{
-              left: `${20 + i * 25}%`,
+            key={i}
+            className="absolute bottom-4 w-8 h-4 z-10"
+            style={{ left: `${15 + i * 60}%` }}
+            animate={{
+              x: [0, 100, 0],
             }}
-            animate={{ y: [0, -3, 0] }}
             transition={{
-              duration: 3 + i * 0.5,
+              duration: 15 + i * 5,
               repeat: Infinity,
-              ease: "easeInOut",
-              delay: i * 0.5,
+              ease: "linear",
+              delay: i * 8,
             }}
           >
-            {/* Tree trunk */}
-            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-2 h-6 bg-amber-800"></div>
-            {/* Tree leaves */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-green-500 rounded-full"></div>
+            {/* Car body */}
+            <div className="w-full h-3 bg-blue-500 rounded-lg" />
+            {/* Wheels */}
+            <div className="absolute bottom-0 left-1 w-2 h-2 bg-black rounded-full" />
+            <div className="absolute bottom-0 right-1 w-2 h-2 bg-black rounded-full" />
           </motion.div>
         ))}
 
-        {/* Butterflies */}
+        {/* Floating Clouds */}
+        <motion.div
+          className="absolute top-12 left-8 w-20 h-12 bg-white/70 rounded-full"
+          animate={{
+            x: [0, 60, 0],
+            opacity: [0.6, 0.9, 0.6],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute top-6 right-16 w-16 h-10 bg-white/60 rounded-full"
+          animate={{
+            x: [0, -40, 0],
+            y: [0, -5, 0],
+            opacity: [0.5, 0.8, 0.5],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 5
+          }}
+        />
+        <motion.div
+          className="absolute top-16 left-1/3 w-14 h-8 bg-white/50 rounded-full"
+          animate={{
+            x: [0, 30, 0],
+            y: [0, -8, 0],
+          }}
+          transition={{
+            duration: 18,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 10
+          }}
+        />
+
+        {/* Animated Hills */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <motion.div
+            className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-green-500 to-green-400 rounded-t-full"
+            animate={{
+              y: [0, -8, 0],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.div
+            className="absolute bottom-0 left-1/4 w-1/2 h-24 bg-gradient-to-t from-green-600 to-green-500 rounded-t-full"
+            animate={{
+              y: [0, -5, 0],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 2
+            }}
+          />
+        </div>
+
+        {/* Blooming Flowers */}
         {[...Array(8)].map((_, i) => (
           <motion.div
-            key={`butterfly-${i}`}
-            className="absolute w-6 h-4"
+            key={i}
+            className="absolute bottom-12 w-10 h-10"
             style={{
-              left: `${15 + i * 10}%`,
-              top: `${20 + i * 8}%`,
+              left: `${10 + i * 12}%`,
             }}
+            initial={{ scale: 0, rotate: 0 }}
             animate={{
-              x: [0, 15, 0],
-              y: [0, -10, 0],
-              rotate: [0, 10, -10, 0],
+              scale: [0, 1, 1.1, 1],
+              rotate: [0, 180, 360],
+              y: [0, -12, 0],
             }}
             transition={{
               duration: 6 + i * 0.5,
               repeat: Infinity,
               ease: "easeInOut",
-              delay: i * 0.3,
+              delay: i * 0.8,
             }}
           >
-            <div className="text-orange-400 text-lg">🦋</div>
+            {/* Flower petals */}
+            {[...Array(6)].map((_, petalIndex) => (
+              <motion.div
+                key={petalIndex}
+                className="absolute w-4 h-6 bg-pink-400 rounded-full"
+                style={{
+                  left: '50%',
+                  top: '50%',
+                  transform: `translate(-50%, -50%) rotate(${petalIndex * 60}deg) translateY(-8px)`,
+                  transformOrigin: 'center bottom',
+                }}
+                animate={{
+                  scaleY: [1, 1.3, 1],
+                  rotate: [0, 5, 0],
+                }}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: petalIndex * 0.1 + i * 0.2,
+                }}
+              />
+            ))}
+            {/* Flower center */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-yellow-400 rounded-full" />
           </motion.div>
         ))}
 
-        {/* Flowers */}
-        {[...Array(12)].map((_, i) => (
+        {/* Swaying Trees */}
+        {[...Array(5)].map((_, i) => (
           <motion.div
-            key={`flower-${i}`}
-            className="absolute w-3 h-3"
+            key={i}
+            className="absolute bottom-0 w-14 h-24"
             style={{
-              left: `${5 + i * 8}%`,
-              bottom: `${5 + i % 3 * 5}%`,
+              left: `${8 + i * 20}%`,
             }}
             animate={{
-              scale: [1, 1.2, 1],
+              y: [0, -4, 0],
+              rotate: [0, 2, -2, 0],
+            }}
+            transition={{
+              duration: 6 + i,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 0.3,
+            }}
+          >
+            {/* Tree trunk */}
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-10 bg-amber-800 rounded-full" />
+            {/* Tree leaves */}
+            <motion.div
+              className="absolute bottom-8 left-1/2 transform -translate-x-1/2 w-12 h-14 bg-green-600 rounded-full"
+              animate={{
+                rotate: [0, 3, -3, 0],
+              }}
+              transition={{
+                duration: 4 + i * 0.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.2,
+              }}
+            />
+          </motion.div>
+        ))}
+
+        {/* Bigger Flying Butterflies */}
+        {[...Array(6)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-12 h-8"
+            style={{
+              left: `${10 + i * 20}%`,
+              top: `${20 + (i % 3) * 12}%`,
+            }}
+            animate={{
+              x: [0, 50, 0],
+              y: [0, -30, 0],
+              rotate: [0, 20, -20, 0],
+            }}
+            transition={{
+              duration: 12 + i * 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 2,
+            }}
+          >
+            {/* Butterfly wings with flapping animation */}
+            <motion.div
+              className="absolute left-0 w-6 h-7 bg-gradient-to-br from-purple-400 to-pink-300 rounded-full"
+              animate={{
+                rotateY: [0, 15, 0],
+                scaleX: [1, 0.8, 1],
+              }}
+              transition={{
+                duration: 0.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.1,
+              }}
+            />
+            <motion.div
+              className="absolute right-0 w-6 h-7 bg-gradient-to-br from-purple-400 to-pink-300 rounded-full"
+              animate={{
+                rotateY: [0, -15, 0],
+                scaleX: [1, 0.8, 1],
+              }}
+              transition={{
+                duration: 0.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: i * 0.1 + 0.25,
+              }}
+            />
+            {/* Butterfly body */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1 h-3 bg-black rounded-full" />
+            {/* Butterfly antennae */}
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-0.5 h-2 bg-black rounded-full rotate-12" />
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-0.5 h-2 bg-black rounded-full -rotate-12" />
+          </motion.div>
+        ))}
+
+        {/* Small Animals */}
+        {/* Birds */}
+        {[...Array(3)].map((_, i) => (
+          <motion.div
+            key={`bird-${i}`}
+            className="absolute w-6 h-4"
+            style={{
+              left: `${20 + i * 30}%`,
+              top: `${15 + (i % 2) * 10}%`,
+            }}
+            animate={{
+              x: [0, 40, 0],
+              y: [0, -10, 0],
+            }}
+            transition={{
+              duration: 12 + i * 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 2,
+            }}
+          >
+            <div className="w-full h-full bg-blue-400 rounded-full" />
+            <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-yellow-400 rounded-full" />
+          </motion.div>
+        ))}
+
+        {/* Bees */}
+        {[...Array(2)].map((_, i) => (
+          <motion.div
+            key={`bee-${i}`}
+            className="absolute w-4 h-4"
+            style={{
+              left: `${30 + i * 40}%`,
+              top: `${35 + i * 10}%`,
+            }}
+            animate={{
+              x: [0, 15, 0],
+              y: [0, -8, 0],
               rotate: [0, 5, -5, 0],
             }}
             transition={{
-              duration: 4 + i * 0.3,
+              duration: 4 + i,
               repeat: Infinity,
               ease: "easeInOut",
-              delay: i * 0.2,
+              delay: i * 1,
             }}
           >
-            <div className={`w-full h-full rounded-full ${
-              i % 3 === 0 ? 'bg-yellow-300' : 
-              i % 3 === 1 ? 'bg-pink-300' : 'bg-orange-300'
-            }`}></div>
+            <div className="w-full h-full bg-yellow-400 rounded-full" />
+            <div className="absolute inset-0 border-2 border-black rounded-full" />
           </motion.div>
+        ))}
+
+        {/* Waving Grass */}
+        {[...Array(15)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute bottom-0 w-1 h-8 bg-green-500"
+            style={{
+              left: `${3 + i * 6}%`,
+            }}
+            animate={{
+              y: [0, -4, 0],
+              rotate: [0, 5, -5, 0],
+            }}
+            transition={{
+              duration: 3 + i * 0.3,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 0.1,
+            }}
+          />
+        ))}
+
+        {/* Floating Leaves */}
+        {[...Array(5)].map((_, i) => (
+          <motion.div
+            key={`leaf-${i}`}
+            className="absolute w-3 h-3 bg-green-400 rounded-full"
+            style={{
+              left: `${25 + i * 15}%`,
+              top: `${60 + i * 8}%`,
+            }}
+            animate={{
+              x: [0, 10, 0],
+              y: [0, -15, 0],
+              rotate: [0, 180, 360],
+            }}
+            transition={{
+              duration: 10 + i * 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 1.5,
+            }}
+          />
         ))}
       </div>
 
@@ -485,30 +844,63 @@ export default function ScanPage() {
             onError={(e) => console.error('Video error:', e)}
           />
           
-          {/* Camera overlay */}
-          <div className="absolute inset-0 bg-black/10">
-            {/* Top controls */}
-            <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center">
-              <motion.button
-                className="w-12 h-12 bg-red-400 rounded-full flex items-center justify-center shadow-lg"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => {
-                  stopCamera();
-                  router.push('/scan');
-                }}
-              >
-                <X className="w-6 h-6 text-white" />
-              </motion.button>
-              
-              <div className="flex items-center space-x-3">
-                <div className="bg-blue-400 rounded-full px-4 py-2 shadow-lg">
-                  <span className="text-white text-sm font-bold">Level {userData.level}</span>
-                </div>
-                <div className="bg-green-400 rounded-full px-4 py-2 shadow-lg">
-                  <span className="text-white text-sm font-bold">👦 Brandon</span>
+          {/* Modern Tech Camera Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/40">
+            {/* Top Tech Bar */}
+            <div className="absolute top-0 left-0 right-0 p-6">
+              <div className="flex justify-between items-center">
+                <motion.button
+                  className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg"
+                  whileHover={{ scale: 1.1, boxShadow: "0 0 20px rgba(239, 68, 68, 0.5)" }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => {
+                    stopCamera();
+                    router.push('/scan');
+                  }}
+                >
+                  <X className="w-6 h-6 text-white" />
+                </motion.button>
+                
+                <div className="flex items-center space-x-3">
+                  <motion.div 
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-full px-4 py-2 shadow-lg"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <span className="text-white text-sm font-bold">LEVEL {userData.level}</span>
+                  </motion.div>
+                  <motion.div 
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-full px-4 py-2 shadow-lg"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <span className="text-white text-sm font-bold">👦 BRANDON</span>
+                  </motion.div>
                 </div>
               </div>
+            </div>
+
+            {/* Tech Status Indicators */}
+            <div className="absolute top-20 left-6 space-y-2">
+              <motion.div 
+                className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-cyan-500/30"
+                animate={{ borderColor: ['rgba(34, 211, 238, 0.3)', 'rgba(34, 211, 238, 0.8)', 'rgba(34, 211, 238, 0.3)'] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+                  <span className="text-cyan-400 text-xs font-bold">CAMERA ACTIVE</span>
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 border border-purple-500/30"
+                animate={{ borderColor: ['rgba(168, 85, 247, 0.3)', 'rgba(168, 85, 247, 0.8)', 'rgba(168, 85, 247, 0.3)'] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                  <span className="text-purple-400 text-xs font-bold">AI READY</span>
+                </div>
+              </motion.div>
             </div>
 
             {/* Scanning overlay */}
@@ -516,18 +908,18 @@ export default function ScanPage() {
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
                   <motion.div
-                    className="relative w-32 h-32"
+                    className="relative w-40 h-40"
                     animate={{ rotate: 360 }}
                     transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
                   >
                     {/* Outer scanning ring */}
-                    <div className="absolute inset-0 border-4 border-yellow-400 rounded-full"></div>
+                    <div className="absolute inset-0 border-4 border-cyan-500/50 rounded-full"></div>
                     
                     {/* Middle scanning ring */}
-                    <div className="absolute inset-4 border-4 border-orange-400 rounded-full animate-pulse"></div>
+                    <div className="absolute inset-4 border-4 border-purple-500/50 rounded-full animate-pulse"></div>
                     
                     {/* Inner scanning ring */}
-                    <div className="absolute inset-8 border-4 border-pink-400 rounded-full animate-ping"></div>
+                    <div className="absolute inset-8 border-4 border-pink-500/50 rounded-full animate-ping"></div>
                     
                     {/* Center icon */}
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -560,12 +952,12 @@ export default function ScanPage() {
                   {/* Progress dots */}
                   <div className="flex justify-center space-x-2 mt-4">
                     <motion.div
-                      className="w-3 h-3 bg-yellow-400 rounded-full"
+                      className="w-3 h-3 bg-cyan-400 rounded-full"
                       animate={{ scale: [1, 1.5, 1] }}
                       transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
                     />
                     <motion.div
-                      className="w-3 h-3 bg-orange-400 rounded-full"
+                      className="w-3 h-3 bg-purple-400 rounded-full"
                       animate={{ scale: [1, 1.5, 1] }}
                       transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
                     />
@@ -579,69 +971,140 @@ export default function ScanPage() {
               </div>
             )}
 
-            {/* Camera button */}
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-              <motion.button
-                className="w-20 h-20 bg-orange-400 rounded-full flex items-center justify-center shadow-2xl border-4 border-white"
-                onClick={capturePhoto}
-                disabled={isScanning}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                animate={{
-                  boxShadow: [
-                    "0 0 20px rgba(251, 146, 60, 0.5)",
-                    "0 0 30px rgba(251, 146, 60, 0.8)",
-                    "0 0 20px rgba(251, 146, 60, 0.5)"
-                  ]
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <Camera className="w-10 h-10 text-white" />
-              </motion.button>
+            {/* Bottom controls - Mobile optimized */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 pb-8">
+              <div className="flex justify-center items-center space-x-6">
+                <motion.button
+                  className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleUploadClick}
+                >
+                  <Upload className="w-5 h-5 text-white" />
+                </motion.button>
+
+                <motion.button
+                  className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleCameraClick}
+                  disabled={isScanning}
+                >
+                  <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center">
+                    <Camera className="w-10 h-10 text-white" />
+                  </div>
+                </motion.button>
+
+                <motion.button
+                  className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => router.push('/book')}
+                >
+                  <BookOpen className="w-5 h-5 text-white" />
+                </motion.button>
+              </div>
+              
+              {/* Capture hint text */}
+              <div className="text-center mt-4">
+                <p className="text-white/80 text-sm font-medium">Tap to capture!</p>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Main content */}
+      {/* Main UI when camera is not active */}
       {!cameraActive && (
         <>
-          {/* Header */}
-          <motion.header
+          {/* Animated background elements */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <motion.div
+              className="absolute top-20 left-10 w-20 h-20 bg-brand-200 rounded-full opacity-30"
+              animate={{
+                scale: [1, 1.2, 1],
+                y: [0, -20, 0],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            <motion.div
+              className="absolute top-40 right-20 w-16 h-16 bg-accent-200 rounded-full opacity-30"
+              animate={{
+                scale: [1, 1.3, 1],
+                x: [0, 15, 0],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 1
+              }}
+            />
+            <motion.div
+              className="absolute bottom-40 left-20 w-12 h-12 bg-sky-200 rounded-full opacity-30"
+              animate={{
+                scale: [1, 1.4, 1],
+                rotate: [0, 180, 360],
+              }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 2
+              }}
+            />
+          </div>
+
+          {/* Header with user stats */}
+          <motion.header 
             className="relative z-10 p-6"
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="flex items-center justify-between">
-              <motion.div
-                className="flex items-center space-x-3"
-                whileHover={{ scale: 1.05 }}
-                onClick={() => setShowProfileSelector(true)}
-              >
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-2xl">👦</span>
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-800">Buggies with Brandon</h1>
-                  <p className="text-sm text-gray-600">Level {userData.level} Explorer</p>
-                </div>
-              </motion.div>
-              
-              <div className="flex items-center space-x-3">
-                <motion.div
-                  className="bg-yellow-400 rounded-full px-4 py-2 shadow-lg flex items-center space-x-2"
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-4">
+                <motion.button
+                  onClick={() => setShowProfileSelector(true)}
+                  className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg"
+                  whileHover={{ scale: 1.1, rotate: 360 }}
+                  whileTap={{ scale: 0.9 }}
                   animate={{
                     boxShadow: [
-                      "0 4px 12px rgba(251, 191, 36, 0.3)",
-                      "0 6px 20px rgba(251, 191, 36, 0.5)",
-                      "0 4px 12px rgba(251, 191, 36, 0.3)"
+                      "0 0 20px rgba(251, 191, 36, 0.5)",
+                      "0 0 30px rgba(251, 191, 36, 0.8)",
+                      "0 0 20px rgba(251, 191, 36, 0.5)"
+                    ]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <span className="text-white font-bold text-lg">{currentProfile?.emoji || '👦'}</span>
+                </motion.button>
+                <div>
+                  <h2 className="text-xl font-bold text-white drop-shadow-lg">Level {userData.level}</h2>
+                  <p className="text-sm text-white/80 drop-shadow-md">{currentProfile?.name || 'Brandon'}&apos;s Explorer</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <motion.div
+                  className="flex items-center space-x-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-2xl px-4 py-2 shadow-lg"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  animate={{
+                    boxShadow: [
+                      "0 5px 15px rgba(251, 191, 36, 0.3)",
+                      "0 10px 25px rgba(251, 191, 36, 0.5)",
+                      "0 5px 15px rgba(251, 191, 36, 0.3)"
                     ]
                   }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
                   <Coins className="w-5 h-5 text-white" />
-                  <span className="font-bold text-white">${userData.coins} BRANDON</span>
+                  <span className="font-bold">${userData.coins} BRANDON</span>
                 </motion.div>
                 
                 <motion.button
@@ -665,12 +1128,12 @@ export default function ScanPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <motion.h1 
-                className="text-5xl font-bold text-gray-800 mb-4 drop-shadow-lg"
+                className="text-5xl font-bold text-white mb-4 drop-shadow-2xl"
                 animate={{
                   textShadow: [
-                    "0 2px 4px rgba(0,0,0,0.1)",
-                    "0 4px 8px rgba(0,0,0,0.2)",
-                    "0 2px 4px rgba(0,0,0,0.1)"
+                    "0 0 20px rgba(255,255,255,0.5)",
+                    "0 0 30px rgba(255,255,255,0.8)",
+                    "0 0 20px rgba(255,255,255,0.5)"
                   ]
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
@@ -678,7 +1141,7 @@ export default function ScanPage() {
                 🐛 Buggies with Brandon
               </motion.h1>
               <motion.p 
-                className="text-xl text-gray-700 drop-shadow-lg"
+                className="text-xl text-white/90 drop-shadow-lg"
                 animate={{ y: [0, -5, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               >
@@ -686,113 +1149,258 @@ export default function ScanPage() {
               </motion.p>
             </motion.div>
 
-            {/* Camera button */}
+            {/* Modern Tech Camera Button */}
             <motion.div
               className="relative mb-8"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ duration: 0.6, delay: 0.4, type: "spring", stiffness: 200 }}
             >
-              {/* Glowing ring around camera button */}
+              {/* Tech scanning rings */}
               <motion.div
                 className="absolute inset-0 rounded-full"
-                animate={{
-                  boxShadow: [
-                    "0 0 30px rgba(251, 146, 60, 0.3)",
-                    "0 0 50px rgba(251, 146, 60, 0.6)",
-                    "0 0 30px rgba(251, 146, 60, 0.3)"
-                  ]
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
+                animate={{ rotate: 360 }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+              >
+                <div className="w-full h-full border-4 border-cyan-500/30 rounded-full"></div>
+              </motion.div>
+              
+              <motion.div
+                className="absolute inset-4 rounded-full"
+                animate={{ rotate: -360 }}
+                transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+              >
+                <div className="w-full h-full border-4 border-purple-500/40 rounded-full"></div>
+              </motion.div>
+              
+              <motion.div
+                className="absolute inset-8 rounded-full"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+              >
+                <div className="w-full h-full border-4 border-pink-500/50 rounded-full"></div>
+              </motion.div>
               
               <motion.button
-                className={`w-36 h-36 rounded-full bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 shadow-2xl flex items-center justify-center border-4 border-white ${
+                className={`w-36 h-36 rounded-full bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 shadow-2xl flex items-center justify-center border-4 border-cyan-500/50 ${
                   isScanning ? 'animate-pulse' : ''
                 }`}
                 onClick={handleCameraClick}
                 disabled={isScanning}
                 whileHover={{ 
                   scale: 1.1,
-                  rotate: 5,
-                  boxShadow: "0 25px 80px rgba(251, 146, 60, 0.4)"
+                  boxShadow: "0 25px 80px rgba(34, 211, 238, 0.4)"
                 }}
                 whileTap={{ scale: 0.95 }}
                 animate={{
                   boxShadow: [
-                    "0 20px 60px rgba(251, 146, 60, 0.2)",
-                    "0 20px 60px rgba(251, 146, 60, 0.4)",
-                    "0 20px 60px rgba(251, 146, 60, 0.2)"
+                    "0 20px 60px rgba(34, 211, 238, 0.2)",
+                    "0 20px 60px rgba(34, 211, 238, 0.4)",
+                    "0 20px 60px rgba(34, 211, 238, 0.2)"
                   ],
-                  y: [0, -5, 0]
+                  borderColor: [
+                    "rgba(34, 211, 238, 0.5)",
+                    "rgba(168, 85, 247, 0.8)",
+                    "rgba(236, 72, 153, 0.8)",
+                    "rgba(34, 211, 238, 0.5)"
+                  ]
                 }}
                 transition={{ 
                   duration: 3, 
                   repeat: Infinity, 
                   ease: "easeInOut",
-                  boxShadow: { duration: 2, repeat: Infinity }
+                  boxShadow: { duration: 2, repeat: Infinity },
+                  borderColor: { duration: 4, repeat: Infinity }
                 }}
               >
                 <motion.div
-                  animate={{ rotate: [0, 360] }}
-                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    rotate: [0, 360]
+                  }}
+                  transition={{ 
+                    duration: 3, 
+                    repeat: Infinity, 
+                    ease: "easeInOut",
+                    rotate: { duration: 4, repeat: Infinity, ease: "linear" }
+                  }}
                 >
-                  <Camera className="w-16 h-16 text-white drop-shadow-lg" />
+                  <Camera className="w-16 h-16 text-cyan-400 drop-shadow-lg" />
                 </motion.div>
               </motion.button>
+              
+              {/* Tech label */}
+              <motion.div
+                className="absolute -bottom-8 left-1/2 transform -translate-x-1/2"
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <span className="text-cyan-400 text-sm font-bold bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full border border-cyan-500/30">
+                  AI SCANNER
+                </span>
+              </motion.div>
             </motion.div>
 
-            {/* Category buttons */}
+            {/* Action buttons */}
             <motion.div
-              className="flex space-x-4 mb-8"
+              className="flex flex-col space-y-4 w-full max-w-sm"
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.6 }}
             >
               <motion.button
-                className="bg-green-400 text-white px-6 py-3 rounded-2xl font-bold shadow-lg flex items-center space-x-2"
-                whileHover={{ scale: 1.05, y: -2 }}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-4 shadow-lg flex items-center justify-center space-x-3 backdrop-blur-sm"
+                whileHover={{ 
+                  scale: 1.05, 
+                  y: -2,
+                  boxShadow: "0 10px 30px rgba(59, 130, 246, 0.4)"
+                }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => router.push('/book?category=animal')}
+                onClick={handleUploadClick}
+                disabled={isScanning}
+                animate={{
+                  boxShadow: [
+                    "0 5px 15px rgba(59, 130, 246, 0.3)",
+                    "0 10px 25px rgba(59, 130, 246, 0.5)",
+                    "0 5px 15px rgba(59, 130, 246, 0.3)"
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
               >
-                <span>🐦</span>
-                <span>Animals</span>
+                <Upload className="w-6 h-6" />
+                <span className="text-lg font-bold">Upload Photo</span>
               </motion.button>
-              
+
               <motion.button
-                className="bg-orange-400 text-white px-6 py-3 rounded-2xl font-bold shadow-lg flex items-center space-x-2"
-                whileHover={{ scale: 1.05, y: -2 }}
+                className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-2xl p-4 shadow-lg flex items-center justify-center space-x-3 backdrop-blur-sm"
+                whileHover={{ 
+                  scale: 1.05, 
+                  y: -2,
+                  boxShadow: "0 10px 30px rgba(34, 197, 94, 0.4)"
+                }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => router.push('/book?category=bug')}
+                onClick={() => router.push('/quest')}
+                animate={{
+                  boxShadow: [
+                    "0 5px 15px rgba(34, 197, 94, 0.3)",
+                    "0 10px 25px rgba(34, 197, 94, 0.5)",
+                    "0 5px 15px rgba(34, 197, 94, 0.3)"
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
               >
-                <span>🦋</span>
-                <span>Bugs</span>
+                <Target className="w-6 h-6" />
+                <span className="text-lg font-bold">Quests</span>
               </motion.button>
-              
-              <motion.button
-                className="bg-pink-400 text-white px-6 py-3 rounded-2xl font-bold shadow-lg flex items-center space-x-2"
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => router.push('/book?category=flower')}
-              >
-                <span>🌸</span>
-                <span>Flowers</span>
-              </motion.button>
+
+
             </motion.div>
 
-            {/* Upload button */}
-            <motion.button
-              className="bg-blue-400 text-white px-8 py-3 rounded-2xl font-bold shadow-lg flex items-center space-x-2"
-              onClick={handleUploadClick}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-            >
-              <Upload className="w-5 h-5" />
-              <span>Upload Photo</span>
-            </motion.button>
+            {/* Modern Tech-like Scanning UI */}
+            {isScanning && (
+              <motion.div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <div className="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-3xl p-8 max-w-md w-full mx-4 border border-purple-500/20 shadow-2xl">
+                  {/* Scanning Ring */}
+                  <div className="flex justify-center mb-6">
+                    <div className="relative">
+                      {/* Outer ring */}
+                      <div className="w-32 h-32 rounded-full border-4 border-purple-500/30 animate-pulse"></div>
+                      
+                      {/* Middle ring */}
+                      <div className="absolute inset-2 w-28 h-28 rounded-full border-4 border-blue-500/50 animate-spin" style={{ animationDuration: '3s' }}></div>
+                      
+                      {/* Inner ring */}
+                      <div className="absolute inset-4 w-24 h-24 rounded-full border-4 border-cyan-500/70 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }}></div>
+                      
+                      {/* Center icon */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <motion.div
+                          animate={{ 
+                            scale: [1, 1.2, 1],
+                            rotate: [0, 360]
+                          }}
+                          transition={{ 
+                            duration: 2, 
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                        >
+                          <Cpu className="w-8 h-8 text-cyan-400" />
+                        </motion.div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mb-6">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-cyan-400 text-sm font-medium">AI Analysis</span>
+                      <span className="text-purple-400 text-sm font-bold">75%</span>
+                    </div>
+                    <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: "75%" }}
+                        transition={{ duration: 2, ease: "easeOut" }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Scanning Text */}
+                  <motion.div
+                    className="text-center"
+                    key={scanningText}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <p className="text-white font-semibold text-lg mb-2">
+                      {scanningText}
+                    </p>
+                    <div className="flex justify-center space-x-1">
+                      <motion.div
+                        className="w-2 h-2 bg-cyan-400 rounded-full"
+                        animate={{ scale: [1, 1.5, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                      />
+                      <motion.div
+                        className="w-2 h-2 bg-purple-400 rounded-full"
+                        animate={{ scale: [1, 1.5, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                      />
+                      <motion.div
+                        className="w-2 h-2 bg-pink-400 rounded-full"
+                        animate={{ scale: [1, 1.5, 1] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* Tech Details */}
+                  <div className="mt-6 grid grid-cols-3 gap-4 text-center">
+                    <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                      <div className="text-cyan-400 text-xs font-medium">VISION</div>
+                      <div className="text-white text-sm font-bold">Active</div>
+                    </div>
+                    <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                      <div className="text-purple-400 text-xs font-medium">ML</div>
+                      <div className="text-white text-sm font-bold">Processing</div>
+                    </div>
+                    <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+                      <div className="text-pink-400 text-xs font-medium">API</div>
+                      <div className="text-white text-sm font-bold">Connected</div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </main>
 
           {/* Bottom Collection button for quick access */}
@@ -803,7 +1411,7 @@ export default function ScanPage() {
             transition={{ duration: 0.6, delay: 0.8 }}
           >
             <motion.button
-              className="w-full bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 text-white rounded-2xl p-4 shadow-2xl flex items-center justify-center space-x-3 backdrop-blur-sm"
+              className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 text-white rounded-2xl p-4 shadow-2xl flex items-center justify-center space-x-3 backdrop-blur-sm"
               whileHover={{ 
                 scale: 1.02, 
                 y: -3,
@@ -818,9 +1426,9 @@ export default function ScanPage() {
                   "0 10px 30px rgba(236, 72, 153, 0.3)"
                 ],
                 background: [
-                  "linear-gradient(to right, #f472b6, #a78bfa, #60a5fa)",
-                  "linear-gradient(to right, #ec4899, #8b5cf6, #3b82f6)",
-                  "linear-gradient(to right, #f472b6, #a78bfa, #60a5fa)"
+                  "linear-gradient(to right, #ec4899, #a855f7, #4f46e5)",
+                  "linear-gradient(to right, #db2777, #9333ea, #3730a3)",
+                  "linear-gradient(to right, #ec4899, #a855f7, #4f46e5)"
                 ]
               }}
               transition={{ 
@@ -859,6 +1467,9 @@ export default function ScanPage() {
           />
         )}
       </AnimatePresence>
+
+      {/* Confetti burst */}
+      <ConfettiBurst trigger={showConfetti} />
 
       {/* Profile Selector */}
       <ProfileSelector
