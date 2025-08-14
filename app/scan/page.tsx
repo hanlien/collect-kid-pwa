@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ConfettiBurst } from '@/components/anim/ConfettiBurst';
 import Toast from '@/components/Toast';
 import { FloatingElements, AnimalSilhouettes } from '@/components/decorative/AnimalPatterns';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import dynamic from 'next/dynamic';
 
 // Lazy load ProfileSelector
@@ -1133,29 +1135,25 @@ export default function ScanPage() {
               
               {/* Right section - Combined Shop button with coins */}
               <div className="flex items-center justify-end">
-                <motion.button
-                  className="flex items-center space-x-2 sm:space-x-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2 sm:py-3 shadow-lg cursor-pointer"
-                  whileHover={{ scale: 1.05, y: -2 }}
+                <Button
+                  variant="accent"
+                  size="md"
+                  animation="sparkle"
+                  className="px-3 sm:px-5 py-2 sm:py-3"
                   onClick={() => router.push('/gift-shop')}
-                  animate={{
-                    boxShadow: [
-                      "0 5px 15px rgba(168, 85, 247, 0.3)",
-                      "0 10px 25px rgba(168, 85, 247, 0.5)",
-                      "0 5px 15px rgba(168, 85, 247, 0.3)"
-                    ]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <div className="flex items-center space-x-1 sm:space-x-2">
-                    <Coins className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300" />
-                    <span className="font-bold text-xs sm:text-sm">${userData.coins}</span>
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                      <Coins className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300" />
+                      <span className="font-bold text-xs sm:text-sm">${userData.coins}</span>
+                    </div>
+                    <div className="w-px h-4 bg-white/30 hidden sm:block"></div>
+                    <div className="flex items-center space-x-1 sm:space-x-2">
+                      <Gift className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="font-bold text-xs sm:text-sm">Shop</span>
+                    </div>
                   </div>
-                  <div className="w-px h-4 bg-white/30 hidden sm:block"></div>
-                  <div className="flex items-center space-x-1 sm:space-x-2">
-                    <Gift className="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span className="font-bold text-xs sm:text-sm">Shop</span>
-                  </div>
-                </motion.button>
+                </Button>
               </div>
             </div>
           </motion.header>
@@ -1442,38 +1440,19 @@ export default function ScanPage() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.8 }}
           >
-            <motion.button
-              className="w-full bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 text-white rounded-2xl p-4 shadow-2xl flex items-center justify-center space-x-3 backdrop-blur-sm"
-              whileHover={{ 
-                scale: 1.02, 
-                y: -3,
-                boxShadow: "0 15px 40px rgba(236, 72, 153, 0.4)"
-              }}
-              whileTap={{ scale: 0.98 }}
+            <Button
+              variant="nature"
+              size="xl"
+              className="w-full"
+              animation="float"
+              leftIcon={<BookOpen className="w-6 h-6" />}
               onClick={() => router.push('/book')}
-              animate={{
-                boxShadow: [
-                  "0 10px 30px rgba(236, 72, 153, 0.3)",
-                  "0 15px 40px rgba(236, 72, 153, 0.5)",
-                  "0 10px 30px rgba(236, 72, 153, 0.3)"
-                ],
-                background: [
-                  "linear-gradient(to right, #ec4899, #a855f7, #4f46e5)",
-                  "linear-gradient(to right, #db2777, #9333ea, #3730a3)",
-                  "linear-gradient(to right, #ec4899, #a855f7, #4f46e5)"
-                ]
-              }}
-              transition={{ 
-                duration: 3, 
-                repeat: Infinity, 
-                ease: "easeInOut",
-                boxShadow: { duration: 2, repeat: Infinity }
-              }}
             >
-              <BookOpen className="w-6 h-6" />
-              <span className="text-lg font-bold">My Collection</span>
-              <span className="text-sm opacity-90">({userData.uniqueSpeciesCount} species)</span>
-            </motion.button>
+              <div className="flex items-center justify-between w-full">
+                <span className="text-lg font-bold">My Collection</span>
+                <span className="text-sm opacity-90">({userData.uniqueSpeciesCount} species)</span>
+              </div>
+            </Button>
           </motion.footer>
         </>
       )}
