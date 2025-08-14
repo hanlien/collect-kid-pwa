@@ -143,6 +143,10 @@ export default function ResultPage() {
         }),
       });
 
+      console.log('Feedback response status:', response.status);
+      const responseData = await response.json();
+      console.log('Feedback response data:', responseData);
+      
       if (response.ok) {
         let message = '';
         if (isCorrect) {
@@ -160,6 +164,12 @@ export default function ResultPage() {
         setShowAccuracyFeedback(false);
         setShowCorrectionInput(false);
         setCorrectionInput('');
+      } else {
+        console.error('Feedback API error:', responseData);
+        setToast({
+          message: `Feedback failed: ${responseData.error || 'Unknown error'}`,
+          type: 'error',
+        });
       }
     } catch (error) {
       console.error('Feedback error:', error);
