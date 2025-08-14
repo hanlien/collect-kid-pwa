@@ -112,6 +112,17 @@ export default function ScanPage() {
     refreshProfileData();
   }, [pathname]);
 
+  // Cleanup camera when component unmounts or user navigates away
+  useEffect(() => {
+    return () => {
+      // Cleanup camera stream when component unmounts
+      if (stream) {
+        console.log('Cleaning up camera stream on unmount');
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
+
   // Initialize camera with better error handling and fallbacks
   const startCamera = async () => {
     try {
@@ -943,15 +954,7 @@ export default function ScanPage() {
                     </div>
                   </motion.div>
                   
-                  <motion.p
-                    className="text-white text-xl font-bold mt-6 drop-shadow-lg"
-                    key={scanningText}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {scanningText}
-                  </motion.p>
+
                   
                   {/* Progress dots */}
                   <div className="flex justify-center space-x-2 mt-4">
@@ -1063,40 +1066,58 @@ export default function ScanPage() {
             />
           </div>
 
-          {/* Header with user stats */}
+          {/* Header with user stats - Mobile optimized */}
           <motion.header 
-            className="relative z-10 p-6"
+            className="relative z-10 p-4 sm:p-6"
             initial={{ y: -50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="flex justify-between items-center">
-              <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0">
+              {/* Left section - Profile */}
+              <div className="flex items-center space-x-3">
                 <motion.button
                   onClick={() => setShowProfileSelector(true)}
-                  className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg"
+                  className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg"
                   whileHover={{ scale: 1.1, rotate: 360 }}
                   whileTap={{ scale: 0.9 }}
                   animate={{
                     boxShadow: [
-                      "0 0 20px rgba(251, 191, 36, 0.5)",
-                      "0 0 30px rgba(251, 191, 36, 0.8)",
-                      "0 0 20px rgba(251, 191, 36, 0.5)"
+                      "0 0 15px rgba(251, 191, 36, 0.5)",
+                      "0 0 25px rgba(251, 191, 36, 0.8)",
+                      "0 0 15px rgba(251, 191, 36, 0.5)"
                     ]
                   }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <span className="text-white font-bold text-lg">{currentProfile?.emoji || '👦'}</span>
+                  <span className="text-white font-bold text-sm sm:text-lg">{currentProfile?.emoji || '👦'}</span>
                 </motion.button>
                 <div>
-                  <h2 className="text-xl font-bold text-white drop-shadow-lg">Level {userData.level}</h2>
-                  <p className="text-sm text-white/80 drop-shadow-md">{currentProfile?.name || 'Brandon'}&apos;s Explorer</p>
+                  <h2 className="text-lg sm:text-xl font-bold text-white drop-shadow-lg">Level {userData.level}</h2>
+                  <p className="text-xs sm:text-sm text-white/80 drop-shadow-md">{currentProfile?.name || 'Brandon'}&apos;s Explorer</p>
+                  {/* Level Progress Bar */}
+                  <div className="mt-1">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex-1 bg-white/20 rounded-full h-1.5 overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-500 ease-out"
+                          style={{ 
+                            width: `${((userData.uniqueSpeciesCount % 5) / 5) * 100}%` 
+                          }}
+                        ></div>
+                      </div>
+                      <span className="text-xs text-white/80 font-medium min-w-fit">
+                        {5 - (userData.uniqueSpeciesCount % 5)} to go
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
               
-              <div className="flex items-center space-x-4">
+              {/* Right section - Stats and actions */}
+              <div className="flex items-center justify-between sm:justify-end space-x-2 sm:space-x-3">
                 <motion.div
-                  className="flex items-center space-x-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-2xl px-4 py-2 shadow-lg"
+                  className="flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl sm:rounded-2xl px-2 sm:px-4 py-1 sm:py-2 shadow-lg"
                   whileHover={{ scale: 1.05, y: -2 }}
                   animate={{
                     boxShadow: [
@@ -1107,26 +1128,26 @@ export default function ScanPage() {
                   }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <Coins className="w-5 h-5 text-white" />
-                  <span className="font-bold">${userData.coins} BRANDON</span>
+                  <Coins className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  <span className="font-bold text-xs sm:text-sm">${userData.coins}</span>
                 </motion.div>
                 
                 <motion.button
-                  className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-2xl px-4 py-2 shadow-lg cursor-pointer"
+                  className="flex items-center space-x-1 sm:space-x-2 bg-white/90 backdrop-blur-md rounded-xl sm:rounded-2xl px-2 sm:px-4 py-1 sm:py-2 shadow-lg cursor-pointer"
                   whileHover={{ scale: 1.05, y: -2 }}
                   onClick={() => router.push('/book')}
                 >
-                  <Trophy className="w-5 h-5 text-yellow-500" />
-                  <span className="font-bold text-gray-800">{userData.uniqueSpeciesCount}</span>
+                  <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
+                  <span className="font-bold text-gray-800 text-xs sm:text-sm">{userData.uniqueSpeciesCount}</span>
                 </motion.button>
                 
                 <motion.button
-                  className="flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl px-4 py-2 shadow-lg cursor-pointer"
+                  className="flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl sm:rounded-2xl px-2 sm:px-4 py-1 sm:py-2 shadow-lg cursor-pointer"
                   whileHover={{ scale: 1.05, y: -2 }}
                   onClick={() => router.push('/gift-shop')}
                 >
-                  <Gift className="w-5 h-5" />
-                  <span className="font-bold">Shop</span>
+                  <Gift className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="font-bold text-xs sm:text-sm">Shop</span>
                 </motion.button>
               </div>
             </div>
