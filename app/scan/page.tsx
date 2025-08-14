@@ -16,7 +16,6 @@ import dynamic from 'next/dynamic';
 // Lazy load ProfileSelector
 const LazyProfileSelector = dynamic(() => import('@/components/lazy/LazyProfileSelector'), { ssr: false });
 import ProfileManager from '@/lib/profileManager';
-import { downscaleImage } from '@/lib/utils';
 import { SpeciesResult } from '@/types/species';
 import { Profile } from '@/types/profile';
 
@@ -342,10 +341,6 @@ export default function ScanPage() {
         reader.readAsDataURL(file);
       });
       console.log('Created persistent image URL (base64)');
-
-      // Downscale image
-      const processedImage = await downscaleImage(file, 1024);
-      console.log('Image downscaled');
 
       // Convert image to base64 for new multi-signal recognition
       const base64Image = imageUrl.split(',')[1]; // Remove data:image/jpeg;base64, prefix
