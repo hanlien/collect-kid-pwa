@@ -336,5 +336,3 @@ export const createThemeCSS = (theme: Theme): string => {
     }
   `;
 };
-
-export type { Theme };

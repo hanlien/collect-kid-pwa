@@ -5,7 +5,7 @@
   "rules": {
     "prefer-const": "warn",
     "no-var": "warn",
-    "no-console": "warn",
+    "no-console": "off",
     "no-debugger": "error",
     "no-alert": "error",
     "no-eval": "error",
