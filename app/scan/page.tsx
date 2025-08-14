@@ -867,7 +867,7 @@ export default function ScanPage() {
 
       {/* Camera viewfinder */}
       {cameraActive && (
-        <div className="absolute inset-0 z-10">
+        <div className="absolute inset-0 z-50">
           <video
             ref={videoRef}
             autoPlay
@@ -1433,27 +1433,29 @@ export default function ScanPage() {
             )}
           </main>
 
-          {/* Bottom Collection button for quick access */}
-          <motion.footer
-            className="relative z-5 p-6 pb-8"
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-          >
-            <Button
-              variant="nature"
-              size="xl"
-              className="w-full"
-              animation="float"
-              leftIcon={<BookOpen className="w-6 h-6" />}
-              onClick={() => router.push('/book')}
+          {/* Bottom Collection button for quick access - hidden when camera is active */}
+          {!cameraActive && (
+            <motion.footer
+              className="relative z-5 p-6 pb-8"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
             >
-              <div className="flex items-center justify-between w-full">
-                <span className="text-lg font-bold">My Collection</span>
-                <span className="text-sm opacity-90">({userData.uniqueSpeciesCount} species)</span>
-              </div>
-            </Button>
-          </motion.footer>
+              <Button
+                variant="nature"
+                size="xl"
+                className="w-full"
+                animation="float"
+                leftIcon={<BookOpen className="w-6 h-6" />}
+                onClick={() => router.push('/book')}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-lg font-bold">My Collection</span>
+                  <span className="text-sm opacity-90">({userData.uniqueSpeciesCount} species)</span>
+                </div>
+              </Button>
+            </motion.footer>
+          )}
         </>
       )}
 
