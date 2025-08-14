@@ -347,29 +347,25 @@ export default function ScanPage() {
       const processedImage = await downscaleImage(file, 1024);
       console.log('Image downscaled');
 
-      // Create FormData
-      const formData = new FormData();
-      formData.append('image', processedImage, 'image.jpg');
-      formData.append('hint', 'auto');
+      // Convert image to base64 for new multi-signal recognition
+      const base64Image = imageUrl.split(',')[1]; // Remove data:image/jpeg;base64, prefix
 
-      console.log('Sending to /api/recognize...');
-      // Call recognition API
-      const response = await fetch('/api/recognize', {
+      console.log('Sending to /api/recognize-v2 (multi-signal recognition)...');
+      // Call new multi-signal recognition API
+      const response = await fetch('/api/recognize-v2', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64Image }),
       });
 
       const data = await response.json();
-      console.log('Recognition response:', data);
+      console.log('Multi-signal recognition response:', data);
 
       if (!response.ok) {
-        if (data.error === 'LOW_CONFIDENCE') {
-          setToast({
-            message: data.message || 'Try getting closer, holding steady, or finding better lighting!',
-            type: 'error',
-          });
-          return;
-        }
+        throw new Error(data.error || 'Recognition failed');
+      }
+
+      if (!data.success) {
         throw new Error(data.error || 'Recognition failed');
       }
 
@@ -377,24 +373,50 @@ export default function ScanPage() {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2000);
 
+      // Handle the new multi-signal response format
+      const decision = data.decision;
+      let result: SpeciesResult;
+
+      if (decision.mode === 'pick' && decision.pick) {
+        // Single species identified with high confidence
+        const candidate = decision.pick;
+        result = {
+          canonicalName: candidate.scientificName,
+          commonName: candidate.commonName || candidate.scientificName,
+          category: 'mysterious', // Default category, will be refined
+          confidence: candidate.totalScore || 0.8,
+          provider: 'multi-signal',
+          rank: 'species',
+          capturedImageUrl: `captured-image-${Date.now()}`,
+        };
+      } else if (decision.mode === 'disambiguate' && decision.top3) {
+        // Multiple candidates - use the top one for now
+        const topCandidate = decision.top3[0];
+        result = {
+          canonicalName: topCandidate.scientificName,
+          commonName: topCandidate.commonName || topCandidate.scientificName,
+          category: 'mysterious', // Default category, will be refined
+          confidence: topCandidate.totalScore || 0.6,
+          provider: 'multi-signal',
+          rank: 'species',
+          capturedImageUrl: `captured-image-${Date.now()}`,
+        };
+      } else {
+        throw new Error('No valid recognition result');
+      }
+
       // Add scan record to profile with actual image
       const profileManager = ProfileManager.getInstance();
       profileManager.addScanRecord({
-        speciesName: data.result.commonName || data.result.canonicalName,
-        category: data.result.category,
-        confidence: data.result.confidence,
+        speciesName: result.commonName || result.canonicalName,
+        category: result.category,
+        confidence: result.confidence,
         imageUrl: imageUrl, // Store the actual base64 image in scan record
       });
 
       // Store image in sessionStorage to avoid URL length limits
-      const imageId = `captured-image-${Date.now()}`;
-      sessionStorage.setItem(imageId, imageUrl);
+      sessionStorage.setItem(result.capturedImageUrl, imageUrl);
       
-      // Navigate to result page with data and image reference
-      const result: SpeciesResult = {
-        ...data.result,
-        capturedImageUrl: imageId, // Store just the reference ID
-      };
       console.log('Navigating to result page with result:', result);
       router.push(`/result?data=${encodeURIComponent(JSON.stringify(result))}`);
     } catch (error) {
