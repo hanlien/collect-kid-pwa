@@ -34,6 +34,15 @@ export default function ResultPage() {
     if (data) {
       try {
         const parsedResult = JSON.parse(decodeURIComponent(data));
+        
+        // If capturedImageUrl is an ID, retrieve the actual image from sessionStorage
+        if (parsedResult.capturedImageUrl && parsedResult.capturedImageUrl.startsWith('captured-image-')) {
+          const actualImageUrl = sessionStorage.getItem(parsedResult.capturedImageUrl);
+          if (actualImageUrl) {
+            parsedResult.capturedImageUrl = actualImageUrl;
+          }
+        }
+        
         setResult(parsedResult);
         fetchFacts(parsedResult);
         

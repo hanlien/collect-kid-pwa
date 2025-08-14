@@ -370,19 +370,23 @@ export default function ScanPage() {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2000);
 
-      // Add scan record to profile
+      // Add scan record to profile with actual image
       const profileManager = ProfileManager.getInstance();
       profileManager.addScanRecord({
         speciesName: data.result.commonName || data.result.canonicalName,
         category: data.result.category,
         confidence: data.result.confidence,
-        imageUrl: imageUrl,
+        imageUrl: imageUrl, // Store the actual base64 image in scan record
       });
 
-      // Navigate to result page with data and image
+      // Store image in sessionStorage to avoid URL length limits
+      const imageId = `captured-image-${Date.now()}`;
+      sessionStorage.setItem(imageId, imageUrl);
+      
+      // Navigate to result page with data and image reference
       const result: SpeciesResult = {
         ...data.result,
-        capturedImageUrl: imageUrl, // Add the captured image URL
+        capturedImageUrl: imageId, // Store just the reference ID
       };
       console.log('Navigating to result page with result:', result);
       router.push(`/result?data=${encodeURIComponent(JSON.stringify(result))}`);
