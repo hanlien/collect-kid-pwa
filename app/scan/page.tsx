@@ -317,9 +317,13 @@ export default function ScanPage() {
       setIsScanning(true);
       setShowScanRing(true);
 
-      // Create a data URL for the original image
-      const imageUrl = URL.createObjectURL(file);
-      console.log('Created image URL:', imageUrl);
+      // Create a persistent data URL for the original image
+      const imageUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.readAsDataURL(file);
+      });
+      console.log('Created persistent image URL (base64)');
 
       // Downscale image
       const processedImage = await downscaleImage(file, 1024);
