@@ -425,8 +425,43 @@ export default function ScanPage() {
           capturedImageUrl: `captured-image-${Date.now()}`,
         };
       } else if (decision.mode === 'no_match') {
-        // No species detected
-        throw new Error('No species detected in this image. Please try a clearer photo or different image.');
+        // No species detected by online recognition, try local model as fallback
+        logger.recognitionStep('trying_local_fallback', { reason: 'Online recognition returned no_match' }, { recognitionId });
+        
+        try {
+          // Try local model as fallback
+          const localResponse = await fetch('/api/recognize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              imageBase64: base64Image,
+              enableLocalModel: true 
+            }),
+          });
+
+          const localData = await localResponse.json();
+          logger.recognitionStep('local_model_response', localData, { recognitionId });
+
+          if (localResponse.ok && localData.success) {
+            // Use local model result
+            result = {
+              canonicalName: localData.result.canonicalName,
+              commonName: localData.result.commonName,
+              category: localData.result.category,
+              confidence: localData.result.confidence,
+              provider: 'local',
+              rank: 'species',
+              capturedImageUrl: `captured-image-${Date.now()}`,
+            };
+            logger.recognitionStep('using_local_result', result, { recognitionId });
+          } else {
+            // Both online and local failed
+            throw new Error('No species detected in this image. Please try a clearer photo or different image.');
+          }
+        } catch (localError) {
+          logger.recognitionStep('local_fallback_failed', { error: localError }, { recognitionId });
+          throw new Error('No species detected in this image. Please try a clearer photo or different image.');
+        }
       } else {
         throw new Error('No valid recognition result');
       }
