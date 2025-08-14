@@ -130,7 +130,7 @@ export default function ResultPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          imageUrl: result.capturedImageUrl,
+          imageUrl: result.capturedImageUrl || null, // Handle blob URLs gracefully
           originalResult: {
             category: result.category,
             canonicalName: result.canonicalName,
