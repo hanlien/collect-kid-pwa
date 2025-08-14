@@ -47,12 +47,32 @@ export default function PWAProvider({ children }: { children: React.ReactNode })
       setInstallPrompt(null);
     };
 
+    // Force cache clear for design system update
+    const forceUpdate = async () => {
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        // Clear old caches
+        await Promise.all(
+          cacheNames
+            .filter(name => name.includes('collect-kid') && !name.includes('v3'))
+            .map(name => caches.delete(name))
+        );
+      }
+    };
+    
+    forceUpdate();
+
     // Register service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
           console.log('SW registered: ', registration);
+          
+          // Force immediate activation of new service worker
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
         })
         .catch((registrationError) => {
           console.log('SW registration failed: ', registrationError);

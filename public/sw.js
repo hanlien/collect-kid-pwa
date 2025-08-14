@@ -1,7 +1,7 @@
-const CACHE_NAME = 'collect-kid-v2';
-const STATIC_CACHE = 'collect-kid-static-v2';
-const DYNAMIC_CACHE = 'collect-kid-dynamic-v2';
-const IMAGE_CACHE = 'collect-kid-images-v2';
+const CACHE_NAME = 'collect-kid-v3';
+const STATIC_CACHE = 'collect-kid-static-v3';
+const DYNAMIC_CACHE = 'collect-kid-dynamic-v3';
+const IMAGE_CACHE = 'collect-kid-images-v3';
 
 // Files to cache immediately (critical path)
 const STATIC_FILES = [
@@ -32,6 +32,13 @@ self.addEventListener('install', (event) => {
     })
   );
   self.skipWaiting();
+});
+
+// Handle skip waiting message
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // Activate event - clean up old caches
