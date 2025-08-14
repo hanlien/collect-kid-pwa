@@ -352,7 +352,7 @@ class Logger {
   }
 
   // Get logs for debugging (works in both dev and prod)
-  async getLogs(level?: LogLevel, limit?: number): Promise<LogEntry[]> {
+  getLogs(level?: LogLevel, limit?: number): LogEntry[] {
     // First get in-memory logs
     let filtered = this.logs;
     if (level !== undefined) {
@@ -362,58 +362,62 @@ class Logger {
       filtered = filtered.slice(-limit);
     }
 
-    // In production, also fetch from database
+    // In production, also fetch from database (non-blocking)
     if (this.isProduction && supabase) {
-      try {
-        let query = supabase
-          .from('logs')
-          .select('*')
-          .order('timestamp', { ascending: false });
+      // Fire and forget - don't block the response
+      (async () => {
+        try {
+          let query = supabase
+            .from('logs')
+            .select('*')
+            .order('timestamp', { ascending: false });
 
-        if (level !== undefined) {
-          query = query.gte('level', level);
+          if (level !== undefined) {
+            query = query.gte('level', level);
+          }
+          if (limit) {
+            query = query.limit(limit);
+          }
+
+          const { data: dbLogs, error } = await query;
+          if (!error && dbLogs) {
+            // Convert database format to LogEntry format
+            const convertedLogs = dbLogs.map(dbLog => ({
+              timestamp: dbLog.timestamp,
+              level: dbLog.level,
+              message: dbLog.message,
+              data: dbLog.data ? JSON.parse(dbLog.data) : undefined,
+              error: dbLog.error ? new Error(dbLog.error) : undefined,
+              userId: dbLog.user_id,
+              sessionId: dbLog.session_id,
+              requestId: dbLog.request_id,
+              api: dbLog.api,
+              duration: dbLog.duration,
+              environment: dbLog.environment,
+              deployment: dbLog.deployment,
+              recognitionId: dbLog.recognition_id
+            }));
+
+            // Merge with in-memory logs, removing duplicates
+            const allLogs = [...filtered, ...convertedLogs];
+            const uniqueLogs = allLogs.filter((log, index, self) => 
+              index === self.findIndex(l => l.timestamp === log.timestamp && l.message === log.message)
+            );
+
+            // Update the in-memory logs with database results
+            this.logs = uniqueLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          }
+        } catch (error) {
+          console.error('Failed to fetch logs from database:', error);
         }
-        if (limit) {
-          query = query.limit(limit);
-        }
-
-        const { data: dbLogs, error } = await query;
-        if (!error && dbLogs) {
-          // Convert database format to LogEntry format
-          const convertedLogs = dbLogs.map(dbLog => ({
-            timestamp: dbLog.timestamp,
-            level: dbLog.level,
-            message: dbLog.message,
-            data: dbLog.data ? JSON.parse(dbLog.data) : undefined,
-            error: dbLog.error ? new Error(dbLog.error) : undefined,
-            userId: dbLog.user_id,
-            sessionId: dbLog.session_id,
-            requestId: dbLog.request_id,
-            api: dbLog.api,
-            duration: dbLog.duration,
-            environment: dbLog.environment,
-            deployment: dbLog.deployment,
-            recognitionId: dbLog.recognition_id
-          }));
-
-          // Merge with in-memory logs, removing duplicates
-          const allLogs = [...filtered, ...convertedLogs];
-          const uniqueLogs = allLogs.filter((log, index, self) => 
-            index === self.findIndex(l => l.timestamp === log.timestamp && l.message === log.message)
-          );
-
-          return uniqueLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        }
-      } catch (error) {
-        console.error('Failed to fetch logs from database:', error);
-      }
+      })();
     }
 
     return filtered;
   }
 
   // Get recognition-specific logs (works in both dev and prod)
-  async getRecognitionLogs(recognitionId?: string, limit?: number): Promise<LogEntry[]> {
+  getRecognitionLogs(recognitionId?: string, limit?: number): LogEntry[] {
     // First get in-memory logs
     let filtered = this.logs.filter(log => log.api === 'recognition');
     
@@ -425,52 +429,56 @@ class Logger {
       filtered = filtered.slice(-limit);
     }
 
-    // In production, also fetch from database
+    // In production, also fetch from database (non-blocking)
     if (this.isProduction && supabase) {
-      try {
-        let query = supabase
-          .from('logs')
-          .select('*')
-          .eq('api', 'recognition')
-          .order('timestamp', { ascending: false });
+      // Fire and forget - don't block the response
+      (async () => {
+        try {
+          let query = supabase
+            .from('logs')
+            .select('*')
+            .eq('api', 'recognition')
+            .order('timestamp', { ascending: false });
 
-        if (recognitionId) {
-          query = query.eq('recognition_id', recognitionId);
+          if (recognitionId) {
+            query = query.eq('recognition_id', recognitionId);
+          }
+          if (limit) {
+            query = query.limit(limit);
+          }
+
+          const { data: dbLogs, error } = await query;
+          if (!error && dbLogs) {
+            // Convert database format to LogEntry format
+            const convertedLogs = dbLogs.map(dbLog => ({
+              timestamp: dbLog.timestamp,
+              level: dbLog.level,
+              message: dbLog.message,
+              data: dbLog.data ? JSON.parse(dbLog.data) : undefined,
+              error: dbLog.error ? new Error(dbLog.error) : undefined,
+              userId: dbLog.user_id,
+              sessionId: dbLog.session_id,
+              requestId: dbLog.request_id,
+              api: dbLog.api,
+              duration: dbLog.duration,
+              environment: dbLog.environment,
+              deployment: dbLog.deployment,
+              recognitionId: dbLog.recognition_id
+            }));
+
+            // Merge with in-memory logs, removing duplicates
+            const allLogs = [...filtered, ...convertedLogs];
+            const uniqueLogs = allLogs.filter((log, index, self) => 
+              index === self.findIndex(l => l.timestamp === log.timestamp && l.message === log.message)
+            );
+
+            // Update the in-memory logs with database results
+            this.logs = [...this.logs.filter(log => log.api !== 'recognition'), ...uniqueLogs];
+          }
+        } catch (error) {
+          console.error('Failed to fetch recognition logs from database:', error);
         }
-        if (limit) {
-          query = query.limit(limit);
-        }
-
-        const { data: dbLogs, error } = await query;
-        if (!error && dbLogs) {
-          // Convert database format to LogEntry format
-          const convertedLogs = dbLogs.map(dbLog => ({
-            timestamp: dbLog.timestamp,
-            level: dbLog.level,
-            message: dbLog.message,
-            data: dbLog.data ? JSON.parse(dbLog.data) : undefined,
-            error: dbLog.error ? new Error(dbLog.error) : undefined,
-            userId: dbLog.user_id,
-            sessionId: dbLog.session_id,
-            requestId: dbLog.request_id,
-            api: dbLog.api,
-            duration: dbLog.duration,
-            environment: dbLog.environment,
-            deployment: dbLog.deployment,
-            recognitionId: dbLog.recognition_id
-          }));
-
-          // Merge with in-memory logs, removing duplicates
-          const allLogs = [...filtered, ...convertedLogs];
-          const uniqueLogs = allLogs.filter((log, index, self) => 
-            index === self.findIndex(l => l.timestamp === log.timestamp && l.message === log.message)
-          );
-
-          return uniqueLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        }
-      } catch (error) {
-        console.error('Failed to fetch recognition logs from database:', error);
-      }
+      })();
     }
 
     return filtered;
