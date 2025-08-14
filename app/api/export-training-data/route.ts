@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin, isSupabaseAvailable } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if Supabase is available
+    if (!isSupabaseAvailable() || !supabaseAdmin) {
+      return NextResponse.json(
+        { error: 'Training data export unavailable - database not configured' },
+        { status: 503 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'json';
     const limit = parseInt(searchParams.get('limit') || '1000');
@@ -103,6 +111,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Supabase is available
+    if (!isSupabaseAvailable() || !supabaseAdmin) {
+      return NextResponse.json(
+        { error: 'Training data management unavailable - database not configured' },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const { action, sample_ids } = body;
 

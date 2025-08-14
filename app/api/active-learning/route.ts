@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin, isSupabaseAvailable } from '@/lib/supabase';
 import { validateEnv } from '@/lib/validation';
 
 export async function POST(request: NextRequest) {
@@ -11,6 +11,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Active learning is disabled' },
         { status: 403 }
+      );
+    }
+
+    // Check if Supabase is available
+    if (!isSupabaseAvailable() || !supabaseAdmin) {
+      return NextResponse.json(
+        { error: 'Active learning database unavailable' },
+        { status: 503 }
       );
     }
 
@@ -96,6 +104,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'Active learning is disabled' },
         { status: 403 }
+      );
+    }
+
+    // Check if Supabase is available
+    if (!isSupabaseAvailable() || !supabaseAdmin) {
+      return NextResponse.json(
+        { error: 'Active learning database unavailable' },
+        { status: 503 }
       );
     }
 
