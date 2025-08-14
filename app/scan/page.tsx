@@ -446,7 +446,10 @@ export default function ScanPage() {
   };
 
   return (
-    <div className="page-container bg-gradient-to-br from-green-50 via-blue-50 to-orange-50 relative overflow-hidden">
+    <div className="page-container bg-gradient-to-br from-green-100 via-blue-100 to-orange-100 relative overflow-hidden">
+      {/* Subtle overlay for better text contrast */}
+      <div className="absolute inset-0 bg-white/20"></div>
+      
       {/* Background decorative elements */}
       <div className="absolute inset-0 opacity-20">
         <AnimalSilhouettes />
@@ -1111,8 +1114,8 @@ export default function ScanPage() {
                   <span className="text-white font-bold text-sm sm:text-lg">{currentProfile?.emoji || '👦'}</span>
                 </motion.button>
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-white drop-shadow-lg">Level {userData.level}</h2>
-                  <p className="text-xs sm:text-sm text-white/80 drop-shadow-md">{currentProfile?.name || 'Brandon'}&apos;s Explorer</p>
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-800 drop-shadow-lg">Level {userData.level}</h2>
+                  <p className="text-xs sm:text-sm text-gray-700 drop-shadow-md">{currentProfile?.name || 'Brandon'}&apos;s Explorer</p>
                   {/* Level Progress Bar */}
                   <div className="mt-1">
                     <div className="flex items-center space-x-2">
@@ -1124,7 +1127,7 @@ export default function ScanPage() {
                           }}
                         ></div>
                       </div>
-                      <span className="text-xs text-white/80 font-medium min-w-fit">
+                      <span className="text-xs text-gray-700 font-medium min-w-fit drop-shadow-sm">
                         {5 - (userData.uniqueSpeciesCount % 5)} to go
                       </span>
                     </div>
@@ -1166,20 +1169,18 @@ export default function ScanPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <motion.h1 
-                className="text-5xl font-bold text-white mb-4 drop-shadow-2xl"
-                animate={{
-                  textShadow: [
-                    "0 0 20px rgba(255,255,255,0.5)",
-                    "0 0 30px rgba(255,255,255,0.8)",
-                    "0 0 20px rgba(255,255,255,0.5)"
-                  ]
+                className="text-5xl font-bold text-gray-800 mb-4 drop-shadow-2xl"
+                style={{
+                  textShadow: "2px 2px 4px rgba(0,0,0,0.3)"
                 }}
-                transition={{ duration: 2, repeat: Infinity }}
               >
                 🐛 Buggies with Brandon
               </motion.h1>
               <motion.p 
-                className="text-xl text-white/90 drop-shadow-lg"
+                className="text-xl text-gray-700 drop-shadow-lg"
+                style={{
+                  textShadow: "1px 1px 2px rgba(0,0,0,0.2)"
+                }}
                 animate={{ y: [0, -5, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
               >
