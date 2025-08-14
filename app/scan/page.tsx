@@ -1118,40 +1118,30 @@ export default function ScanPage() {
                 </div>
               </div>
               
-              {/* Right section - Stats and actions */}
-              <div className="flex items-center justify-between sm:justify-end space-x-2 sm:space-x-3">
-                <motion.div
-                  className="flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl sm:rounded-2xl px-2 sm:px-4 py-1 sm:py-2 shadow-lg"
+              {/* Right section - Combined Shop button with coins */}
+              <div className="flex items-center justify-end">
+                <motion.button
+                  className="flex items-center space-x-2 sm:space-x-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl sm:rounded-2xl px-3 sm:px-5 py-2 sm:py-3 shadow-lg cursor-pointer"
                   whileHover={{ scale: 1.05, y: -2 }}
+                  onClick={() => router.push('/gift-shop')}
                   animate={{
                     boxShadow: [
-                      "0 5px 15px rgba(251, 191, 36, 0.3)",
-                      "0 10px 25px rgba(251, 191, 36, 0.5)",
-                      "0 5px 15px rgba(251, 191, 36, 0.3)"
+                      "0 5px 15px rgba(168, 85, 247, 0.3)",
+                      "0 10px 25px rgba(168, 85, 247, 0.5)",
+                      "0 5px 15px rgba(168, 85, 247, 0.3)"
                     ]
                   }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  <Coins className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                  <span className="font-bold text-xs sm:text-sm">${userData.coins}</span>
-                </motion.div>
-                
-                <motion.button
-                  className="flex items-center space-x-1 sm:space-x-2 bg-white/90 backdrop-blur-md rounded-xl sm:rounded-2xl px-2 sm:px-4 py-1 sm:py-2 shadow-lg cursor-pointer"
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  onClick={() => router.push('/book')}
-                >
-                  <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
-                  <span className="font-bold text-gray-800 text-xs sm:text-sm">{userData.uniqueSpeciesCount}</span>
-                </motion.button>
-                
-                <motion.button
-                  className="flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl sm:rounded-2xl px-2 sm:px-4 py-1 sm:py-2 shadow-lg cursor-pointer"
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  onClick={() => router.push('/gift-shop')}
-                >
-                  <Gift className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="font-bold text-xs sm:text-sm">Shop</span>
+                  <div className="flex items-center space-x-1 sm:space-x-2">
+                    <Coins className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300" />
+                    <span className="font-bold text-xs sm:text-sm">${userData.coins}</span>
+                  </div>
+                  <div className="w-px h-4 bg-white/30 hidden sm:block"></div>
+                  <div className="flex items-center space-x-1 sm:space-x-2">
+                    <Gift className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="font-bold text-xs sm:text-sm">Shop</span>
+                  </div>
                 </motion.button>
               </div>
             </div>

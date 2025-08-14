@@ -87,32 +87,61 @@ export default function ResultPage() {
   const handleSpeak = () => {
     if (!result) return;
 
-    // Create more natural, kid-friendly text
+    // Create more natural, engaging text like Grok's style
     const speciesName = result.commonName || result.canonicalName;
     const summary = facts?.summary || 'This is a fascinating creature!';
     
-    // Make it more engaging for kids
-    const text = `Wow! This is a ${speciesName}! ${summary} Isn't nature amazing?`;
+    // Make it more welcoming and natural
+    const text = `Hey there! Check out this amazing ${speciesName}! ${summary} Nature is absolutely incredible, don't you think?`;
     
     if ('speechSynthesis' in window) {
       setIsSpeaking(true);
       
-      // Get available voices and select a better one
+      // Get available voices and select the most natural one
       const voices = window.speechSynthesis.getVoices();
-      let selectedVoice = voices.find(voice => 
-        voice.lang.includes('en') && 
-        (voice.name.includes('Google') || voice.name.includes('Samantha') || voice.name.includes('Alex'))
-      ) || voices.find(voice => voice.lang.includes('en')) || voices[0];
+      
+      // Priority list for natural, welcoming voices (similar to Grok's style)
+      const preferredVoices = [
+        // iOS/macOS natural voices
+        'Samantha', 'Alex', 'Victoria', 'Allison', 'Ava', 'Susan', 'Karen',
+        // Google's natural voices
+        'Google US English', 'Google UK English Female', 'Google UK English Male',
+        // Windows natural voices
+        'Microsoft Zira', 'Microsoft David', 'Microsoft Hazel',
+        // Other high-quality voices
+        'Eloquence', 'Reed', 'Sandy', 'Tessa'
+      ];
+      
+      let selectedVoice = null;
+      
+      // Try to find the best natural voice
+      for (const preferredName of preferredVoices) {
+        selectedVoice = voices.find(voice => 
+          voice.lang.includes('en') && 
+          voice.name.includes(preferredName)
+        );
+        if (selectedVoice) break;
+      }
+      
+      // Fallback to any good English voice
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => 
+          voice.lang.includes('en') && 
+          !voice.name.includes('eSpeak') && // Avoid robotic voices
+          !voice.name.includes('Festival')
+        ) || voices.find(voice => voice.lang.includes('en')) || voices[0];
+      }
       
       const utterance = new SpeechSynthesisUtterance(text);
       
-      // Use better voice settings for more natural speech
+      // Grok-like voice settings: natural, warm, and engaging
       if (selectedVoice) {
         utterance.voice = selectedVoice;
+        console.log('Using voice:', selectedVoice.name);
       }
-      utterance.rate = 0.9; // Slightly faster
-      utterance.pitch = 1.2; // Slightly higher pitch for enthusiasm
-      utterance.volume = 0.9; // Good volume
+      utterance.rate = 0.85; // Slightly slower for clarity and warmth
+      utterance.pitch = 1.1; // Slightly higher for friendliness
+      utterance.volume = 0.95; // Clear but not overwhelming
       
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = () => setIsSpeaking(false);
