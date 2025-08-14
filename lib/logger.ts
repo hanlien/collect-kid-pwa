@@ -16,12 +16,16 @@ export interface LogEntry {
   requestId?: string;
   api?: string;
   duration?: number;
+  environment?: string;
+  deployment?: string;
 }
 
 class Logger {
   private logs: LogEntry[] = [];
   private maxLogs = 1000; // Keep last 1000 logs in memory
   private logLevel: LogLevel = LogLevel.INFO;
+  private isProduction = process.env.NODE_ENV === 'production';
+  private deploymentId = process.env.VERCEL_GIT_COMMIT_SHA || 'local';
 
   constructor() {
     // In production, we might want to send logs to a service
@@ -47,13 +51,17 @@ class Logger {
       message,
       data,
       error,
+      environment: process.env.NODE_ENV || 'unknown',
+      deployment: this.deploymentId,
       ...context,
     };
 
-    // Add to in-memory logs
-    this.logs.push(entry);
-    if (this.logs.length > this.maxLogs) {
-      this.logs.shift(); // Remove oldest log
+    // Add to in-memory logs (development only)
+    if (!this.isProduction) {
+      this.logs.push(entry);
+      if (this.logs.length > this.maxLogs) {
+        this.logs.shift(); // Remove oldest log
+      }
     }
 
     return entry;
@@ -63,11 +71,44 @@ class Logger {
     return level >= this.logLevel;
   }
 
+  private async sendToExternalService(entry: LogEntry) {
+    if (!this.isProduction) return;
+
+    try {
+      // Option 1: Send to Vercel Analytics (if configured)
+      if (process.env.VERCEL_ANALYTICS_ID) {
+        // Vercel Analytics integration would go here
+        console.log('📊 [VERCEL]', entry.message, entry.data || '');
+      }
+
+      // Option 2: Send to external logging service
+      // Example: LogRocket, Sentry, DataDog, etc.
+      if (process.env.LOG_SERVICE_URL) {
+        await fetch(process.env.LOG_SERVICE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(entry),
+        });
+      }
+
+      // Option 3: Send to Supabase (if you want to store logs in your database)
+      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        // Supabase logging integration would go here
+        console.log('🗄️ [SUPABASE]', entry.message, entry.data || '');
+      }
+
+    } catch (error) {
+      // Fallback to console if external service fails
+      console.error('Failed to send log to external service:', error);
+    }
+  }
+
   debug(message: string, data?: any, context?: any) {
     if (!this.shouldLog(LogLevel.DEBUG)) return;
     
     const entry = this.createLogEntry(LogLevel.DEBUG, message, data, undefined, context);
     console.log(`🔍 [DEBUG] ${message}`, data || '');
+    this.sendToExternalService(entry);
     return entry;
   }
 
@@ -76,6 +117,7 @@ class Logger {
     
     const entry = this.createLogEntry(LogLevel.INFO, message, data, undefined, context);
     console.log(`ℹ️ [INFO] ${message}`, data || '');
+    this.sendToExternalService(entry);
     return entry;
   }
 
@@ -84,6 +126,7 @@ class Logger {
     
     const entry = this.createLogEntry(LogLevel.WARN, message, data, undefined, context);
     console.warn(`⚠️ [WARN] ${message}`, data || '');
+    this.sendToExternalService(entry);
     return entry;
   }
 
@@ -92,6 +135,7 @@ class Logger {
     
     const entry = this.createLogEntry(LogLevel.ERROR, message, data, error, context);
     console.error(`❌ [ERROR] ${message}`, error || '', data || '');
+    this.sendToExternalService(entry);
     return entry;
   }
 
@@ -142,8 +186,13 @@ class Logger {
     return this.error('Collection failed', error, speciesData, { ...context, api: 'collect' });
   }
 
-  // Get logs for debugging
+  // Get logs for debugging (development only)
   getLogs(level?: LogLevel, limit?: number): LogEntry[] {
+    if (this.isProduction) {
+      console.warn('Log retrieval not available in production');
+      return [];
+    }
+
     let filtered = this.logs;
     if (level !== undefined) {
       filtered = filtered.filter(log => log.level >= level);
@@ -154,14 +203,36 @@ class Logger {
     return filtered;
   }
 
-  // Clear logs
+  // Clear logs (development only)
   clearLogs() {
+    if (this.isProduction) {
+      console.warn('Log clearing not available in production');
+      return;
+    }
     this.logs = [];
   }
 
-  // Export logs for debugging
+  // Export logs for debugging (development only)
   exportLogs(): string {
+    if (this.isProduction) {
+      return JSON.stringify({ error: 'Log export not available in production' });
+    }
     return JSON.stringify(this.logs, null, 2);
+  }
+
+  // Production-specific methods
+  async logToDatabase(entry: LogEntry) {
+    if (!this.isProduction) return;
+
+    try {
+      // Example: Log to your Supabase database
+      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        // Implementation would go here
+        console.log('📊 [DB] Logged to database:', entry.message);
+      }
+    } catch (error) {
+      console.error('Failed to log to database:', error);
+    }
   }
 }
 
