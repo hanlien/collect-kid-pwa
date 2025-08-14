@@ -1,34 +1,100 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background circle -->
-  <circle cx="256" cy="256" r="256" fill="#22c55e"/>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="buggiesGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#7dd3fc;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0ea5e9;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="brandonGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bugBodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fb923c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ea580c;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="wingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e0f2fe;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#0ea5e9;stop-opacity:0.3" />
+    </linearGradient>
+    <linearGradient id="foliageGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#86efac;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="rainbowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#fb923c;stop-opacity:0.6" />
+      <stop offset="25%" style="stop-color:#fbbf24;stop-opacity:0.6" />
+      <stop offset="50%" style="stop-color:#86efac;stop-opacity:0.6" />
+      <stop offset="75%" style="stop-color:#7dd3fc;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#a855f7;stop-opacity:0.6" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" fill="#f0fdf4"/>
+  
+  <!-- Rainbow -->
+  <path d="M 50 100 Q 256 50 462 100" stroke="url(#rainbowGradient)" stroke-width="20" fill="none" opacity="0.7"/>
+  
+  <!-- Hearts -->
+  <path d="M 80 80 Q 80 60 100 60 Q 120 60 120 80 Q 120 100 100 120 Q 80 100 80 80 Z" fill="#fecaca" opacity="0.8"/>
+  <path d="M 432 80 Q 432 60 452 60 Q 472 60 472 80 Q 472 100 452 120 Q 432 100 432 80 Z" fill="#fecaca" opacity="0.8"/>
+  
+  <!-- Foliage background -->
+  <ellipse cx="256" cy="380" rx="220" ry="100" fill="url(#foliageGradient)" opacity="0.8"/>
+  
+  <!-- BUGGIES text -->
+  <text x="256" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="url(#buggiesGradient)" stroke="#0ea5e9" stroke-width="3">
+    BUGGIES
+  </text>
+  
+  <!-- WITH text -->
+  <text x="256" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="white" stroke="#1e40af" stroke-width="1">
+    WITH
+  </text>
+  
+  <!-- BRANDON text -->
+  <text x="256" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="url(#brandonGradient)" stroke="#0ea5e9" stroke-width="3">
+    BRANDON
+  </text>
+  
+  <!-- Bug character -->
+  <!-- Wings -->
+  <ellipse cx="180" cy="380" rx="40" ry="20" fill="url(#wingGradient)" stroke="#0ea5e9" stroke-width="3" opacity="0.8"/>
+  <ellipse cx="332" cy="380" rx="40" ry="20" fill="url(#wingGradient)" stroke="#0ea5e9" stroke-width="3" opacity="0.8"/>
   
   <!-- Bug body -->
-  <ellipse cx="256" cy="280" rx="120" ry="75" fill="#f97316"/>
+  <ellipse cx="256" cy="390" rx="32" ry="20" fill="url(#bugBodyGradient)" stroke="#1e40af" stroke-width="3"/>
   
   <!-- Bug spots -->
-  <circle cx="220" cy="250" r="12" fill="#ea580c"/>
-  <circle cx="292" cy="250" r="12" fill="#ea580c"/>
-  <circle cx="220" cy="310" r="12" fill="#ea580c"/>
-  <circle cx="292" cy="310" r="12" fill="#ea580c"/>
+  <circle cx="240" cy="375" r="6" fill="#1e40af"/>
+  <circle cx="272" cy="375" r="6" fill="#1e40af"/>
+  <circle cx="256" cy="400" r="8" fill="#1e40af"/>
   
   <!-- Bug head -->
-  <circle cx="256" cy="200" r="50" fill="#f97316"/>
+  <circle cx="256" cy="360" r="16" fill="url(#bugBodyGradient)" stroke="#1e40af" stroke-width="3"/>
   
-  <!-- Eyes -->
-  <circle cx="240" cy="190" r="10" fill="white"/>
-  <circle cx="272" cy="190" r="10" fill="white"/>
-  <circle cx="240" cy="190" r="5" fill="black"/>
-  <circle cx="272" cy="190" r="5" fill="black"/>
+  <!-- Bug eyes -->
+  <circle cx="250" cy="355" r="4" fill="black"/>
+  <circle cx="262" cy="355" r="4" fill="black"/>
+  <circle cx="251" cy="353" r="1.5" fill="white"/>
+  <circle cx="263" cy="353" r="1.5" fill="white"/>
   
-  <!-- Antennae -->
-  <path d="M 230 170 Q 220 150 210 170" stroke="#ea580c" stroke-width="6" fill="none"/>
-  <path d="M 282 170 Q 292 150 302 170" stroke="#ea580c" stroke-width="6" fill="none"/>
+  <!-- Bug smile -->
+  <path d="M 245 365 Q 256 370 267 365" stroke="#1e40af" stroke-width="3" fill="none"/>
   
-  <!-- Wings -->
-  <ellipse cx="200" cy="260" rx="45" ry="60" fill="#3b82f6" opacity="0.7"/>
-  <ellipse cx="312" cy="260" rx="45" ry="60" fill="#3b82f6" opacity="0.7"/>
+  <!-- Bug antennae -->
+  <path d="M 245 345 Q 240 335 235 320" stroke="#8b4513" stroke-width="3" fill="none"/>
+  <path d="M 267 345 Q 272 335 277 320" stroke="#8b4513" stroke-width="3" fill="none"/>
   
-  <!-- Text placeholder -->
-  <text x="256" y="400" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="32" font-weight="bold">BUGGIES</text>
-  <text x="256" y="430" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="bold">with BRANDON</text>
+  <!-- Bug legs -->
+  <path d="M 225 390 L 215 400" stroke="#ea580c" stroke-width="3" fill="none"/>
+  <path d="M 225 395 L 215 405" stroke="#ea580c" stroke-width="3" fill="none"/>
+  <path d="M 225 400 L 215 410" stroke="#ea580c" stroke-width="3" fill="none"/>
+  <path d="M 287 390 L 297 400" stroke="#ea580c" stroke-width="3" fill="none"/>
+  <path d="M 287 395 L 297 405" stroke="#ea580c" stroke-width="3" fill="none"/>
+  <path d="M 287 400 L 297 410" stroke="#ea580c" stroke-width="3" fill="none"/>
+  
+  <!-- Ground/base -->
+  <rect x="0" y="430" width="512" height="82" fill="#0f766e" opacity="0.3"/>
 </svg>
