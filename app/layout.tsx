@@ -16,25 +16,25 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://buggies-with-brandon.vercel.app'),
-  title: 'Backyard Brandon - Explore Nature with Your Camera',
+  title: 'Buggies with Brandon - Explore Nature with Your Camera',
   description: 'Explore your backyard and discover amazing creatures with Brandon! Learn fun facts and collect badges in this kid-friendly nature app.',
   keywords: 'nature, kids, education, camera, identification, flowers, bugs, animals, backyard',
-  authors: [{ name: 'Backyard Brandon Team' }],
+  authors: [{ name: 'Buggies with Brandon Team' }],
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Backyard Brandon',
+    title: 'Buggies with Brandon',
   },
   openGraph: {
-    title: 'Backyard Brandon - Explore Nature',
+    title: 'Buggies with Brandon - Explore Nature',
     description: 'Explore your backyard and discover amazing creatures with Brandon!',
     type: 'website',
     images: ['/og-image.png'],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Backyard Brandon - Explore Nature',
+    title: 'Buggies with Brandon - Explore Nature',
     description: 'Explore your backyard and discover amazing creatures with Brandon!',
     images: ['/og-image.png'],
   },
@@ -63,9 +63,9 @@ export default function RootLayout({
         {/* PWA Meta */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Backyard Brandon" />
+        <meta name="apple-mobile-web-app-title" content="Buggies with Brandon" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="application-name" content="Backyard Brandon" />
+        <meta name="application-name" content="Buggies with Brandon" />
         <meta name="msapplication-TileColor" content="#22c55e" />
         <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
         <meta name="msapplication-tap-highlight" content="no" />
