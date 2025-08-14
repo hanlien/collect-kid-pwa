@@ -1,9 +1,9 @@
 {
-  "name": "backyard-brandon",
+  "name": "buggies-with-brandon",
   "version": "1.0.0",
   "private": true,
   "description": "AI-powered nature discovery app for kids - explore your backyard and learn about amazing creatures!",
-  "author": "Backyard Brandon Team",
+  "author": "Buggies with Brandon Team",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -62,12 +62,13 @@
     "next": "14.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "sharp": "^0.34.3",
+
     "zod": "^3.22.4",
     "zustand": "^5.0.7"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.4.6",
+    "sharp": "^0.34.3",
     "@types/canvas-confetti": "^1.6.4",
     "@types/node": "^20.10.5",
     "@types/react": "^18.2.45",
