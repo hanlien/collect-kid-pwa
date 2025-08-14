@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Volume2, Heart, ArrowLeft, RotateCcw, Star, MapPin, Calendar, Users, Award, BookOpen, Bookmark } from 'lucide-react';
+import { Volume2, Heart, ArrowLeft, RotateCcw, Star, MapPin, Calendar, Users, Award, BookOpen, Bookmark, Target } from 'lucide-react';
 import Image from 'next/image';
 import BigButton from '@/components/BigButton';
 import ColorChips from '@/components/ColorChips';
@@ -37,10 +37,7 @@ export default function ResultPage() {
         setResult(parsedResult);
         fetchFacts(parsedResult);
         
-        // Automatically show accuracy feedback after 2 seconds to collect training data
-        setTimeout(() => {
-          setShowAccuracyFeedback(true);
-        }, 2000);
+        // Don't automatically show feedback - user should click feedback button
       } catch (error) {
         console.error('Failed to parse result data:', error);
         router.push('/scan');
@@ -542,7 +539,16 @@ export default function ResultPage() {
           </BigButton>
         </div>
 
-
+        {/* Feedback Button */}
+        <div className="flex gap-4 mb-4">
+          <BigButton
+            onClick={() => setShowAccuracyFeedback(true)}
+            className="flex-1 flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600"
+          >
+            <Target className="w-5 h-5" />
+            <span>Train Brandon's AI</span>
+          </BigButton>
+        </div>
 
         {/* Collection Button */}
         <BigButton
