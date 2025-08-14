@@ -306,7 +306,6 @@ export default function DebugPage() {
     if (!decisionLog?.data) return <div className="text-gray-500">No scoring breakdown found</div>;
 
     const { mode, topCandidates, decisionReason } = decisionLog.data;
-    const candidates = candidateLog?.data?.candidates || [];
     
     return (
       <div className="space-y-4">
