@@ -26,6 +26,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate image size (max 10MB base64)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (imageBase64.length > maxSize) {
+      return NextResponse.json(
+        { error: 'Image too large. Please use an image smaller than 10MB.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate minimum size
+    if (imageBase64.length < 1000) {
+      return NextResponse.json(
+        { error: 'Image data too small. Please try a different image.' },
+        { status: 400 }
+      );
+    }
+
     // Start recognition pipeline with unique ID
     recognitionId = logger.recognitionStart(imageBase64.length);
     logger.recognitionStep('request_received', { imageSize: imageBase64.length }, { recognitionId });

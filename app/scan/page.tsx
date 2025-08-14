@@ -335,8 +335,15 @@ export default function ScanPage() {
     let recognitionId: string | undefined;
     try {
       console.log('Starting image processing...');
+      console.log('File size:', file.size, 'bytes');
       setIsScanning(true);
-              // setShowScanRing(true); // TODO: Implement scan ring animation
+      // setShowScanRing(true); // TODO: Implement scan ring animation
+
+      // Check file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        throw new Error('Image too large. Please use an image smaller than 5MB.');
+      }
 
       // Create a persistent data URL for the original image
       const imageUrl = await new Promise<string>((resolve) => {
@@ -353,30 +360,37 @@ export default function ScanPage() {
         throw new Error('Failed to extract base64 image data');
       }
 
-                          recognitionId = logger.recognitionStart(base64Image.length);
-                    logger.recognitionStep('sending_request', { imageSize: base64Image.length }, { recognitionId });
-                    
-                    // Call new multi-signal recognition API
-                    const response = await fetch('/api/recognize-v2', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ imageBase64: base64Image }),
-                    });
+      // Validate base64 data
+      if (base64Image.length < 1000) {
+        throw new Error('Image data too small. Please try a different image.');
+      }
 
-                    const data = await response.json();
-                    logger.recognitionStep('received_response', data, { recognitionId });
+      console.log('Base64 image size:', base64Image.length, 'characters');
 
-                          if (!response.ok) {
-                      const error = new Error(data.error || 'Recognition failed');
-                      logger.recognitionError(error, { recognitionId, imageSize: base64Image.length });
-                      throw error;
-                    }
+      recognitionId = logger.recognitionStart(base64Image.length);
+      logger.recognitionStep('sending_request', { imageSize: base64Image.length }, { recognitionId });
+      
+      // Call new multi-signal recognition API
+      const response = await fetch('/api/recognize-v2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64Image }),
+      });
 
-                    if (!data.success) {
-                      const error = new Error(data.error || 'Recognition failed');
-                      logger.recognitionError(error, { recognitionId, imageSize: base64Image.length });
-                      throw error;
-                    }
+      const data = await response.json();
+      logger.recognitionStep('received_response', data, { recognitionId });
+
+      if (!response.ok) {
+        const error = new Error(data.error || 'Recognition failed');
+        logger.recognitionError(error, { recognitionId, imageSize: base64Image.length });
+        throw error;
+      }
+
+      if (!data.success) {
+        const error = new Error(data.error || 'Recognition failed');
+        logger.recognitionError(error, { recognitionId, imageSize: base64Image.length });
+        throw error;
+      }
 
       // Show confetti for successful scan
       setShowConfetti(true);
@@ -426,18 +440,19 @@ export default function ScanPage() {
       // Store image in sessionStorage to avoid URL length limits
       sessionStorage.setItem(result.capturedImageUrl!, imageUrl);
       
-                          logger.recognitionSuccess(result, Date.now() - startTime, { recognitionId, imageSize: base64Image.length });
-                    logger.info('Navigating to result page', result, { recognitionId });
+      logger.recognitionSuccess(result, Date.now() - startTime, { recognitionId, imageSize: base64Image.length });
+      logger.info('Navigating to result page', result, { recognitionId });
       router.push(`/result?data=${encodeURIComponent(JSON.stringify(result))}`);
-                      } catch (error) {
-                    logger.error('Scan error', error as Error, { recognitionId, imageSize: base64Image?.length });
-                    setToast({
-                      message: 'Something went wrong. Please try again!',
-                      type: 'error',
-                    });
-                  } finally {
+    } catch (error) {
+      console.error('Scan error:', error);
+      logger.error('Scan error', error as Error, { recognitionId, imageSize: base64Image?.length });
+      setToast({
+        message: error instanceof Error ? error.message : 'Something went wrong. Please try again!',
+        type: 'error',
+      });
+    } finally {
       setIsScanning(false);
-              // setShowScanRing(false); // TODO: Implement scan ring animation
+      // setShowScanRing(false); // TODO: Implement scan ring animation
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
