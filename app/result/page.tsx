@@ -328,28 +328,29 @@ export default function ResultPage() {
       {/* Header */}
       <div className="relative z-10 bg-white/80 backdrop-blur-sm border-b border-gray-200">
         <div className="flex items-center justify-between p-4">
-          <BigButton
+          {/* Back button - subtle header navigation */}
+          <button
             onClick={() => router.push('/scan')}
-            variant="ghost"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/60 backdrop-blur-sm border border-gray-200 text-gray-700 hover:bg-white/80 hover:text-gray-900 transition-all duration-200 shadow-sm"
           >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back</span>
-          </BigButton>
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm font-medium">Back</span>
+          </button>
           
-          <div className="text-center">
+          {/* Title section */}
+          <div className="text-center flex-1 mx-4">
             <h1 className="text-lg font-semibold text-gray-800">Discovery</h1>
             <p className="text-sm text-gray-500">Found something amazing!</p>
           </div>
           
-          <BigButton
+          {/* Scan again button - subtle header navigation */}
+          <button
             onClick={() => router.push('/scan')}
-            variant="ghost"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-green-700 hover:bg-green-100 hover:text-green-800 transition-all duration-200 shadow-sm"
           >
-            <RotateCcw className="w-5 h-5" />
-            <span>Scan Again</span>
-          </BigButton>
+            <RotateCcw className="w-4 h-4" />
+            <span className="text-sm font-medium">Scan</span>
+          </button>
         </div>
       </div>
 
