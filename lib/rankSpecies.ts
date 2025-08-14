@@ -81,7 +81,7 @@ function calculateComplexityPenalty(scientificName: string, commonName: string):
   return 1.0; // No penalty for simple names
 }
 
-function calculateKidFriendlyBoost(commonName: string, scientificName: string, scores: any): number {
+function calculateKidFriendlyBoost(commonName: string, _scientificName: string, scores: any): number {
   // Perfect kid-friendly names: 2-3 words, descriptive, memorable
   const perfectKidNames = [
     'oxeye daisy', 'common daisy', 'english daisy', 'shasta daisy',
