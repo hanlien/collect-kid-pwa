@@ -1,14 +1,34 @@
 {
-  "name": "collect-kid",
-  "version": "0.1.0",
+  "name": "backyard-brandon",
+  "version": "1.0.0",
   "private": true,
+  "description": "AI-powered nature discovery app for kids - explore your backyard and learn about amazing creatures!",
+  "author": "Backyard Brandon Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hanlien/collect-kid-pwa.git"
+  },
+  "homepage": "https://github.com/hanlien/collect-kid-pwa#readme",
+  "keywords": ["pwa", "ai", "nature", "education", "kids", "species-recognition", "camera", "gamification"],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "db:seed": "psql $DATABASE_URL -f supabase.sql"
+    "db:seed": "psql $DATABASE_URL -f supabase.sql",
+    "version:patch": "npm version patch --no-git-tag-version && npm run changelog:reminder",
+    "version:minor": "npm version minor --no-git-tag-version && npm run changelog:reminder",
+    "version:major": "npm version major --no-git-tag-version && npm run changelog:reminder",
+    "changelog:reminder": "echo '📝 Don\\'t forget to update CHANGELOG.md with release notes!'",
+    "release:check": "npm run build && npm run type-check && npm run lint",
+    "release:staging": "npm run release:check && echo '🚀 Ready for staging deployment'",
+    "release:production": "npm run release:check && echo '🚀 Ready for production deployment'",
+    "prerelease": "npm run release:check",
+    "release": "git push origin main --tags",
+    "clean": "rm -rf .next && rm -rf node_modules/.cache",
+    "reset": "npm run clean && npm install"
   },
   "dependencies": {
     "@google-cloud/vision": "^4.0.2",
@@ -38,5 +58,9 @@
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6",
     "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }

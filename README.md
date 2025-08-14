@@ -219,6 +219,39 @@ Currently uses external URLs. For production:
 - **Railway**: Good for full-stack apps
 - **Self-hosted**: Docker support available
 
+## Version Control & Releases
+
+### 🏷️ Current Version: **v1.0.0** - "Backyard Discovery"
+
+This project follows **Semantic Versioning** (SemVer) and maintains a structured release process for consistent, reliable updates.
+
+### Quick Commands
+```bash
+# Version Management
+npm run version:patch   # 1.0.0 → 1.0.1 (bug fixes)
+npm run version:minor   # 1.0.0 → 1.1.0 (new features) 
+npm run version:major   # 1.0.0 → 2.0.0 (breaking changes)
+
+# Release Process
+npm run release:check     # Build + Type check + Lint
+npm run release:staging   # Deploy to staging
+npm run release:production # Deploy to production
+```
+
+### 📋 Documentation
+- **[CHANGELOG.md](./CHANGELOG.md)** - Complete release history, features, and bug fixes
+- **[VERSION_CONTROL.md](./VERSION_CONTROL.md)** - Detailed branching strategy and release workflow
+
+### 🌟 Release Highlights
+- **v1.0.0** - Complete PWA with AI recognition, gamification system, and gift shop
+- **Coming Soon** - Enhanced AI accuracy, family sharing, and community features
+
+### 🌳 Branch Strategy
+- **`main`** - Production-ready code (auto-deploys)
+- **`develop`** - Integration branch (staging environment)
+- **`feature/*`** - Individual feature development
+- **`release/*`** - Version preparation and testing
+
 ## Contributing
 
 1. Fork the repository
