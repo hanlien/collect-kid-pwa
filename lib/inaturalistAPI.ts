@@ -101,7 +101,7 @@ class iNaturalistAPI {
   /**
    * Identify species using Google Vision labels to search iNaturalist database
    */
-  async identifySpeciesFromLabels(labels: string[], location?: { lat: number; lng: number }): Promise<iNaturalistIdentification[]> {
+  async identifySpeciesFromLabels(labels: string[], _location?: { lat: number; lng: number }): Promise<iNaturalistIdentification[]> {
     try {
       console.log('🔍 Searching iNaturalist with labels:', labels);
       

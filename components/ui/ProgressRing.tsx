@@ -34,6 +34,7 @@ export function ProgressRing({
     } else {
       setDisplayProgress(progress);
     }
+    return undefined;
   }, [progress, animated]);
 
   return (

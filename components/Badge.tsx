@@ -19,6 +19,7 @@ export default function Badge({ level, count, nextGoal, leveledUp = false, class
       const timer = setTimeout(() => setShowSparkles(false), 3000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [leveledUp]);
 
   const getLevelInfo = (level: number) => {

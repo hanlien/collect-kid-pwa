@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
     });
 
     let badge: any = null;
-    let leveledUp = false;
-    let achievements: any[] = [];
+    const leveledUp = false;
+    const achievements: any[] = [];
 
     // Create badge for new species (since we already checked it's new above)
     if (isNewSpecies) {

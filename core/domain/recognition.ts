@@ -121,8 +121,8 @@ export class RecognitionService {
     
     for (const [name, provider] of Array.from(this.providers.entries())) {
       stats[name] = {
-        available: provider.isAvailable,
-        avgProcessingTime: undefined as number | undefined // TODO: Implement tracking
+        available: provider.isAvailable
+        // avgProcessingTime: undefined // TODO: Implement tracking
       };
     }
     

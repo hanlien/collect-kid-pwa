@@ -289,7 +289,7 @@ export default function ResultPage() {
           setBadgeData({
             speciesName: result.commonName || result.canonicalName,
             category: result.category,
-            imageUrl: result.capturedImageUrl || undefined,
+            imageUrl: result.capturedImageUrl || '',
           });
           setShowBadgePopup(true);
         }
@@ -624,7 +624,7 @@ export default function ResultPage() {
           }}
           speciesName={badgeData.speciesName}
           category={badgeData.category}
-          imageUrl={badgeData.imageUrl || undefined}
+          imageUrl={badgeData.imageUrl || ''}
         />
       )}
 

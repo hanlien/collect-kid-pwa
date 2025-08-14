@@ -54,6 +54,7 @@ export default function ScanPage() {
       }, 1000);
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [isScanning]);
 
   // Animated background elements
