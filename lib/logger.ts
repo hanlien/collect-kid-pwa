@@ -18,6 +18,7 @@ export interface LogEntry {
   duration?: number;
   environment?: string;
   deployment?: string;
+  recognitionId?: string; // Track individual recognition sessions
 }
 
 class Logger {
@@ -43,7 +44,7 @@ class Logger {
     message: string,
     data?: any,
     error?: Error,
-    context?: { userId?: string; sessionId?: string; requestId?: string; api?: string; duration?: number }
+    context?: { userId?: string; sessionId?: string; requestId?: string; api?: string; duration?: number; recognitionId?: string }
   ): LogEntry {
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
@@ -156,21 +157,148 @@ class Logger {
     };
   }
 
-  // Recognition-specific logging
+  // Recognition-specific logging with detailed pipeline tracking
   recognitionStart(imageSize?: number, context?: any) {
-    return this.info('Recognition started', { imageSize }, { ...context, api: 'recognition' });
+    const recognitionId = `rec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.info('🚀 Recognition Pipeline Started', { 
+      imageSize, 
+      recognitionId,
+      timestamp: new Date().toISOString()
+    }, { ...context, api: 'recognition', recognitionId });
+    return recognitionId;
   }
 
   recognitionStep(step: string, data?: any, context?: any) {
-    return this.debug(`Recognition step: ${step}`, data, { ...context, api: 'recognition' });
+    return this.debug(`🔄 Recognition Step: ${step}`, data, { ...context, api: 'recognition' });
   }
 
+  // Vision API logging
+  visionResults(visionBundle: any, processingTime: number, context?: any) {
+    this.info('🔍 Vision API Results', {
+      labels: visionBundle.labels?.slice(0, 5) || [],
+      cropLabels: visionBundle.cropLabels?.slice(0, 3) || [],
+      webBestGuess: visionBundle.webBestGuess || [],
+      processingTime,
+      totalLabels: visionBundle.labels?.length || 0,
+      totalCropLabels: visionBundle.cropLabels?.length || 0,
+    }, { ...context, api: 'recognition' });
+  }
+
+  // Plant gate decision
+  plantGateDecision(isPlant: boolean, confidence: number, context?: any) {
+    this.info('🌱 Plant Gate Decision', {
+      isPlant,
+      confidence,
+      decision: isPlant ? 'Will call Plant.id API' : 'Skipping Plant.id API'
+    }, { ...context, api: 'recognition' });
+  }
+
+  // Provider results logging
+  providerResults(provider: string, results: any[], processingTime: number, context?: any) {
+    this.info(`📊 ${provider} Provider Results`, {
+      provider,
+      resultCount: results.length,
+      topResults: results.slice(0, 3).map(r => ({
+        name: r.scientificName || r.commonName,
+        confidence: r.confidence,
+        source: r.source
+      })),
+      processingTime,
+      allResults: results
+    }, { ...context, api: 'recognition' });
+  }
+
+  // Knowledge Graph results
+  kgResults(canonicalResults: any[], processingTime: number, context?: any) {
+    this.info('🧠 Knowledge Graph Results', {
+      resultCount: canonicalResults.length,
+      topResults: canonicalResults.slice(0, 3).map(r => ({
+        commonName: r.commonName,
+        scientificName: r.scientificName,
+        kgId: r.kgId,
+        wikipediaTitle: r.wikipediaTitle
+      })),
+      processingTime,
+      allResults: canonicalResults
+    }, { ...context, api: 'recognition' });
+  }
+
+  // Candidate building and scoring
+  candidateBuilding(candidates: any[], context?: any) {
+    this.info('🏗️ Candidate Building', {
+      totalCandidates: candidates.length,
+      candidates: candidates.map(c => ({
+        scientificName: c.scientificName,
+        commonName: c.commonName,
+        scores: c.scores,
+        totalScore: c.totalScore
+      }))
+    }, { ...context, api: 'recognition' });
+  }
+
+  // Scoring details
+  scoringDetails(candidate: any, context?: any) {
+    this.debug('📈 Scoring Details', {
+      candidate: {
+        scientificName: candidate.scientificName,
+        commonName: candidate.commonName,
+        scores: {
+          vision: candidate.scores?.vision,
+          webGuess: candidate.scores?.webGuess,
+          kgMatch: candidate.scores?.kgMatch,
+          provider: candidate.scores?.provider,
+          cropAgree: candidate.scores?.cropAgree,
+          habitatTime: candidate.scores?.habitatTime
+        },
+        totalScore: candidate.totalScore
+      }
+    }, { ...context, api: 'recognition' });
+  }
+
+  // Decision making
+  decisionMaking(decision: any, margin: number, context?: any) {
+    this.info('🎯 Decision Making', {
+      mode: decision.mode,
+      margin,
+      topCandidates: decision.mode === 'pick' ? 
+        [decision.pick] : 
+        decision.top3?.slice(0, 3),
+      decisionReason: decision.mode === 'pick' ? 
+        'High confidence single result' : 
+        'Multiple candidates, showing top 3 for disambiguation'
+    }, { ...context, api: 'recognition' });
+  }
+
+  // Final result
   recognitionSuccess(result: any, duration: number, context?: any) {
-    return this.info('Recognition successful', { result, duration }, { ...context, api: 'recognition' });
+    this.info('✅ Recognition Successful', { 
+      result: {
+        canonicalName: result.canonicalName,
+        commonName: result.commonName,
+        category: result.category,
+        confidence: result.confidence,
+        provider: result.provider
+      },
+      duration,
+      finalDecision: result
+    }, { ...context, api: 'recognition' });
   }
 
   recognitionError(error: Error, context?: any) {
-    return this.error('Recognition failed', error, undefined, { ...context, api: 'recognition' });
+    return this.error('❌ Recognition Failed', error, undefined, { ...context, api: 'recognition' });
+  }
+
+  // User feedback logging
+  userFeedback(originalResult: any, userCorrection: string, context?: any) {
+    this.info('👤 User Feedback', {
+      originalResult: {
+        canonicalName: originalResult.canonicalName,
+        commonName: originalResult.commonName,
+        confidence: originalResult.confidence
+      },
+      userCorrection,
+      feedbackType: 'correction'
+    }, { ...context, api: 'recognition' });
   }
 
   // Collection-specific logging
@@ -203,6 +331,26 @@ class Logger {
     return filtered;
   }
 
+  // Get recognition-specific logs
+  getRecognitionLogs(recognitionId?: string, limit?: number): LogEntry[] {
+    if (this.isProduction) {
+      console.warn('Log retrieval not available in production');
+      return [];
+    }
+
+    let filtered = this.logs.filter(log => log.api === 'recognition');
+    
+    if (recognitionId) {
+      filtered = filtered.filter(log => log.recognitionId === recognitionId);
+    }
+    
+    if (limit) {
+      filtered = filtered.slice(-limit);
+    }
+    
+    return filtered;
+  }
+
   // Clear logs (development only)
   clearLogs() {
     if (this.isProduction) {
@@ -218,6 +366,15 @@ class Logger {
       return JSON.stringify({ error: 'Log export not available in production' });
     }
     return JSON.stringify(this.logs, null, 2);
+  }
+
+  // Export recognition logs specifically
+  exportRecognitionLogs(recognitionId?: string): string {
+    if (this.isProduction) {
+      return JSON.stringify({ error: 'Log export not available in production' });
+    }
+    const recognitionLogs = this.getRecognitionLogs(recognitionId);
+    return JSON.stringify(recognitionLogs, null, 2);
   }
 
   // Production-specific methods

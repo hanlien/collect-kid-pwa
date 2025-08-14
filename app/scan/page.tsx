@@ -352,30 +352,30 @@ export default function ScanPage() {
         throw new Error('Failed to extract base64 image data');
       }
 
-      logger.recognitionStart(base64Image.length);
-      logger.recognitionStep('sending_request', { imageSize: base64Image.length });
-      
-      // Call new multi-signal recognition API
-      const response = await fetch('/api/recognize-v2', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64Image }),
-      });
+                          const recognitionId = logger.recognitionStart(base64Image.length);
+                    logger.recognitionStep('sending_request', { imageSize: base64Image.length }, { recognitionId });
+                    
+                    // Call new multi-signal recognition API
+                    const response = await fetch('/api/recognize-v2', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ imageBase64: base64Image }),
+                    });
 
-      const data = await response.json();
-      logger.recognitionStep('received_response', data);
+                    const data = await response.json();
+                    logger.recognitionStep('received_response', data, { recognitionId });
 
-      if (!response.ok) {
-        const error = new Error(data.error || 'Recognition failed');
-        logger.recognitionError(error, { imageSize: base64Image.length });
-        throw error;
-      }
+                          if (!response.ok) {
+                      const error = new Error(data.error || 'Recognition failed');
+                      logger.recognitionError(error, { recognitionId, imageSize: base64Image.length });
+                      throw error;
+                    }
 
-      if (!data.success) {
-        const error = new Error(data.error || 'Recognition failed');
-        logger.recognitionError(error, { imageSize: base64Image.length });
-        throw error;
-      }
+                    if (!data.success) {
+                      const error = new Error(data.error || 'Recognition failed');
+                      logger.recognitionError(error, { recognitionId, imageSize: base64Image.length });
+                      throw error;
+                    }
 
       // Show confetti for successful scan
       setShowConfetti(true);
@@ -425,16 +425,16 @@ export default function ScanPage() {
       // Store image in sessionStorage to avoid URL length limits
       sessionStorage.setItem(result.capturedImageUrl!, imageUrl);
       
-      logger.recognitionSuccess(result, Date.now() - startTime, { imageSize: base64Image.length });
-      logger.info('Navigating to result page', result);
+                          logger.recognitionSuccess(result, Date.now() - startTime, { recognitionId, imageSize: base64Image.length });
+                    logger.info('Navigating to result page', result, { recognitionId });
       router.push(`/result?data=${encodeURIComponent(JSON.stringify(result))}`);
-    } catch (error) {
-      logger.error('Scan error', error as Error, { imageSize: base64Image?.length });
-      setToast({
-        message: 'Something went wrong. Please try again!',
-        type: 'error',
-      });
-    } finally {
+                      } catch (error) {
+                    logger.error('Scan error', error as Error, { recognitionId, imageSize: base64Image?.length });
+                    setToast({
+                      message: 'Something went wrong. Please try again!',
+                      type: 'error',
+                    });
+                  } finally {
       setIsScanning(false);
               // setShowScanRing(false); // TODO: Implement scan ring animation
       if (fileInputRef.current) {
