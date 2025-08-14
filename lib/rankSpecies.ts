@@ -186,8 +186,8 @@ function selectBestDisplayName(topCandidate: Candidate, allCandidates: Candidate
   const sameSpecies = allCandidates.filter(candidate => 
     candidate.scientificName === topCandidate.scientificName ||
     candidate.commonName === topCandidate.commonName ||
-    fuzzyMatch(candidate.scientificName, topCandidate.scientificName) ||
-    fuzzyMatch(candidate.commonName, topCandidate.commonName)
+    (candidate.scientificName && topCandidate.scientificName && fuzzyMatch(candidate.scientificName, topCandidate.scientificName)) ||
+    (candidate.commonName && topCandidate.commonName && fuzzyMatch(candidate.commonName, topCandidate.commonName))
   );
 
   if (sameSpecies.length === 1) {
