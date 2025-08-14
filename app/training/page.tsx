@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BigButton } from '@/components/ui/BigButton';
-import { ArrowLeft, Download, Eye, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Download, RefreshCw } from 'lucide-react';
 
 interface TrainingSample {
   id: string;

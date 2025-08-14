@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, isSupabaseAvailable } from '@/lib/supabase';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Check if Supabase is available
     if (!isSupabaseAvailable() || !supabaseAdmin) {
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Test basic connection
-    const { data, error } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from('training_feedback')
       .select('count')
       .limit(1);

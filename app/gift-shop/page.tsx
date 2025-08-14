@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Gift, ShoppingCart, Coins, Star, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import { ArrowLeft, Gift, Coins, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import BigButton from '@/components/BigButton';
 import Toast from '@/components/Toast';
 import ProfileManager from '@/lib/profileManager';

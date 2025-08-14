@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const identifications = await iNaturalistAPI.identifySpeciesFromLabels(sampleLabels);
     
     if (identifications.length > 0) {
-      const result = iNaturalistAPI.convertToAppFormat(identifications[0]);
+      const result = iNaturalistAPI.convertToAppFormat(identifications[0]!);
       console.log('✅ iNaturalist test successful:', result);
       return NextResponse.json({
         success: true,

@@ -6,7 +6,7 @@ import {
   Capture, 
   Badge, 
   RecognitionResult,
-  TrainingFeedback,
+  // TrainingFeedback,
   FeatureFlags,
   RecognitionError
 } from '../domain/types';
@@ -80,13 +80,13 @@ const defaultFeatureFlags: FeatureFlags = {
 };
 
 // Default user preferences
-const defaultUserPreferences = {
-  notifications: true,
-  soundEnabled: true,
-  autoSpeak: false,
-  theme: 'auto' as const,
-  language: 'en',
-};
+// const defaultUserPreferences = {
+//   notifications: true,
+//   soundEnabled: true,
+//   autoSpeak: false,
+//   theme: 'auto' as const,
+//   language: 'en',
+// };
 
 // Create the store
 export const useAppStore = create<AppState>()(

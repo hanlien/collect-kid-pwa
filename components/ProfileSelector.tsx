@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Settings, User } from 'lucide-react';
+import { X, Plus, User } from 'lucide-react';
 import ProfileManager from '@/lib/profileManager';
 import { Profile } from '@/types/profile';
 
@@ -43,7 +43,7 @@ export default function ProfileSelector({ isOpen, onClose, onProfileSwitch }: Pr
 
   const handleCreateProfile = () => {
     if (newProfileName.trim()) {
-      const newProfile = profileManager.createProfile(newProfileName.trim(), newProfileEmoji);
+      // const newProfile = profileManager.createProfile(newProfileName.trim(), newProfileEmoji); // TODO: Implement profile creation
       setNewProfileName('');
       setNewProfileEmoji('👤');
       setShowCreateForm(false);
@@ -51,11 +51,11 @@ export default function ProfileSelector({ isOpen, onClose, onProfileSwitch }: Pr
     }
   };
 
-  const handleDeleteProfile = (profileId: string) => {
-    if (profileManager.deleteProfile(profileId)) {
-      loadProfiles();
-    }
-  };
+  // const handleDeleteProfile = (profileId: string) => {
+  //   if (profileManager.deleteProfile(profileId)) {
+  //     loadProfiles();
+  //   }
+    // };
 
   const emojiOptions = ['👦', '👧', '🧒', '👨', '👩', '👴', '👵', '👤', '🦊', '🐱', '🐶', '🐰', '🐻', '🐼', '🦁', '🐯'];
 

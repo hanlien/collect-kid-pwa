@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Volume2, Heart, ArrowLeft, RotateCcw, Star, MapPin, Calendar, Users, Award, BookOpen, Bookmark, Target } from 'lucide-react';
+import { Volume2, Heart, ArrowLeft, RotateCcw, Star, MapPin, Award, BookOpen, Bookmark, Target } from 'lucide-react';
 import Image from 'next/image';
 import BigButton from '@/components/BigButton';
-import ColorChips from '@/components/ColorChips';
+// import ColorChips from '@/components/ColorChips'; // TODO: Use when needed
 import Confetti from '@/components/Confetti';
 import Toast from '@/components/Toast';
 import BadgePopup from '@/components/BadgePopup';
@@ -289,7 +289,7 @@ export default function ResultPage() {
           setBadgeData({
             speciesName: result.commonName || result.canonicalName,
             category: result.category,
-            imageUrl: result.capturedImageUrl,
+            imageUrl: result.capturedImageUrl || undefined,
           });
           setShowBadgePopup(true);
         }
@@ -624,7 +624,7 @@ export default function ResultPage() {
           }}
           speciesName={badgeData.speciesName}
           category={badgeData.category}
-          imageUrl={badgeData.imageUrl}
+          imageUrl={badgeData.imageUrl || undefined}
         />
       )}
 

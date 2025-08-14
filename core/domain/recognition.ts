@@ -122,7 +122,7 @@ export class RecognitionService {
     for (const [name, provider] of Array.from(this.providers.entries())) {
       stats[name] = {
         available: provider.isAvailable,
-        avgProcessingTime: undefined // TODO: Implement tracking
+        avgProcessingTime: undefined as number | undefined // TODO: Implement tracking
       };
     }
     
@@ -153,7 +153,7 @@ export class INaturalistProvider extends BaseRecognitionProvider {
   readonly name: RecognitionProvider = 'iNaturalist';
   readonly isAvailable: boolean = true;
   
-  async recognize(imageData: string): Promise<RecognitionResult> {
+  async recognize(_imageData: string): Promise<RecognitionResult> {
     // TODO: Implement iNaturalist API integration
     throw new Error('INaturalistProvider not implemented');
   }
@@ -163,7 +163,7 @@ export class PlantIdProvider extends BaseRecognitionProvider {
   readonly name: RecognitionProvider = 'Plant.id';
   readonly isAvailable: boolean = true;
   
-  async recognize(imageData: string): Promise<RecognitionResult> {
+  async recognize(_imageData: string): Promise<RecognitionResult> {
     // TODO: Implement Plant.id API integration
     throw new Error('PlantIdProvider not implemented');
   }
@@ -173,7 +173,7 @@ export class GoogleVisionProvider extends BaseRecognitionProvider {
   readonly name: RecognitionProvider = 'GoogleVision';
   readonly isAvailable: boolean = true;
   
-  async recognize(imageData: string): Promise<RecognitionResult> {
+  async recognize(_imageData: string): Promise<RecognitionResult> {
     // TODO: Implement Google Vision API integration
     throw new Error('GoogleVisionProvider not implemented');
   }
@@ -183,7 +183,7 @@ export class LocalModelProvider extends BaseRecognitionProvider {
   readonly name: RecognitionProvider = 'LocalModel';
   readonly isAvailable: boolean = false; // Disabled for now
   
-  async recognize(imageData: string): Promise<RecognitionResult> {
+  async recognize(_imageData: string): Promise<RecognitionResult> {
     // TODO: Implement local TensorFlow.js model
     throw new Error('LocalModelProvider not implemented');
   }

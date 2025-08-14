@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { validateEnv, recognizeRequestSchema } from '@/lib/validation';
 import { SpeciesResult, Category, Provider } from '@/types/species';
-import { colorNameToHex, getBadgeSubtype } from '@/lib/utils';
+// import { colorNameToHex, getBadgeSubtype } from '@/lib/utils'; // TODO: Use when needed
 import { iNaturalistAPI } from '@/lib/inaturalistAPI';
 
 // Simple in-memory rate limiting (TODO: use Redis in production)
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         
         if (iNaturalistIdentifications.length > 0) {
           const bestMatch = iNaturalistIdentifications[0];
-          iNaturalistResult = iNaturalistAPI.convertToAppFormat(bestMatch);
+          iNaturalistResult = iNaturalistAPI.convertToAppFormat(bestMatch!);
           
           console.log('✅ iNaturalist result:', {
             commonName: iNaturalistResult.commonName,
@@ -426,7 +426,7 @@ export async function POST(request: NextRequest) {
         // Use all labels for fallback search
         const fallbackIdentifications = await iNaturalistAPI.identifySpeciesFromLabels(labels);
         if (fallbackIdentifications.length > 0) {
-          const fallbackResult = iNaturalistAPI.convertToAppFormat(fallbackIdentifications[0]);
+          const fallbackResult = iNaturalistAPI.convertToAppFormat(fallbackIdentifications[0]!);
           if (fallbackResult.confidence > 0.3) {
             console.log('✅ Using iNaturalist fallback result');
             speciesResult = {

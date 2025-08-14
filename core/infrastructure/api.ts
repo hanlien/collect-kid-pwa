@@ -1,4 +1,4 @@
-import { RecognitionResult, Species, TrainingFeedback, UserProfile, Capture, ApiResponse } from '../domain/types';
+import { RecognitionResult, Species, TrainingFeedback, Capture, ApiResponse } from '../domain/types';
 
 // API base configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';

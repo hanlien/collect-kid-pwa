@@ -8,7 +8,7 @@ import BigButton from '@/components/BigButton';
 import Badge from '@/components/Badge';
 import ProfileManager from '@/lib/profileManager';
 import { Capture, Badge as BadgeType } from '@/types/profile';
-import { ALL_BADGES, getAllBadgesForCategory, getBadgeDefinition } from '@/lib/badgeDefinitions';
+import { ALL_BADGES } from '@/lib/badgeDefinitions';
 
 type TabType = 'discoveries' | 'badges';
 type DiscoveryCategory = 'all' | 'animal' | 'bug' | 'flower';
@@ -95,18 +95,18 @@ export default function BookPage() {
     }
   };
 
-  const getCategoryName = (category: string) => {
-    switch (category) {
-      case 'animal':
-        return 'Animals';
-      case 'bug':
-        return 'Bugs';
-      case 'flower':
-        return 'Flowers';
-      default:
-        return 'Unknown';
-    }
-  };
+  // const getCategoryName = (category: string) => {
+  //   switch (category) {
+  //     case 'animal':
+  //       return 'Animals';
+  //     case 'bug':
+  //       return 'Bugs';
+  //     case 'flower':
+  //       return 'Flowers';
+  //     default:
+  //       return 'Unknown';
+  //   }
+  // };
 
   // Filter captures by discovery category
   const filteredCaptures = activeTab === 'discoveries' 

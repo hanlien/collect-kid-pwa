@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, isSupabaseAvailable } from '@/lib/supabase';
-import { validateEnv } from '@/lib/validation';
+// import { validateEnv } from '@/lib/validation'; // TODO: Use when needed
 
 export async function POST(request: NextRequest) {
   try {
-    const env = validateEnv();
+    // const env = validateEnv(); // TODO: Use env for configuration
     
     // Check if active learning is enabled
     if (process.env.AL_ENABLE !== 'true') {
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const env = validateEnv();
+    // const env = validateEnv(); // TODO: Use env for configuration
     
     // Check if active learning is enabled
     if (process.env.AL_ENABLE !== 'true') {

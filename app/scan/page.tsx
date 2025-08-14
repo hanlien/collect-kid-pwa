@@ -2,16 +2,16 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Camera, Upload, Sparkles, Search, BookOpen, Trophy, Coins, Target, X, RotateCcw, User, Cpu, Gift } from 'lucide-react';
+import { Camera, Upload, Search, BookOpen, Coins, Target, X, Cpu, Gift } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import BigButton from '@/components/BigButton';
-import { ProgressRing } from '@/components/ui/ProgressRing';
+// import BigButton from '@/components/BigButton'; // TODO: Use when needed
+// import { ProgressRing } from '@/components/ui/ProgressRing'; // TODO: Use when needed
 import { ConfettiBurst } from '@/components/anim/ConfettiBurst';
 import Toast from '@/components/Toast';
 import ProfileSelector from '@/components/ProfileSelector';
 import ProfileManager from '@/lib/profileManager';
 import { downscaleImage } from '@/lib/utils';
-import { SpeciesResult, RecognitionHint } from '@/types/species';
+import { SpeciesResult } from '@/types/species';
 import { Profile } from '@/types/profile';
 
 export default function ScanPage() {
@@ -21,9 +21,9 @@ export default function ScanPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [showScanRing, setShowScanRing] = useState(false);
+  // const [showScanRing, setShowScanRing] = useState(false); // TODO: Use when needed
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'info' } | null>(null);
-  const [pulseAnimation, setPulseAnimation] = useState(false);
+  // const [pulseAnimation, setPulseAnimation] = useState(false); // TODO: Use when needed
   const [showConfetti, setShowConfetti] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -49,7 +49,7 @@ export default function ScanPage() {
       ];
       let index = 0;
       const interval = setInterval(() => {
-        setScanningText(texts[index]);
+        setScanningText(texts[index] || '');
         index = (index + 1) % texts.length;
       }, 1000);
       return () => clearInterval(interval);
@@ -57,12 +57,12 @@ export default function ScanPage() {
   }, [isScanning]);
 
   // Animated background elements
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPulseAnimation(prev => !prev);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setPulseAnimation(prev => !prev);
+  //   }, 3000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   // Load profile data
   useEffect(() => {
@@ -326,7 +326,7 @@ export default function ScanPage() {
     try {
       console.log('Starting image processing...');
       setIsScanning(true);
-      setShowScanRing(true);
+              // setShowScanRing(true); // TODO: Implement scan ring animation
 
       // Create a persistent data URL for the original image
       const imageUrl = await new Promise<string>((resolve) => {
@@ -398,7 +398,7 @@ export default function ScanPage() {
       });
     } finally {
       setIsScanning(false);
-      setShowScanRing(false);
+              // setShowScanRing(false); // TODO: Implement scan ring animation
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
