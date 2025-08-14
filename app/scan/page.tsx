@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Camera, Upload, Sparkles, Search, BookOpen, Trophy, Coins, Target, X, RotateCcw, User, Cpu } from 'lucide-react';
+import { Camera, Upload, Sparkles, Search, BookOpen, Trophy, Coins, Target, X, RotateCcw, User, Cpu, Gift } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BigButton from '@/components/BigButton';
 import { ProgressRing } from '@/components/ui/ProgressRing';
@@ -1115,6 +1115,15 @@ export default function ScanPage() {
                   <Trophy className="w-5 h-5 text-yellow-500" />
                   <span className="font-bold text-gray-800">{userData.uniqueSpeciesCount}</span>
                 </motion.button>
+                
+                <motion.button
+                  className="flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl px-4 py-2 shadow-lg cursor-pointer"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  onClick={() => router.push('/gift-shop')}
+                >
+                  <Gift className="w-5 h-5" />
+                  <span className="font-bold">Shop</span>
+                </motion.button>
               </div>
             </div>
           </motion.header>
@@ -1405,7 +1414,7 @@ export default function ScanPage() {
 
           {/* Bottom Collection button for quick access */}
           <motion.footer
-            className="relative z-10 p-6"
+            className="relative z-5 p-6 pb-8"
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.8 }}

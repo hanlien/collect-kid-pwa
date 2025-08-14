@@ -354,10 +354,11 @@ class ProfileManager {
       coins: profile.coins + capture.coinsEarned,
     };
 
-    // Level up logic
-    const newLevel = Math.floor(updates.totalCaptures! / 10) + 1;
+    // Level up logic - based on unique species count
+    const newLevel = Math.floor(updates.uniqueSpeciesCount! / 5) + 1;
     if (newLevel > profile.level) {
       updates.level = newLevel;
+      console.log(`🎉 Level up! ${profile.name} reached level ${newLevel}!`);
     }
 
     this.updateProfile(profile.id, updates);

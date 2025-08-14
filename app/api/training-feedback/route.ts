@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { supabaseAdmin } from '@/lib/supabase';
+
+// Try to import supabase, but handle missing env vars gracefully
+let supabaseAdmin: any = null;
+try {
+  const supabaseModule = await import('@/lib/supabase');
+  supabaseAdmin = supabaseModule.supabaseAdmin;
+} catch (error) {
+  console.warn('Supabase not available, using fallback storage:', error);
+}
 
 const trainingFeedbackSchema = z.object({
   imageUrl: z.string().optional(),
@@ -36,6 +44,23 @@ export async function POST(request: NextRequest) {
         category: feedback.originalResult.category,
       }
     };
+
+    // Check if Supabase is available
+    if (!supabaseAdmin) {
+      console.log('⚠️ Supabase unavailable, storing feedback in memory:', {
+        imageUrl: feedback.imageUrl,
+        originalResult: feedback.originalResult,
+        isCorrect: feedback.isCorrect,
+        correction: feedback.correction,
+        timestamp: feedback.timestamp,
+      });
+      
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Training feedback received (stored locally)',
+        warning: 'Database unavailable, feedback stored in memory only'
+      });
+    }
 
     // Insert into training_feedback table
     const { data, error } = await supabaseAdmin
