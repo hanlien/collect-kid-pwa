@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const envSchema = z.object({
   PLANT_ID_API_KEY: z.string().min(1),
   GOOGLE_APPLICATION_CREDENTIALS_JSON: z.string().min(1),
+  GOOGLE_KNOWLEDGE_GRAPH_API_KEY: z.string().min(1),
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
@@ -55,6 +56,7 @@ export function validateEnv() {
       return {
         PLANT_ID_API_KEY: 'placeholder',
         GOOGLE_APPLICATION_CREDENTIALS_JSON: '{"type":"service_account"}',
+        GOOGLE_KNOWLEDGE_GRAPH_API_KEY: 'placeholder',
         SUPABASE_URL: 'https://placeholder.supabase.co',
         SUPABASE_ANON_KEY: 'placeholder',
         SUPABASE_SERVICE_ROLE_KEY: 'placeholder',
