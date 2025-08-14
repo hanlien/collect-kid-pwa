@@ -61,7 +61,7 @@ export default function DebugPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/logs/recognition');
+                    const response = await fetch('/api/logs-recognition');
       const data = await response.json();
       
       if (data.success) {
@@ -82,7 +82,7 @@ export default function DebugPage() {
     if (!isAuthorized) return;
     
     try {
-      const response = await fetch(`/api/logs/recognition?recognitionId=${sessionId}`);
+      const response = await fetch(`/api/logs-recognition?recognitionId=${sessionId}`);
       const data = await response.json();
       
       if (data.success) {
@@ -101,7 +101,7 @@ export default function DebugPage() {
     if (!isAuthorized) return;
     
     try {
-      const response = await fetch('/api/logs/recognition', { method: 'DELETE' });
+      const response = await fetch('/api/logs-recognition', { method: 'DELETE' });
       const data = await response.json();
       
       if (data.success) {
@@ -122,7 +122,7 @@ export default function DebugPage() {
     if (!isAuthorized) return;
     
     try {
-      const response = await fetch('/api/logs/recognition?export=true');
+      const response = await fetch('/api/logs-recognition?export=true');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
