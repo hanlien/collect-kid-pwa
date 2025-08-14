@@ -64,7 +64,7 @@ const typographyVariants = cva('', {
 });
 
 export interface TypographyProps
-  extends React.HTMLAttributes<HTMLElement>,
+  extends Omit<React.HTMLAttributes<HTMLElement>, 'color'>,
     VariantProps<typeof typographyVariants> {
   as?: keyof JSX.IntrinsicElements;
   children: React.ReactNode;
