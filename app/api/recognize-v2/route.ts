@@ -5,8 +5,7 @@ import {
   VisionBundle,
   Canonical,
   ProviderHit,
-  Candidate,
-  RecognitionDecision
+  Candidate
 } from '@/types/recognition';
 import { plantGate, getPlantConfidence } from '@/lib/plantGate';
 import { decide, calculateCropAgreement, fuzzyMatch } from '@/lib/rankSpecies';
