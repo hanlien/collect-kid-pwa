@@ -1,4 +1,10 @@
 import { Category, SpeciesResult } from '@/types/species';
+import { type ClassValue, clsx } from 'clsx';
+
+// Utility function for combining classes
+export function cn(...inputs: ClassValue[]) {
+  return clsx(inputs);
+}
 
 // Image processing utilities
 export function downscaleImage(file: File, maxSize: number = 1024): Promise<Blob> {

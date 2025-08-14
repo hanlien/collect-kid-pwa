@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // import { ProgressRing } from '@/components/ui/ProgressRing'; // TODO: Use when needed
 import { ConfettiBurst } from '@/components/anim/ConfettiBurst';
 import Toast from '@/components/Toast';
+import { FloatingElements, AnimalSilhouettes } from '@/components/decorative/AnimalPatterns';
 import dynamic from 'next/dynamic';
 
 // Lazy load ProfileSelector
@@ -444,7 +445,15 @@ export default function ScanPage() {
   };
 
   return (
-    <div className="page-container bg-gradient-to-b from-sky-300 via-green-200 to-yellow-200 relative overflow-hidden">
+    <div className="page-container bg-gradient-to-br from-primary-400 via-secondary-500 to-accent-400 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 opacity-20">
+        <AnimalSilhouettes />
+      </div>
+      
+      {/* Floating nature elements */}
+      <FloatingElements count={6} className="animate-float" />
+      
       {/* Animated Garden Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Bigger Moving Sun */}
