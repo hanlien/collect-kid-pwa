@@ -10,7 +10,6 @@ import { ConfettiBurst } from '@/components/anim/ConfettiBurst';
 import Toast from '@/components/Toast';
 import { FloatingElements, AnimalSilhouettes } from '@/components/decorative/AnimalPatterns';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import dynamic from 'next/dynamic';
 
 // Lazy load ProfileSelector
