@@ -1267,16 +1267,7 @@ export default function ScanPage() {
                 </motion.div>
               </motion.button>
               
-              {/* Tech label */}
-              <motion.div
-                className="absolute -bottom-8 left-1/2 transform -translate-x-1/2"
-                animate={{ opacity: [0.7, 1, 0.7] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <span className="text-cyan-400 text-sm font-bold bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full border border-cyan-500/30">
-                  AI SCANNER
-                </span>
-              </motion.div>
+
             </motion.div>
 
             {/* Action buttons */}

@@ -1,0 +1,43 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#16a34a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#15803d;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="cameraGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d97706;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGradient)" stroke="#ffffff" stroke-width="8"/>
+  
+  <!-- Camera body -->
+  <rect x="180" y="200" width="152" height="120" rx="20" fill="url(#cameraGradient)" stroke="#ffffff" stroke-width="4"/>
+  
+  <!-- Camera lens -->
+  <circle cx="256" cy="260" r="45" fill="#ffffff" stroke="#d97706" stroke-width="6"/>
+  <circle cx="256" cy="260" r="30" fill="#374151" stroke="#ffffff" stroke-width="2"/>
+  <circle cx="256" cy="260" r="15" fill="#6b7280"/>
+  
+  <!-- Camera flash -->
+  <rect x="290" y="210" width="25" height="15" rx="7" fill="#ffffff" stroke="#d97706" stroke-width="2"/>
+  
+  <!-- Viewfinder -->
+  <rect x="200" y="215" width="20" height="15" rx="3" fill="#1f2937" stroke="#ffffff" stroke-width="1"/>
+  
+  <!-- Nature elements - leaves -->
+  <path d="M150 150 Q140 130 160 120 Q170 140 150 150" fill="#22c55e" opacity="0.8"/>
+  <path d="M360 150 Q370 130 350 120 Q340 140 360 150" fill="#16a34a" opacity="0.8"/>
+  <path d="M150 360 Q140 380 160 390 Q170 370 150 360" fill="#15803d" opacity="0.8"/>
+  <path d="M360 360 Q370 380 350 390 Q340 370 360 360" fill="#22c55e" opacity="0.8"/>
+  
+  <!-- Discovery sparkles -->
+  <circle cx="200" cy="180" r="3" fill="#fbbf24" opacity="0.9"/>
+  <circle cx="320" cy="170" r="2" fill="#f59e0b" opacity="0.9"/>
+  <circle cx="180" cy="340" r="2.5" fill="#fbbf24" opacity="0.9"/>
+  <circle cx="340" cy="350" r="2" fill="#f59e0b" opacity="0.9"/>
+</svg>
