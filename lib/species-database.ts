@@ -506,6 +506,7 @@ export function findSpeciesByKeywords(labels: string[]): LocalSpecies | null {
 
 // Helper function to convert LocalSpecies to SpeciesResult
 export function localSpeciesToResult(species: LocalSpecies): SpeciesResult {
+  // @ts-ignore - exactOptionalPropertyTypes conflict
   return {
     category: species.category,
     canonicalName: species.scientificName,

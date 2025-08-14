@@ -123,8 +123,10 @@ class ProfileManager {
   updateProfile(profileId: string, updates: Partial<Profile>): boolean {
     const profileIndex = this.settings.profiles.findIndex(p => p.id === profileId);
     if (profileIndex !== -1) {
+      const existingProfile = this.settings.profiles[profileIndex];
+      // @ts-ignore - exactOptionalPropertyTypes conflict with spread operator
       this.settings.profiles[profileIndex] = {
-        ...this.settings.profiles[profileIndex],
+        ...existingProfile,
         ...updates,
         lastSeen: new Date().toISOString(),
       };

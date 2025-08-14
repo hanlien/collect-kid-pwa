@@ -87,11 +87,11 @@ export class MLRouter {
 
       // Check if local model is confident
       const isConfident = localModel.isConfident(localResult);
-      decision.reasoning.push(`Local confidence check: ${isConfident} (top1: ${localResult.topK[0].prob.toFixed(3)}, margin: ${(localResult.topK[0].prob - localResult.topK[1].prob).toFixed(3)})`);
+      decision.reasoning.push(`Local confidence check: ${isConfident} (top1: ${localResult.topK[0]?.prob?.toFixed(3) || '0.000'}, margin: ${((localResult.topK[0]?.prob || 0) - (localResult.topK[1]?.prob || 0)).toFixed(3)})`);
 
       if (isConfident) {
         decision.useLocal = true;
-        decision.confidence = localResult.topK[0].prob;
+        decision.confidence = localResult.topK[0]?.prob || 0;
         decision.reasoning.push('Using local model result (confident)');
         
         return {
@@ -115,7 +115,7 @@ export class MLRouter {
       } else {
         // For bugs and animals, use local result even if not confident
         decision.useLocal = true;
-        decision.confidence = localResult.topK[0].prob;
+        decision.confidence = localResult.topK[0]?.prob || 0;
         decision.needsReview = true;
         decision.reasoning.push('Using local result but needs review (low confidence)');
         
@@ -187,7 +187,7 @@ export class MLRouter {
     };
   }
 
-  private createPlantIdFallbackResult(visionLabels: string[]): SpeciesResult {
+  private createPlantIdFallbackResult(_visionLabels: string[]): SpeciesResult {
     return {
       category: 'flower',
       canonicalName: 'Plant',

@@ -101,7 +101,7 @@ class LocalModel {
       const inferenceTime = performance.now() - startTime;
       
       return {
-        labelId: topK[0].labelId,
+        labelId: topK[0]?.labelId || '',
         probs: Array.from(probs),
         topK,
         inferenceTime
@@ -129,7 +129,7 @@ class LocalModel {
     const { tau, margin } = this.config;
     const [p1, p2] = result.topK.slice(0, 2).map(r => r.prob);
     
-    return p1 >= tau && (p1 - p2) >= margin;
+    return (p1 || 0) >= tau && ((p1 || 0) - (p2 || 0)) >= margin;
   }
 
   getCategory(labelId: string): string {

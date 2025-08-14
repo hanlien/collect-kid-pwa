@@ -11,7 +11,7 @@ export function postprocessLocalResult(localResult: LocalModelResult): SpeciesRe
       canonicalName: 'Unknown',
       commonName: 'Unknown',
       rank: 'species',
-      confidence: localResult.topK[0].prob,
+      confidence: localResult.topK[0]?.prob || 0,
       provider: 'local',
       meta: {
         modelVersion: 'v001',
@@ -28,7 +28,7 @@ export function postprocessLocalResult(localResult: LocalModelResult): SpeciesRe
     canonicalName: labelInfo.species,
     commonName: labelInfo.commonName,
     rank: 'species',
-    confidence: localResult.topK[0].prob,
+    confidence: localResult.topK[0]?.prob || 0,
     provider: 'local',
     gbifKey: undefined, // Local model doesn't provide GBIF keys
     wiki: {
@@ -49,15 +49,15 @@ export function postprocessLocalResult(localResult: LocalModelResult): SpeciesRe
   };
 }
 
-let labelMapCache: any = null;
+// let labelMapCache: any = null;
 
-async function loadLabelMap(): Promise<any> {
-  if (!labelMapCache) {
-    const response = await fetch('/ml/label_map.json');
-    labelMapCache = await response.json();
-  }
-  return labelMapCache;
-}
+// async function loadLabelMap(): Promise<any> {
+//   if (!labelMapCache) {
+//     const response = await fetch('/ml/label_map.json');
+//     labelMapCache = await response.json();
+//   }
+//   return labelMapCache;
+// }
 
 function getLabelInfo(labelId: string): any {
   // For now, return a basic structure based on the label ID

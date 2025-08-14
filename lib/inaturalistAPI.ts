@@ -125,7 +125,7 @@ class iNaturalistAPI {
               taxon: {
                 id: taxon.id,
                 name: taxon.name,
-                preferred_common_name: taxon.preferred_common_name,
+                ...(taxon.preferred_common_name && { preferred_common_name: taxon.preferred_common_name }),
                 rank: taxon.rank,
                 iconic_taxon_name: taxon.iconic_taxon_name,
                 ancestor_ids: taxon.ancestor_ids
@@ -229,7 +229,7 @@ class iNaturalistAPI {
   /**
    * Legacy method - now uses label-based identification
    */
-  async identifySpecies(imageBuffer: Buffer): Promise<iNaturalistIdentification[]> {
+  async identifySpecies(_imageBuffer: Buffer): Promise<iNaturalistIdentification[]> {
     try {
       // This method is now deprecated in favor of identifySpeciesFromLabels
       console.log('iNaturalist direct image identification not implemented - use identifySpeciesFromLabels');
@@ -375,14 +375,17 @@ class iNaturalistAPI {
    * Get observations by iconic taxon (Animalia, Plantae, etc.)
    */
   async getObservationsByIconicTaxon(iconicTaxonName: string, lat?: number, lng?: number): Promise<iNaturalistObservation[]> {
-    return this.searchObservations({
+    const params: any = {
       iconic_taxon_name: iconicTaxonName,
-      lat,
-      lng,
       radius: 10,
       quality_grade: 'research',
       per_page: 30
-    });
+    };
+    
+    if (lat) params.lat = lat;
+    if (lng) params.lng = lng;
+    
+    return this.searchObservations(params);
   }
 
   /**
@@ -455,7 +458,7 @@ class iNaturalistAPI {
       const bestMatch = sortedIdentifications[0];
       
       // Only return if confidence is reasonable
-      if ((bestMatch.score || 0) < 0.3) {
+      if (!bestMatch || (bestMatch.score || 0) < 0.3) {
         return null;
       }
 
