@@ -39,7 +39,7 @@ export function decide(
   );
 
   if (sorted.length === 0) {
-    return { mode: "pick" };
+    return { mode: "no_match" };
   }
 
   if (sorted.length === 1) {

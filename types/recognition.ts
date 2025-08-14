@@ -53,7 +53,7 @@ export type WikiCard = {
 };
 
 export type RecognitionDecision = {
-  mode: "pick" | "disambiguate";
+  mode: "pick" | "disambiguate" | "no_match";
   pick?: Candidate | undefined;
   top3?: Candidate[] | undefined;
   debug?: {

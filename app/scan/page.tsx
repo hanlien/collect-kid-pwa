@@ -424,6 +424,9 @@ export default function ScanPage() {
           rank: 'species',
           capturedImageUrl: `captured-image-${Date.now()}`,
         };
+      } else if (decision.mode === 'no_match') {
+        // No species detected
+        throw new Error('No species detected in this image. Please try a clearer photo or different image.');
       } else {
         throw new Error('No valid recognition result');
       }
