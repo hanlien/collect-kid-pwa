@@ -332,6 +332,7 @@ export default function ScanPage() {
   const processImage = async (file: File) => {
     const startTime = Date.now();
     let base64Image: string | undefined;
+    let recognitionId: string | undefined;
     try {
       console.log('Starting image processing...');
       setIsScanning(true);
@@ -352,7 +353,7 @@ export default function ScanPage() {
         throw new Error('Failed to extract base64 image data');
       }
 
-                          const recognitionId = logger.recognitionStart(base64Image.length);
+                          recognitionId = logger.recognitionStart(base64Image.length);
                     logger.recognitionStep('sending_request', { imageSize: base64Image.length }, { recognitionId });
                     
                     // Call new multi-signal recognition API

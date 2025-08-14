@@ -53,7 +53,7 @@ export default function DebugPage() {
 
   useEffect(() => {
     checkAuth();
-  }, [password]);
+  }, [password, checkAuth]);
 
   const fetchLogs = async () => {
     if (!isAuthorized) return;
@@ -140,7 +140,7 @@ export default function DebugPage() {
     if (isAuthorized) {
       fetchLogs();
     }
-  }, [isAuthorized]);
+  }, [isAuthorized, fetchLogs]);
 
   const getLevelColor = (level: number) => {
     switch (level) {
@@ -300,7 +300,7 @@ export default function DebugPage() {
             
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {sessionLogs.map((log, index) => (
-                <div key={index} className="border-l-4 border-gray-200 pl-4 py-2">
+                <div key={`${log.timestamp}-${index}`} className="border-l-4 border-gray-200 pl-4 py-2">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-sm">{getLevelIcon(log.level)}</span>
                     <span className={`text-sm font-medium ${getLevelColor(log.level)}`}>
@@ -336,7 +336,7 @@ export default function DebugPage() {
           
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {logs.map((log, index) => (
-              <div key={index} className="border-l-4 border-gray-200 pl-4 py-2">
+              <div key={`${log.timestamp}-${log.recognitionId}-${index}`} className="border-l-4 border-gray-200 pl-4 py-2">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm">{getLevelIcon(log.level)}</span>
                   <span className={`text-sm font-medium ${getLevelColor(log.level)}`}>
