@@ -31,9 +31,9 @@ export async function POST(request: NextRequest) {
     recognitionId = logger.recognitionStart(imageBase64.length);
     logger.recognitionStep('request_received', { imageSize: imageBase64.length }, { recognitionId });
 
-    console.log('🚀 Starting multi-signal recognition pipeline...');
+    console.log('🚀 Starting optimized multi-signal recognition pipeline...');
 
-    // Step 1: Get Vision Bundle (Google Vision API)
+    // Step 1: Get Vision Bundle (Google Vision API) - This must be first
     logger.recognitionStep('vision_api_call', { step: 'Starting Vision API' }, { recognitionId });
     console.log('🔍 Step 1: Getting Vision Bundle...');
 
@@ -59,49 +59,9 @@ export async function POST(request: NextRequest) {
       labelCount: visionBundle.labels?.length || 0
     }, { recognitionId });
 
-    // Step 2: Check if it's a plant and call Plant.id in parallel
-    logger.recognitionStep('plant_gate_check', { step: 'Checking plant gate' }, { recognitionId });
-    console.log('🌱 Step 2: Checking plant gate...');
-
-    const isPlant = plantGate(visionBundle);
-    const plantConfidence = getPlantConfidence(visionBundle);
-
-    // Log plant gate decision
-    logger.plantGateDecision(isPlant, plantConfidence, { recognitionId });
-
-    let plantResults: ProviderHit[] = [];
-    if (isPlant) {
-      logger.recognitionStep('plantid_api_call', { step: 'Calling Plant.id API' }, { recognitionId });
-      console.log('🌱 Plant detected, calling Plant.id API...');
-
-      const plantPromise = fetch(`${request.nextUrl.origin}/api/plantid`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64 }),
-      }).then(res => res.ok ? res.json() : { results: [] });
-
-      try {
-        const plantData = await plantPromise;
-        plantResults = plantData.results || [];
-
-        // Log Plant.id results
-        logger.providerResults('Plant.id', plantResults, plantData.processingTime || 0, { recognitionId });
-        logger.recognitionStep('plantid_api_complete', {
-          resultCount: plantResults.length,
-          processingTime: plantData.processingTime || 0
-        }, { recognitionId });
-
-      } catch (error) {
-        console.error('Plant.id API error:', error);
-        logger.recognitionStep('plantid_api_error', { error: error instanceof Error ? error.message : 'Unknown error' }, { recognitionId });
-      }
-    } else {
-      logger.recognitionStep('plantid_api_skipped', { reason: 'Not a plant' }, { recognitionId });
-    }
-
-    // Step 3: Build candidate strings from Vision
+    // Step 2: Build candidate strings from Vision
     logger.recognitionStep('candidate_strings_building', { step: 'Building candidate strings' }, { recognitionId });
-    console.log('🧠 Step 3: Building candidate strings...');
+    console.log('🧠 Step 2: Building candidate strings...');
 
     const candidateStrings = [
       ...visionBundle.labels.map(l => l.desc),
@@ -114,52 +74,87 @@ export async function POST(request: NextRequest) {
       topStrings: candidateStrings.slice(0, 5)
     }, { recognitionId });
 
-    // Step 4: Canonicalize names with Knowledge Graph
-    logger.recognitionStep('knowledge_graph_call', { step: 'Calling Knowledge Graph' }, { recognitionId });
-    console.log('🧠 Step 4: Canonicalizing with Knowledge Graph...');
+    // Step 3: Check plant gate and prepare parallel API calls
+    logger.recognitionStep('plant_gate_check', { step: 'Checking plant gate' }, { recognitionId });
+    console.log('🌱 Step 3: Checking plant gate...');
 
-    let canonicalResults: Canonical[] = [];
+    const isPlant = plantGate(visionBundle);
+    const plantConfidence = getPlantConfidence(visionBundle);
+
+    // Log plant gate decision
+    logger.plantGateDecision(isPlant, plantConfidence, { recognitionId });
+
+    // Step 4: PARALLEL API CALLS - This is the key optimization!
+    logger.recognitionStep('parallel_api_calls', { step: 'Starting parallel API calls' }, { recognitionId });
+    console.log('⚡ Step 4: Making parallel API calls...');
+
+    const parallelPromises: Promise<any>[] = [];
+
+    // Knowledge Graph API call
     if (candidateStrings.length > 0) {
-      try {
-        const kgResponse = await fetch(`${request.nextUrl.origin}/api/kg`, {
+      parallelPromises.push(
+        fetch(`${request.nextUrl.origin}/api/kg`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ queries: candidateStrings }),
-        });
-
-        if (kgResponse.ok) {
-          const kgData = await kgResponse.json();
-          canonicalResults = kgData.results || [];
-
-          // Log Knowledge Graph results
-          logger.kgResults(canonicalResults, kgData.processingTime || 0, { recognitionId });
-          logger.recognitionStep('knowledge_graph_complete', {
-            resultCount: canonicalResults.length,
-            processingTime: kgData.processingTime || 0
-          }, { recognitionId });
-
-        } else {
-          logger.recognitionStep('knowledge_graph_error', { status: kgResponse.status }, { recognitionId });
-        }
-      } catch (error) {
-        console.error('Knowledge Graph API error:', error);
-        logger.recognitionStep('knowledge_graph_error', { error: error instanceof Error ? error.message : 'Unknown error' }, { recognitionId });
-      }
-    } else {
-      logger.recognitionStep('knowledge_graph_skipped', { reason: 'No candidate strings' }, { recognitionId });
+        }).then(res => res.ok ? res.json() : { results: [] })
+          .catch(error => {
+            console.error('Knowledge Graph API error:', error);
+            return { results: [] };
+          })
+      );
     }
 
-    // Step 5: Search iNaturalist with canonical names
-    logger.recognitionStep('inaturalist_call', { step: 'Calling iNaturalist' }, { recognitionId });
-    console.log('🌿 Step 5: Searching iNaturalist...');
+    // Plant.id API call (if plant detected)
+    if (isPlant) {
+      parallelPromises.push(
+        fetch(`${request.nextUrl.origin}/api/plantid`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64 }),
+        }).then(res => res.ok ? res.json() : { results: [] })
+          .catch(error => {
+            console.error('Plant.id API error:', error);
+            return { results: [] };
+          })
+      );
+    }
 
+    // Wait for all parallel API calls to complete
+    const parallelResults = await Promise.all(parallelPromises);
+    
+    // Extract results
+    let canonicalResults: Canonical[] = [];
+    let plantResults: ProviderHit[] = [];
+    
+    if (candidateStrings.length > 0 && parallelResults[0]) {
+      canonicalResults = parallelResults[0].results || [];
+      logger.kgResults(canonicalResults, parallelResults[0].processingTime || 0, { recognitionId });
+    }
+    
+    if (isPlant && parallelResults[parallelResults.length - 1]) {
+      plantResults = parallelResults[parallelResults.length - 1].results || [];
+      logger.providerResults('Plant.id', plantResults, parallelResults[parallelResults.length - 1].processingTime || 0, { recognitionId });
+    }
+
+    logger.recognitionStep('parallel_api_complete', {
+      kgResults: canonicalResults.length,
+      plantResults: plantResults.length,
+      totalTime: Date.now() - startTime
+    }, { recognitionId });
+
+    // Step 5: iNaturalist search (only if we have canonical results)
     let inatResults: ProviderHit[] = [];
     if (canonicalResults.length > 0) {
+      logger.recognitionStep('inaturalist_call', { step: 'Calling iNaturalist' }, { recognitionId });
+      console.log('🌿 Step 5: Searching iNaturalist...');
+
       try {
         const inatQueries = canonicalResults
           .map(c => [c.commonName, c.scientificName])
           .flat()
-          .filter(Boolean);
+          .filter(Boolean)
+          .slice(0, 10); // Limit to top 10 queries for performance
 
         logger.recognitionStep('inaturalist_queries', {
           queryCount: inatQueries.length,
@@ -227,50 +222,43 @@ export async function POST(request: NextRequest) {
       };
 
       // Add provider confidence if available
-      const providerMatch = allProviderResults.find(p =>
-        fuzzyMatch(p.scientificName, candidate.scientificName) > 0.5 ||
-        fuzzyMatch(p.commonName || '', candidate.commonName || '') > 0.5
+      const providerMatch = allProviderResults.find(p => 
+        fuzzyMatch(p.scientificName || '', canonical.scientificName || '') > 0.7 ||
+        fuzzyMatch(p.commonName || '', canonical.commonName || '') > 0.7
       );
-
+      
       if (providerMatch) {
-        candidate.scores.provider = providerMatch.confidence;
+        candidate.scores.provider = providerMatch.confidence || 0.5;
       }
 
       candidates.push(candidate);
-
-      // Log scoring details for each candidate
       logger.scoringDetails(candidate, { recognitionId });
     }
 
-    // Add candidates from provider results that weren't in canonical results
+    // Add provider-only candidates (not found in Knowledge Graph)
     for (const providerResult of allProviderResults) {
-      const exists = candidates.some(c =>
-        fuzzyMatch(c.scientificName, providerResult.scientificName) > 0.5
+      const isDuplicate = candidates.some(c => 
+        fuzzyMatch(c.scientificName || '', providerResult.scientificName || '') > 0.7 ||
+        fuzzyMatch(c.commonName || '', providerResult.commonName || '') > 0.7
       );
 
-      if (!exists) {
+      if (!isDuplicate) {
         const candidate: Candidate = {
           scientificName: providerResult.scientificName,
           commonName: providerResult.commonName,
           scores: {
-            provider: providerResult.confidence,
-            vision: Math.max(
-              ...visionBundle.labels
-                .filter(l => fuzzyMatch(l.desc, providerResult.scientificName) > 0.3)
-                .map(l => l.score)
-            ),
-            cropAgree: calculateCropAgreement(visionBundle.labels, visionBundle.cropLabels),
-            habitatTime: 0.0,
+            provider: providerResult.confidence || 0.5,
+            vision: 0,
+            cropAgree: 0,
+            habitatTime: 0
           },
         };
-        candidates.push(candidate);
 
-        // Log scoring details for provider-only candidates
+        candidates.push(candidate);
         logger.scoringDetails(candidate, { recognitionId });
       }
     }
 
-    // Log candidate building summary
     logger.candidateBuilding(candidates, { recognitionId });
     logger.recognitionStep('candidate_merging_complete', {
       totalCandidates: candidates.length,
@@ -279,74 +267,35 @@ export async function POST(request: NextRequest) {
     }, { recognitionId });
 
     // Step 7: Make decision
-    logger.recognitionStep('decision_making', { step: 'Making final decision' }, { recognitionId });
-    console.log('🎯 Step 7: Making decision...');
+    logger.recognitionStep('decision_making', { step: 'Making decision' }, { recognitionId });
+    console.log('🎯 Step 7: Making final decision...');
 
-    const decision: RecognitionDecision = decide(candidates, 0.15);
-
-    // Log decision making process
+    const decision = decide(candidates, 0.15);
     logger.decisionMaking(decision, 0.15, { recognitionId });
 
+    // Step 8: Return response
     const totalTime = Date.now() - startTime;
-    console.log(`✅ Multi-signal recognition completed in ${totalTime}ms`);
-    console.log(`📊 Processed ${candidates.length} candidates, decision: ${decision.mode}`);
-
-        // Log final success
-    if (decision.mode === 'pick' && decision.pick) {
-      const result = {
-        canonicalName: decision.pick.scientificName,
-        commonName: decision.pick.commonName || decision.pick.scientificName,
-        category: 'mysterious',
-        confidence: decision.pick.totalScore || 0.8,
-        provider: 'multi-signal',
-        rank: 'species',
-        capturedImageUrl: `captured-image-${Date.now()}`,
-      };
-      
-      logger.recognitionSuccess(result, totalTime, { recognitionId });
-    } else if (decision.mode === 'disambiguate' && decision.top3 && decision.top3.length > 0) {
-      const topResult = decision.top3[0]!; // Non-null assertion as we checked length > 0
-      const result = {
-        canonicalName: topResult.scientificName,
-        commonName: topResult.commonName || topResult.scientificName,
-        category: 'mysterious',
-        confidence: topResult.totalScore || 0.6,
-        provider: 'multi-signal',
-        rank: 'species',
-        capturedImageUrl: `captured-image-${Date.now()}`,
-      };
-      
-      logger.recognitionSuccess(result, totalTime, { recognitionId });
-    }
-
-    const response: RecognitionResponse = {
+    const result: RecognitionResponse = {
       success: true,
-      decision: {
-        ...decision,
-        debug: {
-          visionBundle,
-          candidates,
-          processingTime: totalTime,
-        },
-      },
+      decision,
+      debug: {
+        visionBundle,
+        candidates,
+        processingTime: totalTime
+      }
     };
 
-    return NextResponse.json(response);
+    logger.recognitionSuccess(result, totalTime, { recognitionId });
+
+    return NextResponse.json(result);
 
   } catch (error) {
-    console.error('Multi-signal recognition error:', error);
-    const totalTime = Date.now() - startTime;
-
-    // Log the error with recognition ID
     logger.recognitionError(error as Error, { recognitionId });
-
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Recognition failed',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        processingTime: totalTime,
-        recognitionId, // Include recognition ID in error response for debugging
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        recognitionId 
       },
       { status: 500 }
     );

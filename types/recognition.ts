@@ -74,4 +74,9 @@ export type RecognitionResponse = {
   success: boolean;
   decision: RecognitionDecision;
   error?: string | undefined;
+  debug?: {
+    visionBundle?: VisionBundle | undefined;
+    candidates?: Candidate[] | undefined;
+    processingTime?: number | undefined;
+  } | undefined;
 };
