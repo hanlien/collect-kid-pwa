@@ -2,7 +2,7 @@
 
 A production-quality, mobile-first Progressive Web App that helps kids discover and learn about nature through camera identification. Built with Next.js 14, TypeScript, and TailwindCSS.
 
-> **Latest Update**: Production logging and debug system deployed (v1.0.3)
+> **Latest Update**: Production logging and debug system deployed (v1.0.4)
 
 ## Features
 
