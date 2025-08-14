@@ -305,6 +305,7 @@ export default function ResultPage() {
     flower: '🌸',
     bug: '🦋',
     animal: '🐾',
+    unknown: '❓',
   }[result.category];
 
   return (

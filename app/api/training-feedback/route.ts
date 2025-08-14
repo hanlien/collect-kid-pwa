@@ -5,7 +5,7 @@ import { supabaseAdmin, isSupabaseAvailable } from '@/lib/supabase';
 const trainingFeedbackSchema = z.object({
   imageUrl: z.string().optional(),
   originalResult: z.object({
-    category: z.enum(['flower', 'bug', 'animal']),
+    category: z.enum(['flower', 'bug', 'animal', 'unknown']),
     canonicalName: z.string(),
     commonName: z.string().optional(),
     confidence: z.number(),
