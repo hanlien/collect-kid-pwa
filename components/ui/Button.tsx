@@ -141,6 +141,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     }
 
     return (
+      // @ts-ignore - exactOptionalPropertyTypes conflict with framer-motion
       <motion.button
         className={cn(buttonVariants({ variant, size, animation, className }))}
         ref={ref}
@@ -148,7 +149,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         whileTap={{ scale: 0.95 }}
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.1 }}
-        // @ts-ignore - exactOptionalPropertyTypes conflict with framer-motion
         {...props}
       >
         {buttonContent}

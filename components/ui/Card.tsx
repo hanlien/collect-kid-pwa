@@ -68,11 +68,11 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     };
 
     return (
+      // @ts-ignore - exactOptionalPropertyTypes conflict with framer-motion
       <Comp
         className={cn(cardVariants({ variant, size, interactive, className }))}
         ref={ref}
         {...motionProps}
-        // @ts-ignore - exactOptionalPropertyTypes conflict with framer-motion  
         {...props}
       >
         {children}
