@@ -2,20 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { collectRequestSchema } from '@/lib/validation';
 import { getBadgeSubtype, getBadgeLevel } from '@/lib/utils';
 import ProfileManager from '@/lib/profileManager';
+import logger from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
+  const apiCall = logger.apiCall('/api/collect', 'POST');
+  
   try {
-    console.log('Collect API called');
+    logger.info('Collect API called');
     const body = await request.json();
-    console.log('Request body:', body);
+    logger.debug('Request body', body);
     
     const { userId, result: speciesResult } = collectRequestSchema.parse(body);
-    console.log('Parsed request:', { userId, speciesResult });
+    logger.info('Parsed request', { userId, speciesResult });
 
     // Use ProfileManager to check if this is a new species
     const profileManager = ProfileManager.getInstance();
     const currentProfile = profileManager.getCurrentProfile();
-    console.log('Current profile:', currentProfile);
+    logger.debug('Current profile', currentProfile);
     
     // Check if this is a new species for this profile
     const existingCaptures = profileManager.getCaptures();
@@ -25,6 +28,8 @@ export async function POST(request: NextRequest) {
     
     // Prevent duplicate collection - if already collected, return error
     if (!isNewSpecies) {
+      logger.warn('Species already collected', { speciesResult });
+      apiCall.end({ error: 'Species already collected!', alreadyCollected: true });
       return NextResponse.json(
         { error: 'Species already collected!', alreadyCollected: true },
         { status: 400 }
@@ -51,7 +56,7 @@ export async function POST(request: NextRequest) {
       b.subtype === badgeSubtype
     );
 
-    console.log('Badge check:', {
+    logger.debug('Badge check', {
       category: speciesResult.category,
       badgeSubtype,
       existingBadges: existingBadges.length,
@@ -67,7 +72,7 @@ export async function POST(request: NextRequest) {
     if (isNewSpecies) {
       const badgeLevel = getBadgeLevel(1); // Level 1 for first capture
       
-      console.log('Creating badge with data:', {
+      logger.info('Creating badge', {
         category: speciesResult.category,
         subtype: badgeSubtype,
         level: badgeLevel,
@@ -83,11 +88,11 @@ export async function POST(request: NextRequest) {
         nextGoal: 3, // Next goal is 3 for level 2
       });
       
-      console.log('Created new badge:', badge);
+      logger.info('Created new badge', badge);
       
       // Verify badge was saved
       const allBadges = profileManager.getBadges();
-      console.log('All badges after creation:', allBadges);
+      logger.debug('All badges after creation', allBadges);
     }
 
     // Create capture data (don't save to ProfileManager on server)
@@ -118,7 +123,7 @@ export async function POST(request: NextRequest) {
       nextGoal: 3,
     } : null;
 
-    return NextResponse.json({
+    const response = {
       capture: newCapture,
       badge: badgeData,
       leveledUp,
@@ -132,9 +137,16 @@ export async function POST(request: NextRequest) {
         uniqueSpeciesCount: newUniqueSpeciesCount,
         level: newLevel,
       },
-    });
+    };
+
+    logger.collectionSuccess(speciesResult, coinsEarned, { userId });
+    apiCall.end(response);
+    
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('Collect API error:', error);
+    logger.collectionError(error as Error, { userId });
+    apiCall.end(undefined, error as Error);
+    
     return NextResponse.json(
       { error: 'Failed to collect item' },
       { status: 500 }

@@ -18,6 +18,7 @@ const LazyProfileSelector = dynamic(() => import('@/components/lazy/LazyProfileS
 import ProfileManager from '@/lib/profileManager';
 import { SpeciesResult } from '@/types/species';
 import { Profile } from '@/types/profile';
+import logger from '@/lib/logger';
 
 export default function ScanPage() {
   const router = useRouter();
@@ -329,6 +330,7 @@ export default function ScanPage() {
   };
 
   const processImage = async (file: File) => {
+    const startTime = Date.now();
     try {
       console.log('Starting image processing...');
       setIsScanning(true);
@@ -345,7 +347,9 @@ export default function ScanPage() {
       // Convert image to base64 for new multi-signal recognition
       const base64Image = imageUrl.split(',')[1]; // Remove data:image/jpeg;base64, prefix
 
-      console.log('Sending to /api/recognize-v2 (multi-signal recognition)...');
+      logger.recognitionStart(base64Image.length);
+      logger.recognitionStep('sending_request', { imageSize: base64Image.length });
+      
       // Call new multi-signal recognition API
       const response = await fetch('/api/recognize-v2', {
         method: 'POST',
@@ -354,14 +358,18 @@ export default function ScanPage() {
       });
 
       const data = await response.json();
-      console.log('Multi-signal recognition response:', data);
+      logger.recognitionStep('received_response', data);
 
       if (!response.ok) {
-        throw new Error(data.error || 'Recognition failed');
+        const error = new Error(data.error || 'Recognition failed');
+        logger.recognitionError(error, { imageSize: base64Image.length });
+        throw error;
       }
 
       if (!data.success) {
-        throw new Error(data.error || 'Recognition failed');
+        const error = new Error(data.error || 'Recognition failed');
+        logger.recognitionError(error, { imageSize: base64Image.length });
+        throw error;
       }
 
       // Show confetti for successful scan
@@ -412,10 +420,11 @@ export default function ScanPage() {
       // Store image in sessionStorage to avoid URL length limits
       sessionStorage.setItem(result.capturedImageUrl!, imageUrl);
       
-      console.log('Navigating to result page with result:', result);
+      logger.recognitionSuccess(result, Date.now() - startTime, { imageSize: base64Image.length });
+      logger.info('Navigating to result page', result);
       router.push(`/result?data=${encodeURIComponent(JSON.stringify(result))}`);
     } catch (error) {
-      console.error('Scan error:', error);
+      logger.error('Scan error', error as Error, { imageSize: base64Image?.length });
       setToast({
         message: 'Something went wrong. Please try again!',
         type: 'error',
