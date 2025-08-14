@@ -5,9 +5,7 @@
       "maxDuration": 30
     }
   },
-  "regions": ["sfo1", "iad1"],
   "env": {
     "NODE_ENV": "production"
-  },
-  "buildCommand": "npm run build"
+  }
 }
