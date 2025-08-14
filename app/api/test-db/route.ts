@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin, isSupabaseAvailable } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if Supabase is available
+    if (!isSupabaseAvailable() || !supabaseAdmin) {
+      return NextResponse.json({
+        status: 'error',
+        message: 'Database not configured',
+        error: 'Supabase environment variables are missing',
+        suggestion: 'Add SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY to your environment variables'
+      }, { status: 503 });
+    }
+
     // Test basic connection
     const { data, error } = await supabaseAdmin
       .from('training_feedback')

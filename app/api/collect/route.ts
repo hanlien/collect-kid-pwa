@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { collectRequestSchema } from '@/lib/validation';
-import { supabaseAdmin } from '@/lib/supabase';
 import { getBadgeSubtype, getBadgeLevel } from '@/lib/utils';
 import ProfileManager from '@/lib/profileManager';
 

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { validateEnv, recognizeRequestSchema } from '@/lib/validation';
-import { supabaseAdmin } from '@/lib/supabase';
 import { SpeciesResult, Category, Provider } from '@/types/species';
 import { colorNameToHex, getBadgeSubtype } from '@/lib/utils';
 import { iNaturalistAPI } from '@/lib/inaturalistAPI';
