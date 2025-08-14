@@ -5,6 +5,8 @@ import { WikiCard } from '@/types/recognition';
 const wikiCache = new Map<string, { data: WikiCard; timestamp: number }>();
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

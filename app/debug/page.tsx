@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Typography } from '@/components/ui/Typography';
@@ -42,20 +42,20 @@ export default function DebugPage() {
   // Simple password protection for production
   const DEBUG_PASSWORD = process.env.NEXT_PUBLIC_DEBUG_PASSWORD || 'brandon2024';
 
-  const checkAuth = () => {
+  const checkAuth = useCallback(() => {
     if (process.env.NODE_ENV === 'development') {
       setIsAuthorized(true);
     } else {
       // In production, require password
       setIsAuthorized(password === DEBUG_PASSWORD);
     }
-  };
+  }, [password]);
 
   useEffect(() => {
     checkAuth();
   }, [password, checkAuth]);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     if (!isAuthorized) return;
     
     setLoading(true);
@@ -76,7 +76,7 @@ export default function DebugPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthorized]);
 
   const fetchSessionLogs = async (sessionId: string) => {
     if (!isAuthorized) return;
