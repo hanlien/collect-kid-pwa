@@ -11,7 +11,7 @@
   }
   
   body {
-    @apply bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50;
+    @apply bg-white;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -50,23 +50,23 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-bold py-4 px-8 rounded-2xl shadow-lg transform transition-all duration-200 active:scale-95;
+    @apply bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-2xl shadow-lg transform transition-all duration-200 active:scale-95;
   }
   
   .btn-secondary {
-    @apply bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-bold py-3 px-6 rounded-2xl shadow-md transform transition-all duration-200 active:scale-95;
+    @apply bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-2xl shadow-md transform transition-all duration-200 active:scale-95;
   }
   
   .btn-outline {
-    @apply border-2 border-orange-400 text-orange-600 hover:bg-orange-400 hover:text-white font-bold py-3 px-6 rounded-2xl transition-all duration-200 active:scale-95;
+    @apply border-2 border-blue-400 text-blue-600 hover:bg-blue-400 hover:text-white font-bold py-3 px-6 rounded-2xl transition-all duration-200 active:scale-95;
   }
   
   .card {
-    @apply bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-6 border border-white/20;
+    @apply bg-white rounded-2xl shadow-lg p-6 border border-gray-100;
   }
 
   .card-3d {
-    @apply bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-6 border border-white/30 transform hover:scale-105 transition-all duration-300;
+    @apply bg-white rounded-2xl shadow-xl p-6 border border-gray-200 transform hover:scale-105 transition-all duration-300;
   }
   
   .scan-ring {

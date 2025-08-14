@@ -446,7 +446,7 @@ export default function ScanPage() {
   };
 
   return (
-    <div className="page-container bg-gradient-to-br from-primary-400 via-secondary-500 to-accent-400 relative overflow-hidden">
+    <div className="page-container bg-gradient-to-br from-green-50 via-blue-50 to-orange-50 relative overflow-hidden">
       {/* Background decorative elements */}
       <div className="absolute inset-0 opacity-20">
         <AnimalSilhouettes />

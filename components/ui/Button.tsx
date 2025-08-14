@@ -49,11 +49,11 @@ const buttonVariants = cva(
           'shadow-nature hover:animate-nature-glow'
         ],
         nature: [
-          'bg-gradient-to-r from-primary-500 to-secondary-500 text-white shadow-paw',
-          'hover:from-primary-600 hover:to-secondary-600 hover:shadow-nature',
-          'focus-visible:ring-primary-500',
+          'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-paw',
+          'hover:from-green-600 hover:to-green-700 hover:shadow-nature',
+          'focus-visible:ring-green-500',
           'active:scale-95',
-          'relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-accent-400/20 before:to-primary-400/20 before:opacity-0 hover:before:opacity-100 before:transition-opacity'
+          'relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-green-400/20 before:to-green-500/20 before:opacity-0 hover:before:opacity-100 before:transition-opacity'
         ]
       },
       size: {
