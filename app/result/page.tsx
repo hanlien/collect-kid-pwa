@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Volume2, Heart, ArrowLeft, RotateCcw, Star, MapPin, Award, BookOpen, Bookmark, Target } from 'lucide-react';
 import Image from 'next/image';
@@ -16,7 +16,7 @@ import { isDangerousSpecies } from '@/lib/utils';
 import ProfileManager from '@/lib/profileManager';
 import { SpeciesResult } from '@/types/species';
 
-export default function ResultPage() {
+function ResultPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [result, setResult] = useState<SpeciesResult | null>(null);
@@ -719,5 +719,13 @@ export default function ResultPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ResultPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResultPageContent />
+    </Suspense>
   );
 }
