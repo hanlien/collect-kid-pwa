@@ -185,14 +185,9 @@ export function decide(
   candidates: Candidate[], 
   margin: number = 0.15
 ): RecognitionDecision {
-  // Score all candidates
-  const scoredCandidates = candidates.map(candidate => ({
-    ...candidate,
-    totalScore: score(candidate)
-  }));
-
+  // Candidates should already be scored from scoreCandidates function
   // Sort by total score (descending)
-  const sorted = scoredCandidates.sort((a, b) => 
+  const sorted = candidates.sort((a, b) => 
     (b.totalScore || 0) - (a.totalScore || 0)
   );
 

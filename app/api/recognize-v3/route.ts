@@ -408,8 +408,13 @@ async function runTraditionalPipeline(imageBase64: string, recognitionId?: strin
       ...inatResults.map(i => ({ ...i, source: 'inat' }))
     ];
 
+    console.log('🔍 [DEBUG] All candidates before scoring:', JSON.stringify(allCandidates, null, 2));
+
     const scoredCandidates = scoreCandidates(allCandidates);
+    console.log('🔍 [DEBUG] Scored candidates:', JSON.stringify(scoredCandidates, null, 2));
+
     const decision = decide(scoredCandidates);
+    console.log('🔍 [DEBUG] Decision:', JSON.stringify(decision, null, 2));
 
     if (decision.mode === 'pick' && decision.pick) {
       // Add Wikipedia summary if we have a pick
