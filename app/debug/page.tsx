@@ -250,9 +250,9 @@ export default function DebugPage() {
               <Button onClick={fetchLogs} disabled={loading}>
                 {loading ? 'Loading...' : 'Refresh Logs'}
               </Button>
-              <Button onClick={clearLogs} variant="destructive">
-                Clear All Logs
-              </Button>
+                             <Button onClick={clearLogs} variant="danger">
+                 Clear All Logs
+               </Button>
             </div>
           </div>
           
