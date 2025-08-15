@@ -319,7 +319,8 @@ async function runTraditionalPipeline(imageBase64: string, recognitionId?: strin
 
     logger.recognitionStep('vision_complete', {
       labels: visionBundle.labels?.length || 0,
-      processingTime: visionTime
+      processingTime: visionTime,
+      actualLabels: visionBundle.labels?.slice(0, 3).map(l => l.desc) || []
     }, { recognitionId });
 
     // Step 2: Check if it's a plant
@@ -374,20 +375,20 @@ async function runTraditionalPipeline(imageBase64: string, recognitionId?: strin
     let resultIndex = 0;
 
     // Knowledge Graph results
-    if (parallelResults[resultIndex] && parallelResults[resultIndex] !== undefined) {
-      canonicalResults = parallelResults[resultIndex]?.results || [];
+    if (parallelResults[resultIndex]) {
+      canonicalResults = parallelResults[resultIndex].results || [];
       resultIndex++;
     }
 
     // Plant.id results
-    if (isPlant && parallelResults[resultIndex] && parallelResults[resultIndex] !== undefined) {
-      plantResults = parallelResults[resultIndex]?.results || [];
+    if (isPlant && parallelResults[resultIndex]) {
+      plantResults = parallelResults[resultIndex].results || [];
       resultIndex++;
     }
 
     // iNaturalist results
-    if (parallelResults[resultIndex] && parallelResults[resultIndex] !== undefined) {
-      inatResults = parallelResults[resultIndex]?.results || [];
+    if (parallelResults[resultIndex]) {
+      inatResults = parallelResults[resultIndex].results || [];
     }
 
     // Step 4: Score and decide
