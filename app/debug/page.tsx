@@ -73,7 +73,7 @@ export default function DebugPage() {
       // In production, require password
       setIsAuthorized(password === DEBUG_PASSWORD);
     }
-  }, [password]);
+  }, [password, DEBUG_PASSWORD]);
 
   useEffect(() => {
     checkAuth();

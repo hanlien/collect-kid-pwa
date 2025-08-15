@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       logs;
 
     if (exportLogs) {
-      const logsJson = await logger.exportRecognitionLogs(recognitionId || undefined);
+      const logsJson = JSON.stringify(filteredLogs, null, 2);
       return new NextResponse(logsJson, {
         headers: {
           'Content-Type': 'application/json',
@@ -87,11 +87,11 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE() {
   try {
-    logger.clearLogs();
+    const success = await logger.clearLogs();
     
     return NextResponse.json({
-      success: true,
-      message: 'Recognition logs cleared',
+      success,
+      message: success ? 'Recognition logs cleared' : 'Failed to clear logs',
       timestamp: new Date().toISOString(),
     });
 
