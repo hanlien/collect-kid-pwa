@@ -80,8 +80,8 @@ class Logger {
       this.logs.shift(); // Remove oldest log
     }
 
-    // Store in Supabase for persistence (production only) - NON-BLOCKING
-    if (this.isProduction && supabase) {
+    // Store in Supabase for persistence (when available) - NON-BLOCKING
+    if (supabase) {
       // Fire and forget - don't await this
       (async () => {
         try {
