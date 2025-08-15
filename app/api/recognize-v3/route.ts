@@ -220,14 +220,26 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
 
     let finalDecision;
 
-    if (aiResults && traditionalResults) {
+    // Helper function to extract traditional results safely
+    const getTraditionalPick = (results: any) => {
+      if (results?.decision?.mode === 'pick') {
+        return results.decision.pick;
+      } else if (results?.mode === 'pick') {
+        return results.pick;
+      }
+      return null;
+    };
+
+    const traditionalPick = getTraditionalPick(traditionalResults);
+
+    if (aiResults && traditionalPick) {
       // Both systems succeeded - use AI results as primary, traditional as backup
       finalDecision = {
         mode: 'pick' as const,
         pick: {
           ...aiResults,
-          backupProvider: traditionalResults.provider,
-          backupConfidence: traditionalResults.confidence
+          backupProvider: traditionalPick.provider || 'multi-signal',
+          backupConfidence: traditionalPick.confidence || 0.7
         },
         debug: {
           traditionalResults,
@@ -243,9 +255,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
 
       logger.recognitionStep('hybrid_success', {
         finalProvider: 'ai-router',
-        backupProvider: traditionalResults.provider,
+        backupProvider: traditionalPick.provider || 'multi-signal',
         aiConfidence: aiResults.confidence,
-        traditionalConfidence: traditionalResults.confidence
+        traditionalConfidence: traditionalPick.confidence || 0.7
       }, { recognitionId });
 
     } else if (aiResults) {
@@ -269,11 +281,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
         confidence: aiResults.confidence
       }, { recognitionId });
 
-    } else if (traditionalResults) {
+    } else if (traditionalPick) {
       // Only traditional succeeded
       finalDecision = {
         mode: 'pick' as const,
-        pick: traditionalResults,
+        pick: traditionalPick,
         debug: {
           traditionalResults,
           processingTime: totalTime,
@@ -286,8 +298,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
       };
 
       logger.recognitionStep('traditional_only_success', {
-        provider: traditionalResults.provider,
-        confidence: traditionalResults.confidence
+        provider: traditionalPick.provider || 'multi-signal',
+        confidence: traditionalPick.confidence || 0.7
       }, { recognitionId });
 
     } else {
