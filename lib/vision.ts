@@ -2,7 +2,8 @@ import { VisionBundle } from '@/types/recognition';
 
 export async function getVisionLabels(imageBase64: string): Promise<VisionBundle> {
   try {
-    const response = await fetch('/api/vision', {
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/vision`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageBase64 })

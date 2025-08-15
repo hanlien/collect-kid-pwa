@@ -4,7 +4,8 @@ export async function getKnowledgeGraphResults(queries: string[]): Promise<{ res
   const startTime = Date.now();
   
   try {
-    const response = await fetch('/api/kg', {
+    const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/kg`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ queries })

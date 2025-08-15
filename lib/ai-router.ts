@@ -118,7 +118,7 @@ export class AIRouter {
     
     try {
       // 1. Select the best model based on requirements
-      const selectedModel = this.selectModel(params);
+      let selectedModel = this.selectModel(params);
       
       if (!selectedModel) {
         throw new Error(`No suitable model found for budget $${params.budget} and capabilities: ${params.requiredCapabilities.join(', ')}`);
@@ -132,28 +132,86 @@ export class AIRouter {
         estimatedCost: this.estimateCost(selectedModel, params.prompt)
       }, { recognitionId: params.recognitionId });
 
-      // 2. Call the selected model
-      const result = await this.callModel(selectedModel, params);
-      
-      // 3. Calculate actual cost and response time
-      const responseTime = Date.now() - startTime;
-      const cost = this.calculateActualCost(selectedModel, result.tokens);
-      
-      logger.recognitionStep('ai_router_complete', {
-        model: selectedModel.name,
-        provider: selectedModel.provider,
-        actualCost: cost,
-        responseTime,
-        tokens: result.tokens
-      }, { recognitionId: params.recognitionId });
+      // 2. Try to call the selected model
+      try {
+        const result = await this.callModel(selectedModel, params);
+        
+        // 3. Calculate actual cost and response time
+        const responseTime = Date.now() - startTime;
+        const cost = this.calculateActualCost(selectedModel, result.tokens);
+        
+        logger.recognitionStep('ai_router_complete', {
+          model: selectedModel.name,
+          provider: selectedModel.provider,
+          actualCost: cost,
+          responseTime,
+          tokens: result.tokens
+        }, { recognitionId: params.recognitionId });
 
-      return {
-        ...result,
-        model: selectedModel.name,
-        provider: selectedModel.provider,
-        cost,
-        responseTime
-      };
+        return {
+          ...result,
+          model: selectedModel.name,
+          provider: selectedModel.provider,
+          cost,
+          responseTime
+        };
+
+      } catch (modelError) {
+        // If OpenAI fails with quota error, try Google models
+        if (selectedModel.provider === 'openai' && 
+            modelError instanceof Error && 
+            modelError.message.includes('insufficient_quota')) {
+          
+          logger.recognitionStep('ai_router_fallback', {
+            originalModel: selectedModel.name,
+            reason: 'OpenAI quota exceeded, trying Google models'
+          }, { recognitionId: params.recognitionId });
+
+          // Try to find a Google model
+          const googleModels = this.models.filter(m => m.provider === 'google' && 
+            params.requiredCapabilities.every(cap => m.capabilities.includes(cap)));
+          
+          if (googleModels.length > 0) {
+            const fallbackModel = googleModels[0]; // Use first available Google model
+            if (!fallbackModel) {
+              throw new Error('No fallback model available');
+            }
+            
+            logger.recognitionStep('ai_router_model_selected', {
+              model: fallbackModel.name,
+              provider: fallbackModel.provider,
+              budget: params.budget,
+              priority: params.priority,
+              estimatedCost: this.estimateCost(fallbackModel, params.prompt),
+              fallback: true
+            }, { recognitionId: params.recognitionId });
+
+            const result = await this.callModel(fallbackModel, params);
+            const responseTime = Date.now() - startTime;
+            const cost = this.calculateActualCost(fallbackModel, result.tokens);
+            
+            logger.recognitionStep('ai_router_complete', {
+              model: fallbackModel.name,
+              provider: fallbackModel.provider,
+              actualCost: cost,
+              responseTime,
+              tokens: result.tokens,
+              fallback: true
+            }, { recognitionId: params.recognitionId });
+
+            return {
+              ...result,
+              model: fallbackModel.name,
+              provider: fallbackModel.provider,
+              cost,
+              responseTime
+            };
+          }
+        }
+        
+        // If fallback failed or not applicable, throw the original error
+        throw modelError;
+      }
 
     } catch (error) {
       logger.recognitionStep('ai_router_error', {
