@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'No image provided' }, { status: 400 });
     }
 
-    logger.recognitionStep('llm_only_start', { aiBudget, aiPriority }, { recognitionId });
+    await logger.recognitionStep('llm_only_start', { aiBudget, aiPriority }, { recognitionId });
 
     // Primary attempt: structured kid-friendly speciesIdentification
     const primaryParams: LLMParams = {
@@ -71,10 +71,10 @@ export async function POST(request: NextRequest) {
         cost: ai.cost,
         responseTime: ai.responseTime
       };
-      logger.recognitionStep('llm_only_success', { model: ai.model, confidence: pick.confidence }, { recognitionId });
+      await logger.recognitionStep('llm_only_success', { model: ai.model, confidence: pick.confidence }, { recognitionId });
     } else {
       // Fallback 1: quick identification prompt
-      logger.recognitionStep('llm_only_retry_quick', {}, { recognitionId });
+      await logger.recognitionStep('llm_only_retry_quick', {}, { recognitionId });
       const quickParams: LLMParams = {
         image: imageBase64,
         prompt: PROMPT_TEMPLATES.quickIdentification,
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
             cost: ai.cost,
             responseTime: ai.responseTime
           };
-          logger.recognitionStep('llm_only_loose_parse', { guess: loose.commonName, confidence: loose.confidence }, { recognitionId });
+          await logger.recognitionStep('llm_only_loose_parse', { guess: loose.commonName, confidence: loose.confidence }, { recognitionId });
         }
       }
     }
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.recognitionStep('llm_only_error', { error: errorMessage }, { recognitionId });
+    await logger.recognitionStep('llm_only_error', { error: errorMessage }, { recognitionId });
     return NextResponse.json({ 
       success: false, 
       error: `LLM recognition failed: ${errorMessage}`,

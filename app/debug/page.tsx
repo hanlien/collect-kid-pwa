@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Typography } from '@/components/ui/Typography';
 
 interface LogEntry {
+  id?: string;
   timestamp: string;
   level: number;
   message: string;
@@ -22,11 +23,32 @@ interface SessionSummary {
   duration?: number;
   status: 'failed' | 'success' | 'in_progress';
   imageSize?: number;
-  visionLabels: number;
-  decision?: string;
   logCount: number;
   error?: string;
   finalResult?: any;
+  lastActivity: string;
+}
+
+interface DebugTestResult {
+  success: boolean;
+  timestamp: string;
+  environment: string;
+  tests: {
+    databaseConnection: boolean;
+    loggingTest: boolean;
+    recentLogsCount: number;
+  };
+  environmentVariables: {
+    supabaseUrl: boolean;
+    supabaseServiceKey: boolean;
+    supabaseAnonKey: boolean;
+    nodeEnv: string;
+  };
+  recentLogs: Array<{
+    timestamp: string;
+    message: string;
+    level: number;
+  }>;
 }
 
 export default function DebugPage() {
@@ -38,6 +60,8 @@ export default function DebugPage() {
   const [error, setError] = useState<string | null>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [password, setPassword] = useState('');
+  const [testResult, setTestResult] = useState<DebugTestResult | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<string>('unknown');
 
   // Simple password protection for production
   const DEBUG_PASSWORD = process.env.NEXT_PUBLIC_DEBUG_PASSWORD || 'brandon2024';
@@ -55,34 +79,58 @@ export default function DebugPage() {
     checkAuth();
   }, [password, checkAuth]);
 
+  const testConnection = useCallback(async () => {
+    if (!isAuthorized) return;
+    
+    try {
+      const response = await fetch(`/api/debug/test?password=${password}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setTestResult(data);
+        setConnectionStatus(data.tests.databaseConnection ? 'connected' : 'disconnected');
+      } else {
+        setError(data.error || 'Connection test failed');
+        setConnectionStatus('error');
+      }
+    } catch (error) {
+      console.error('Connection test failed:', error);
+      setError('Connection test failed');
+      setConnectionStatus('error');
+    }
+  }, [isAuthorized, password]);
+
   const fetchLogs = useCallback(async () => {
     if (!isAuthorized) return;
     
     setLoading(true);
     setError(null);
     try {
-                    const response = await fetch('/api/logs-recognition');
+      const response = await fetch(`/api/debug/logs?password=${password}`);
       const data = await response.json();
       
       if (data.success) {
         setLogs(data.logs || []);
         setSessionSummaries(data.sessionSummaries || []);
+        setConnectionStatus(data.connectionStatus || 'unknown');
       } else {
         setError(data.error || 'Failed to fetch logs');
+        setConnectionStatus('error');
       }
     } catch (error) {
       console.error('Failed to fetch logs:', error);
       setError('Failed to fetch logs');
+      setConnectionStatus('error');
     } finally {
       setLoading(false);
     }
-  }, [isAuthorized]);
+  }, [isAuthorized, password]);
 
   const fetchSessionLogs = async (sessionId: string) => {
     if (!isAuthorized) return;
     
     try {
-      const response = await fetch(`/api/logs-recognition?recognitionId=${sessionId}`);
+      const response = await fetch(`/api/debug/logs?recognitionId=${sessionId}&password=${password}`);
       const data = await response.json();
       
       if (data.success) {
@@ -100,8 +148,12 @@ export default function DebugPage() {
   const clearLogs = async () => {
     if (!isAuthorized) return;
     
+    if (!confirm('Are you sure you want to clear all logs?')) return;
+    
     try {
-      const response = await fetch('/api/logs-recognition', { method: 'DELETE' });
+      const response = await fetch(`/api/debug/logs?password=${password}`, {
+        method: 'DELETE'
+      });
       const data = await response.json();
       
       if (data.success) {
@@ -109,6 +161,7 @@ export default function DebugPage() {
         setSessionSummaries([]);
         setSessionLogs([]);
         setSelectedSession(null);
+        alert('All logs cleared successfully');
       } else {
         setError(data.error || 'Failed to clear logs');
       }
@@ -118,41 +171,7 @@ export default function DebugPage() {
     }
   };
 
-  const exportLogs = async () => {
-    if (!isAuthorized) return;
-    
-    try {
-      const response = await fetch('/api/logs-recognition?export=true');
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'recognition-logs.json';
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to export logs:', error);
-      setError('Failed to export logs');
-    }
-  };
-
-  useEffect(() => {
-    if (isAuthorized) {
-      fetchLogs();
-    }
-  }, [isAuthorized, fetchLogs]);
-
-  const getLevelColor = (level: number) => {
-    switch (level) {
-      case 0: return 'text-blue-600'; // DEBUG
-      case 1: return 'text-green-600'; // INFO
-      case 2: return 'text-yellow-600'; // WARN
-      case 3: return 'text-red-600'; // ERROR
-      default: return 'text-gray-600';
-    }
-  };
-
-  const getLevelIcon = (level: number) => {
+  const getLevelEmoji = (level: number) => {
     switch (level) {
       case 0: return '🔍';
       case 1: return 'ℹ️';
@@ -162,547 +181,261 @@ export default function DebugPage() {
     }
   };
 
-  // Helper functions to extract API results
-  const extractApiPerformance = (logs: any[]) => {
-    const apis = [
-      { name: 'Google Vision', pattern: 'Vision API Results', color: 'green' },
-      { name: 'Knowledge Graph', pattern: 'Knowledge Graph Results', color: 'purple' },
-      { name: 'Plant.id', pattern: 'Plant.id Provider Results', color: 'emerald' },
-      { name: 'iNaturalist', pattern: 'iNaturalist Provider Results', color: 'orange' }
-    ];
-
-    return apis.map(api => {
-      const log = logs.find(l => l.message.includes(api.pattern));
-      if (log) {
-        return {
-          name: api.name,
-          time: log.data?.processingTime || 0,
-          status: log.data?.processingTime ? '✅ Success' : '❌ Failed',
-          color: api.color
-        };
-      }
-      return {
-        name: api.name,
-        time: 0,
-        status: '⏭️ Skipped',
-        color: api.color
-      };
-    });
+  const getLevelName = (level: number) => {
+    switch (level) {
+      case 0: return 'DEBUG';
+      case 1: return 'INFO';
+      case 2: return 'WARN';
+      case 3: return 'ERROR';
+      default: return 'UNKNOWN';
+    }
   };
 
-  const extractVisionResults = (logs: any[]) => {
-    const visionLog = logs.find(l => l.message.includes('Vision API Results'));
-    if (!visionLog?.data) return <div className="text-gray-500">No Vision results found</div>;
-
-    const { labels, webBestGuess, processingTime } = visionLog.data;
-    
-    return (
-      <div className="space-y-3">
-        <div className="text-sm text-gray-600">Processing Time: <span className="font-semibold">{processingTime}ms</span></div>
-        
-        <div>
-          <div className="text-sm font-semibold text-gray-700 mb-2">Top Labels:</div>
-          <div className="space-y-1">
-            {labels?.slice(0, 5).map((label: any, index: number) => (
-              <div key={index} className="flex justify-between text-xs">
-                <span>{label.desc}</span>
-                <span className="font-semibold">{(label.score * 100).toFixed(1)}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <div className="text-sm font-semibold text-gray-700 mb-2">Web Best Guesses:</div>
-          <div className="space-y-1">
-            {webBestGuess?.slice(0, 3).map((guess: string, index: number) => (
-              <div key={index} className="text-xs text-gray-600">• {guess}</div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'success': return 'text-green-600';
+      case 'failed': return 'text-red-600';
+      case 'in_progress': return 'text-yellow-600';
+      default: return 'text-gray-600';
+    }
   };
 
-  const extractKGResults = (logs: any[]) => {
-    const kgLog = logs.find(l => l.message.includes('Knowledge Graph Results'));
-    if (!kgLog?.data) return <div className="text-gray-500">No Knowledge Graph results found</div>;
-
-    const { topResults, processingTime } = kgLog.data;
-    
-    return (
-      <div className="space-y-3">
-        <div className="text-sm text-gray-600">Processing Time: <span className="font-semibold">{processingTime}ms</span></div>
-        
-        <div>
-          <div className="text-sm font-semibold text-gray-700 mb-2">Top Results:</div>
-          <div className="space-y-1">
-            {topResults?.slice(0, 5).map((result: any, index: number) => (
-              <div key={index} className="text-xs">
-                <div className="font-semibold">{result.commonName}</div>
-                {result.scientificName && <div className="text-gray-500 italic">{result.scientificName}</div>}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  const getConnectionStatusColor = () => {
+    switch (connectionStatus) {
+      case 'connected': return 'text-green-600';
+      case 'disconnected': return 'text-red-600';
+      case 'error': return 'text-red-600';
+      default: return 'text-gray-600';
+    }
   };
 
-  const extractPlantIdResults = (logs: any[]) => {
-    const plantLog = logs.find(l => l.message.includes('Plant.id Provider Results'));
-    if (!plantLog?.data) return <div className="text-gray-500">No Plant.id results found</div>;
-
-    const { topResults, processingTime } = plantLog.data;
-    
-    return (
-      <div className="space-y-3">
-        <div className="text-sm text-gray-600">Processing Time: <span className="font-semibold">{processingTime}ms</span></div>
-        
-        <div>
-          <div className="text-sm font-semibold text-gray-700 mb-2">Top Results:</div>
-          <div className="space-y-1">
-            {topResults?.slice(0, 3).map((result: any, index: number) => (
-              <div key={index} className="flex justify-between text-xs">
-                <span>{result.name}</span>
-                <span className="font-semibold">{(result.confidence * 100).toFixed(1)}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const extractINatResults = (logs: any[]) => {
-    const inatLog = logs.find(l => l.message.includes('iNaturalist Provider Results'));
-    if (!inatLog?.data) return <div className="text-gray-500">No iNaturalist results found</div>;
-
-    const { topResults, processingTime } = inatLog.data;
-    
-    return (
-      <div className="space-y-3">
-        <div className="text-sm text-gray-600">Processing Time: <span className="font-semibold">{processingTime}ms</span></div>
-        
-        <div>
-          <div className="text-sm font-semibold text-gray-700 mb-2">Top Results:</div>
-          <div className="space-y-1">
-            {topResults?.slice(0, 3).map((result: any, index: number) => (
-              <div key={index} className="flex justify-between text-xs">
-                <span>{result.name}</span>
-                <span className="font-semibold">{(result.confidence * 100).toFixed(1)}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const extractScoringBreakdown = (logs: any[]) => {
-    const decisionLog = logs.find(l => l.message.includes('Decision Making'));
-    
-    if (!decisionLog?.data) return <div className="text-gray-500">No scoring breakdown found</div>;
-
-    const { mode, topCandidates, decisionReason } = decisionLog.data;
-    
-    return (
-      <div className="space-y-4">
-        <div className="bg-white p-3 rounded border">
-          <div className="text-sm font-semibold text-gray-700 mb-2">Final Decision:</div>
-          <div className="text-sm">
-            <span className="font-semibold">Mode:</span> {mode} | 
-            <span className="font-semibold ml-2">Reason:</span> {decisionReason}
-          </div>
-        </div>
-
-        <div>
-          <div className="text-sm font-semibold text-gray-700 mb-2">Top Candidates & Scores:</div>
-          <div className="space-y-2">
-            {topCandidates?.slice(0, 3).map((candidate: any, index: number) => (
-              <div key={index} className="bg-white p-3 rounded border">
-                <div className="text-sm font-semibold text-gray-900 mb-1">
-                  #{index + 1}: {candidate.commonName}
-                </div>
-                <div className="text-xs text-gray-600 mb-2">{candidate.scientificName}</div>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div>Vision: <span className="font-semibold">{(candidate.scores.vision * 100).toFixed(1)}%</span></div>
-                  <div>Web: <span className="font-semibold">{(candidate.scores.webGuess * 100).toFixed(1)}%</span></div>
-                  <div>KG: <span className="font-semibold">{(candidate.scores.kgMatch * 100).toFixed(1)}%</span></div>
-                  <div>Provider: <span className="font-semibold">{(candidate.scores.provider * 100).toFixed(1)}%</span></div>
-                  <div>Crop: <span className="font-semibold">{(candidate.scores.cropAgree * 100).toFixed(1)}%</span></div>
-                  <div>Total: <span className="font-semibold text-green-600">{((candidate.totalScore || 0) * 100).toFixed(1)}%</span></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Authentication screen
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center p-4">
-        <Card className="p-8 max-w-md w-full">
-          <Typography variant="h1" className="text-center mb-6">
-            🔐 Debug Access
-          </Typography>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Password</label>
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-6xl mx-auto">
+          <Card className="p-6">
+            <Typography variant="h1" className="mb-4">🔧 Debug Dashboard</Typography>
+            <Typography variant="body" className="mb-4">
+              Enter the debug password to access the dashboard:
+            </Typography>
+            <div className="flex gap-2">
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Enter debug password"
+                placeholder="Debug password"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <Button onClick={checkAuth}>
+                Access Dashboard
+              </Button>
             </div>
-            
-            <Button onClick={checkAuth} className="w-full">
-              🔓 Access Debug Panel
-            </Button>
-          </div>
-          
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-4 p-3 bg-blue-50 text-blue-700 text-sm rounded">
-              💡 Development mode: No password required
-            </div>
-          )}
-        </Card>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        <Typography variant="h1" className="text-center mb-8">
-          🐛 Recognition Pipeline Debug
-        </Typography>
-
-        {/* Error Display */}
-        {error && (
-          <Card className="mb-6 p-4 bg-red-50 border-red-200">
-            <Typography variant="body" className="text-red-700">
-              ❌ {error}
-            </Typography>
-          </Card>
-        )}
-
-        {/* Controls */}
-        <Card className="mb-6 p-4">
-          <div className="flex gap-4 flex-wrap">
-            <Button onClick={fetchLogs} disabled={loading}>
-              {loading ? 'Loading...' : '🔄 Refresh Logs'}
-            </Button>
-            <Button onClick={clearLogs} variant="outline">
-              🗑️ Clear Logs
-            </Button>
-            <Button onClick={exportLogs} variant="outline">
-              📥 Export Logs
-            </Button>
-            <div className="text-sm text-gray-600">
-              Environment: {process.env.NODE_ENV}
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <Card className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <Typography variant="h1">🔧 Debug Dashboard</Typography>
+            <div className="flex gap-2">
+              <Button onClick={testConnection} variant="outline">
+                Test Connection
+              </Button>
+              <Button onClick={fetchLogs} disabled={loading}>
+                {loading ? 'Loading...' : 'Refresh Logs'}
+              </Button>
+              <Button onClick={clearLogs} variant="destructive">
+                Clear All Logs
+              </Button>
             </div>
           </div>
-        </Card>
-
-        {/* Stats Overview */}
-        <Card className="mb-6 p-6">
-          <Typography variant="h2" className="mb-6 text-center">
-            📈 Recognition Performance Overview
-          </Typography>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg p-4 text-white text-center">
-              <div className="text-2xl font-bold">{sessionSummaries.length}</div>
-              <div className="text-sm">Total Sessions</div>
+          {/* Connection Status */}
+          <div className="flex items-center gap-4 mb-4">
+            <div className={`flex items-center gap-2 ${getConnectionStatusColor()}`}>
+              <div className={`w-3 h-3 rounded-full ${
+                connectionStatus === 'connected' ? 'bg-green-500' :
+                connectionStatus === 'disconnected' ? 'bg-red-500' :
+                connectionStatus === 'error' ? 'bg-red-500' : 'bg-gray-500'
+              }`} />
+              <span className="font-medium">
+                Database: {connectionStatus.toUpperCase()}
+              </span>
             </div>
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-4 text-white text-center">
-              <div className="text-2xl font-bold">{logs.length}</div>
-              <div className="text-sm">Log Entries</div>
-            </div>
-            <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg p-4 text-white text-center">
-              <div className="text-2xl font-bold">
-                {sessionSummaries.filter(s => s.status === 'success').length}
+            {error && (
+              <div className="text-red-600">
+                Error: {error}
               </div>
-              <div className="text-sm">Successful</div>
-            </div>
-            <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg p-4 text-white text-center">
-              <div className="text-2xl font-bold">
-                {sessionSummaries.filter(s => s.status === 'failed').length}
-              </div>
-              <div className="text-sm">Failed</div>
-            </div>
+            )}
           </div>
 
-          {/* Average Performance */}
-          {sessionSummaries.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="bg-gray-50 rounded-lg p-3 text-center">
-                <div className="text-lg font-semibold text-gray-900">
-                  {Math.round(sessionSummaries.reduce((sum, s) => sum + (s.duration || 0), 0) / sessionSummaries.length)}ms
+          {/* Test Results */}
+          {testResult && (
+            <div className="bg-blue-50 p-4 rounded-lg mb-4">
+              <Typography variant="h3" className="mb-2">Connection Test Results</Typography>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <strong>Database:</strong> {testResult.tests.databaseConnection ? '✅ Connected' : '❌ Disconnected'}
                 </div>
-                <div className="text-sm text-gray-600">Avg Response Time</div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3 text-center">
-                <div className="text-lg font-semibold text-gray-900">
-                  {Math.round(sessionSummaries.reduce((sum, s) => sum + (s.visionLabels || 0), 0) / sessionSummaries.length)}
+                <div>
+                  <strong>Logging:</strong> {testResult.tests.loggingTest ? '✅ Working' : '❌ Failed'}
                 </div>
-                <div className="text-sm text-gray-600">Avg Vision Labels</div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3 text-center">
-                <div className="text-lg font-semibold text-gray-900">
-                  {Math.round(sessionSummaries.reduce((sum, s) => sum + (s.imageSize || 0), 0) / sessionSummaries.length).toLocaleString()}
+                <div>
+                  <strong>Recent Logs:</strong> {testResult.tests.recentLogsCount}
                 </div>
-                <div className="text-sm text-gray-600">Avg Image Size</div>
+                <div>
+                  <strong>Environment:</strong> {testResult.environment}
+                </div>
               </div>
             </div>
           )}
         </Card>
 
         {/* Session Summaries */}
-        <Card className="mb-6 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <Typography variant="h2">
-              🔍 Recent Recognition Sessions ({sessionSummaries.length})
-            </Typography>
-            <div className="text-sm text-gray-500">
-              Showing last 20 sessions
-            </div>
-          </div>
+        <Card className="p-6">
+          <Typography variant="h2" className="mb-4">
+            Recognition Sessions ({sessionSummaries.length})
+          </Typography>
           
           {sessionSummaries.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🔍</div>
-              <Typography variant="h3" className="text-gray-500 mb-2">
-                No Recognition Sessions Found
-              </Typography>
-              <Typography variant="body" className="text-gray-400">
-                Try scanning an image to see recognition results here!
-              </Typography>
+            <div className="text-center py-8 text-gray-500">
+              No recognition sessions found. Try scanning an image to generate logs.
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {sessionSummaries.slice(0, 20).map((session, index) => (
-                <Card 
-                  key={session.sessionId} 
-                  className={`p-4 cursor-pointer transition-all hover:shadow-lg ${
-                    selectedSession === session.sessionId ? 'ring-2 ring-primary-500 bg-primary-50' : 'hover:bg-gray-50'
-                  }`}
+            <div className="space-y-2">
+              {sessionSummaries.map((session) => (
+                <div
+                  key={session.sessionId}
+                  className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
                   onClick={() => fetchSessionLogs(session.sessionId)}
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">#{index + 1}</span>
-                      <Typography variant="h3" className="text-sm font-mono text-gray-600">
-                        {session.sessionId.slice(-6)}
-                      </Typography>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      session.status === 'success' ? 'bg-green-100 text-green-800' :
-                      session.status === 'failed' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {session.status === 'success' ? '✅ Success' : 
-                       session.status === 'failed' ? '❌ Failed' : '⏳ Processing'}
-                    </span>
-                  </div>
-                  
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">🕒 Time:</span>
-                      <span className="font-medium">{new Date(session.startTime).toLocaleTimeString()}</span>
-                    </div>
-                    {session.duration && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">⏱️ Duration:</span>
-                        <span className={`font-medium ${session.duration > 5000 ? 'text-red-600' : session.duration > 3000 ? 'text-yellow-600' : 'text-green-600'}`}>
-                          {session.duration}ms
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`font-medium ${getStatusColor(session.status)}`}>
+                          {session.status.toUpperCase()}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {session.logCount} logs
                         </span>
                       </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">📏 Size:</span>
-                      <span className="font-medium">{session.imageSize ? (session.imageSize / 1024).toFixed(1) : '0'}KB</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">🏷️ Labels:</span>
-                      <span className="font-medium">{session.visionLabels}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">🎯 Decision:</span>
-                      <span className="font-medium">{session.decision || 'N/A'}</span>
-                    </div>
-                  </div>
-
-                  {session.error && (
-                    <div className="mt-3 p-2 bg-red-50 text-red-700 text-xs rounded border border-red-200">
-                      <div className="font-semibold">❌ Error:</div>
-                      <div className="truncate">{session.error}</div>
-                    </div>
-                  )}
-
-                  {session.finalResult && (
-                    <div className="mt-3 p-2 bg-green-50 text-green-700 text-xs rounded border border-green-200">
-                      <div className="font-semibold">✅ Result:</div>
-                      <div className="truncate">
-                        {session.finalResult.commonName || session.finalResult.canonicalName}
+                      <div className="text-sm text-gray-600">
+                        <div>Session: {session.sessionId}</div>
+                        <div>Started: {session.startTime ? new Date(session.startTime).toLocaleString() : 'Unknown'}</div>
+                        {session.duration && <div>Duration: {session.duration}ms</div>}
+                        {session.imageSize && <div>Image Size: {session.imageSize} bytes</div>}
+                        {session.error && <div className="text-red-600">Error: {session.error}</div>}
+                        {session.finalResult && (
+                          <div>
+                            Result: {session.finalResult.commonName || session.finalResult.canonicalName}
+                            (Confidence: {Math.round(session.finalResult.confidence * 100)}%)
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
-                </Card>
+                    <div className="text-xs text-gray-400">
+                      {new Date(session.lastActivity).toLocaleTimeString()}
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           )}
         </Card>
 
-        {/* API Results Analysis */}
+        {/* Session Logs */}
         {selectedSession && (
-          <Card className="mb-6 p-6">
-            <div className="flex justify-between items-center mb-6">
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
               <Typography variant="h2">
-                🔬 API Results Analysis: {selectedSession.slice(-8)}
+                Session Logs: {selectedSession}
               </Typography>
-              <button
+              <Button
                 onClick={() => setSelectedSession(null)}
-                className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
+                variant="outline"
+                size="sm"
               >
-                ✕ Close
-              </button>
+                Close
+              </Button>
             </div>
             
-            {sessionLogs.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <div className="text-4xl mb-2">📝</div>
-                <div>No detailed logs found for this session</div>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* API Performance Summary */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-                  <Typography variant="h3" className="mb-3 text-blue-900">
-                    ⚡ API Performance Summary
-                  </Typography>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {extractApiPerformance(sessionLogs).map((api, index) => (
-                      <div key={index} className="bg-white p-3 rounded border">
-                        <div className="text-sm font-semibold text-gray-700">{api.name}</div>
-                        <div className={`text-lg font-bold ${api.time > 2000 ? 'text-red-600' : api.time > 1000 ? 'text-yellow-600' : 'text-green-600'}`}>
-                          {api.time}ms
-                        </div>
-                        <div className="text-xs text-gray-500">{api.status}</div>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {sessionLogs.map((log, index) => (
+                <div key={log.id || index} className="border rounded p-3 bg-white">
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg">{getLevelEmoji(log.level)}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium text-gray-600">
+                          {getLevelName(log.level)}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* API Results Breakdown */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Google Vision Results */}
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
-                    <Typography variant="h3" className="mb-3 text-green-900">
-                      🔍 Google Vision Results
-                    </Typography>
-                    {extractVisionResults(sessionLogs)}
-                  </div>
-
-                  {/* Knowledge Graph Results */}
-                  <div className="bg-gradient-to-r from-purple-50 to-violet-50 p-4 rounded-lg border border-purple-200">
-                    <Typography variant="h3" className="mb-3 text-purple-900">
-                      🧠 Knowledge Graph Results
-                    </Typography>
-                    {extractKGResults(sessionLogs)}
-                  </div>
-
-                  {/* Plant.id Results */}
-                  <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-lg border border-emerald-200">
-                    <Typography variant="h3" className="mb-3 text-emerald-900">
-                      🌱 Plant.id Results
-                    </Typography>
-                    {extractPlantIdResults(sessionLogs)}
-                  </div>
-
-                  {/* iNaturalist Results */}
-                  <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 rounded-lg border border-orange-200">
-                    <Typography variant="h3" className="mb-3 text-orange-900">
-                      🌿 iNaturalist Results
-                    </Typography>
-                    {extractINatResults(sessionLogs)}
-                  </div>
-                </div>
-
-                {/* Scoring Breakdown */}
-                <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-lg border border-indigo-200">
-                  <Typography variant="h3" className="mb-3 text-indigo-900">
-                    🎯 Scoring Breakdown & Final Decision
-                  </Typography>
-                  {extractScoringBreakdown(sessionLogs)}
-                </div>
-
-                {/* Raw Logs */}
-                <div className="bg-gray-50 p-4 rounded-lg border">
-                  <Typography variant="h3" className="mb-3 text-gray-900">
-                    📋 Raw Logs
-                  </Typography>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {sessionLogs.map((log, index) => (
-                      <div key={`${log.timestamp}-${index}`} className="border-l-4 border-gray-300 pl-3 py-2 bg-white rounded-r">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm">{getLevelIcon(log.level)}</span>
-                          <span className={`text-xs font-semibold ${getLevelColor(log.level)}`}>
-                            {new Date(log.timestamp).toLocaleTimeString()}
-                          </span>
-                          <span className="text-xs text-gray-600">
-                            {log.message}
-                          </span>
+                      <div className="text-sm">{log.message}</div>
+                      {log.data && (
+                        <pre className="text-xs bg-gray-100 p-2 rounded mt-2 overflow-x-auto">
+                          {JSON.stringify(log.data, null, 2)}
+                        </pre>
+                      )}
+                      {log.error && (
+                        <div className="text-xs text-red-600 mt-1">
+                          Error: {log.error}
                         </div>
-                        
-                        {log.data && (
-                          <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto max-h-20 overflow-y-auto">
-                            {JSON.stringify(log.data, null, 2)}
-                          </pre>
-                        )}
-                      </div>
-                    ))}
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
           </Card>
         )}
 
         {/* All Logs */}
-        <Card className="p-4">
+        <Card className="p-6">
           <Typography variant="h2" className="mb-4">
-            📝 All Recognition Logs ({logs.length})
+            All Logs ({logs.length})
           </Typography>
           
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {logs.map((log, index) => (
-              <div key={`${log.timestamp}-${log.recognitionId}-${index}`} className="border-l-4 border-gray-200 pl-4 py-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm">{getLevelIcon(log.level)}</span>
-                  <span className={`text-sm font-medium ${getLevelColor(log.level)}`}>
-                    {new Date(log.timestamp).toLocaleTimeString()}
-                  </span>
-                  <span className="text-sm text-gray-500 font-mono">
-                    {log.recognitionId?.slice(-8)}
-                  </span>
-                  <span className="text-sm text-gray-600">
-                    {log.message}
-                  </span>
+              <div key={log.id || index} className="border rounded p-3 bg-white">
+                <div className="flex items-start gap-2">
+                  <span className="text-lg">{getLevelEmoji(log.level)}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium text-gray-600">
+                        {getLevelName(log.level)}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </span>
+                      {log.recognitionId && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          {log.recognitionId}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm">{log.message}</div>
+                    {log.data && (
+                      <pre className="text-xs bg-gray-100 p-2 rounded mt-2 overflow-x-auto">
+                        {JSON.stringify(log.data, null, 2)}
+                      </pre>
+                    )}
+                    {log.error && (
+                      <div className="text-xs text-red-600 mt-1">
+                        Error: {log.error}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                
-                {log.data && (
-                  <pre className="text-xs bg-gray-50 p-2 rounded mt-1 overflow-x-auto">
-                    {JSON.stringify(log.data, null, 2)}
-                  </pre>
-                )}
               </div>
             ))}
           </div>
