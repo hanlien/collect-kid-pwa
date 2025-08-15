@@ -42,7 +42,8 @@ export const collectRequestSchema = z.object({
   userId: z.string().min(1), // Changed from UUID to any non-empty string for profile IDs
   result: z.object({
     category: z.enum(['flower', 'bug', 'animal', 'mysterious']),
-    canonicalName: z.string(),
+    canonicalName: z.string().optional(), // AI router uses scientificName
+    scientificName: z.string().optional(), // AI router provides this
     commonName: z.string().optional(),
     rank: z.enum(['species', 'genus', 'family']).optional(),
     confidence: z.number().min(0).max(1),
@@ -57,6 +58,12 @@ export const collectRequestSchema = z.object({
       colorChips: z.array(z.string()).optional(),
       funFacts: z.array(z.string()).optional(),
     }).optional(),
+  }).transform((data) => {
+    // Transform AI router response to match expected format
+    return {
+      ...data,
+      canonicalName: data.canonicalName || data.scientificName || data.commonName || 'Unknown',
+    };
   }),
 });
 
