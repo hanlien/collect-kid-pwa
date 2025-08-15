@@ -118,7 +118,7 @@ export class AIRouter {
     
     try {
       // 1. Select the best model based on requirements
-      let selectedModel = this.selectModel(params);
+      const selectedModel = this.selectModel(params);
       
       if (!selectedModel) {
         throw new Error(`No suitable model found for budget $${params.budget} and capabilities: ${params.requiredCapabilities.join(', ')}`);

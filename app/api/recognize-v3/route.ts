@@ -376,19 +376,19 @@ async function runTraditionalPipeline(imageBase64: string, recognitionId?: strin
 
     // Knowledge Graph results
     if (parallelResults[resultIndex]) {
-      canonicalResults = parallelResults[resultIndex].results || [];
+      canonicalResults = parallelResults[resultIndex]!.results || [];
       resultIndex++;
     }
 
     // Plant.id results
     if (isPlant && parallelResults[resultIndex]) {
-      plantResults = parallelResults[resultIndex].results || [];
+      plantResults = parallelResults[resultIndex]!.results || [];
       resultIndex++;
     }
 
     // iNaturalist results
     if (parallelResults[resultIndex]) {
-      inatResults = parallelResults[resultIndex].results || [];
+      inatResults = parallelResults[resultIndex]!.results || [];
     }
 
     // Step 4: Score and decide
