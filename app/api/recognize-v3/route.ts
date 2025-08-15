@@ -112,7 +112,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
     let aiCost = 0;
     let aiTime = 0;
 
-    if (enableAIRouter && traditionalResults) {
+    // Run AI Router regardless of traditional results so we still get an answer
+    if (enableAIRouter) {
       logger.recognitionStep('ai_router_start', {
         budget: aiBudget,
         priority: aiPriority
