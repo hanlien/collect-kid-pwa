@@ -69,14 +69,15 @@ export async function POST(request: NextRequest) {
     const visionBundle: VisionBundle = visionData.visionBundle;
 
     // Log Vision API results
-    logger.visionResults(visionBundle, visionData.processingTime, { recognitionId });
-    logger.recognitionStep('vision_api_complete', {
+    await logger.recognitionStep('vision_api_results', {
       processingTime: visionData.processingTime,
-      labelCount: visionBundle.labels?.length || 0
+      labelCount: visionBundle.labels?.length || 0,
+      labels: visionBundle.labels?.slice(0, 5) || [],
+      webBestGuess: visionBundle.webBestGuess || []
     }, { recognitionId });
 
     // Step 2: Build candidate strings from Vision
-    logger.recognitionStep('candidate_strings_building', { step: 'Building candidate strings' }, { recognitionId });
+    await logger.recognitionStep('candidate_strings_building', { step: 'Building candidate strings' }, { recognitionId });
     console.log('🧠 Step 2: Building candidate strings...');
 
     const candidateStrings = [
@@ -85,23 +86,27 @@ export async function POST(request: NextRequest) {
       ...(visionBundle.cropLabels || []).map(l => l.desc),
     ].filter(Boolean);
 
-    logger.recognitionStep('candidate_strings_complete', {
+    await logger.recognitionStep('candidate_strings_complete', {
       totalStrings: candidateStrings.length,
       topStrings: candidateStrings.slice(0, 5)
     }, { recognitionId });
 
     // Step 3: Check plant gate and prepare parallel API calls
-    logger.recognitionStep('plant_gate_check', { step: 'Checking plant gate' }, { recognitionId });
+    await logger.recognitionStep('plant_gate_check', { step: 'Checking plant gate' }, { recognitionId });
     console.log('🌱 Step 3: Checking plant gate...');
 
     const isPlant = plantGate(visionBundle);
     const plantConfidence = getPlantConfidence(visionBundle);
 
     // Log plant gate decision
-    logger.plantGateDecision(isPlant, plantConfidence, { recognitionId });
+    await logger.recognitionStep('plant_gate_decision', {
+      isPlant,
+      plantConfidence,
+      decision: isPlant ? 'Will call Plant.id API' : 'Skipping Plant.id API'
+    }, { recognitionId });
 
     // Step 4: PARALLEL API CALLS - This is the key optimization!
-    logger.recognitionStep('parallel_api_calls', { step: 'Starting parallel API calls' }, { recognitionId });
+    await logger.recognitionStep('parallel_api_calls', { step: 'Starting parallel API calls' }, { recognitionId });
     console.log('⚡ Step 4: Making parallel API calls...');
 
     const parallelPromises: Promise<any>[] = [];
@@ -164,24 +169,51 @@ export async function POST(request: NextRequest) {
     // Knowledge Graph results (always first if candidateStrings exist)
     if (candidateStrings.length > 0 && parallelResults[resultIndex]) {
       canonicalResults = parallelResults[resultIndex].results || [];
-      logger.kgResults(canonicalResults, parallelResults[resultIndex].processingTime || 0, { recognitionId });
+      await logger.recognitionStep('kg_results', {
+        resultCount: canonicalResults.length,
+        topResults: canonicalResults.slice(0, 3).map(r => ({
+          commonName: r.commonName,
+          scientificName: r.scientificName,
+          kgId: r.kgId,
+          wikipediaTitle: r.wikipediaTitle
+        })),
+        processingTime: parallelResults[resultIndex].processingTime || 0
+      }, { recognitionId });
       resultIndex++;
     }
     
     // Plant.id results (if plant detected)
     if (isPlant && parallelResults[resultIndex]) {
       plantResults = parallelResults[resultIndex].results || [];
-      logger.providerResults('Plant.id', plantResults, parallelResults[resultIndex].processingTime || 0, { recognitionId });
+      await logger.recognitionStep('plantid_results', {
+        provider: 'Plant.id',
+        resultCount: plantResults.length,
+        topResults: plantResults.slice(0, 3).map(r => ({
+          name: r.scientificName || r.commonName,
+          confidence: r.confidence,
+          source: r.source
+        })),
+        processingTime: parallelResults[resultIndex].processingTime || 0
+      }, { recognitionId });
       resultIndex++;
     }
 
     // iNaturalist results (always last)
     if (candidateStrings.length > 0 && parallelResults[resultIndex]) {
       inatResults = parallelResults[resultIndex].results || [];
-      logger.providerResults('iNaturalist', inatResults, parallelResults[resultIndex].processingTime || 0, { recognitionId });
+      await logger.recognitionStep('inat_results', {
+        provider: 'iNaturalist',
+        resultCount: inatResults.length,
+        topResults: inatResults.slice(0, 3).map(r => ({
+          name: r.scientificName || r.commonName,
+          confidence: r.confidence,
+          source: r.source
+        })),
+        processingTime: parallelResults[resultIndex].processingTime || 0
+      }, { recognitionId });
     }
 
-    logger.recognitionStep('parallel_api_complete', {
+    await logger.recognitionStep('parallel_api_complete', {
       kgResults: canonicalResults.length,
       plantResults: plantResults.length,
       totalTime: Date.now() - startTime
@@ -190,7 +222,7 @@ export async function POST(request: NextRequest) {
     // Step 5: iNaturalist search is now done in parallel above
 
     // Step 6: Merge and deduplicate candidates
-    logger.recognitionStep('candidate_merging', { step: 'Merging candidates' }, { recognitionId });
+    await logger.recognitionStep('candidate_merging', { step: 'Merging candidates' }, { recognitionId });
     console.log('🔄 Step 6: Merging and deduplicating candidates...');
 
     const allProviderResults = [...plantResults, ...inatResults];
@@ -232,7 +264,13 @@ export async function POST(request: NextRequest) {
       }
 
       candidates.push(candidate);
-      logger.scoringDetails(candidate, { recognitionId });
+      await logger.recognitionStep('scoring_details', {
+        candidate: {
+          scientificName: candidate.scientificName,
+          commonName: candidate.commonName,
+          scores: candidate.scores
+        }
+      }, { recognitionId });
     }
 
     // Add provider-only candidates (not found in Knowledge Graph)
@@ -255,23 +293,45 @@ export async function POST(request: NextRequest) {
         };
 
         candidates.push(candidate);
-        logger.scoringDetails(candidate, { recognitionId });
+        await logger.recognitionStep('scoring_details', {
+          candidate: {
+            scientificName: candidate.scientificName,
+            commonName: candidate.commonName,
+            scores: candidate.scores
+          }
+        }, { recognitionId });
       }
     }
 
-    logger.candidateBuilding(candidates, { recognitionId });
-    logger.recognitionStep('candidate_merging_complete', {
+    await logger.recognitionStep('candidate_building', {
+      totalCandidates: candidates.length,
+      candidates: candidates.map(c => ({
+        scientificName: c.scientificName,
+        commonName: c.commonName,
+        scores: c.scores
+      }))
+    }, { recognitionId });
+    await logger.recognitionStep('candidate_merging_complete', {
       totalCandidates: candidates.length,
       canonicalCandidates: canonicalResults.length,
       providerCandidates: allProviderResults.length
     }, { recognitionId });
 
     // Step 7: Make decision
-    logger.recognitionStep('decision_making', { step: 'Making decision' }, { recognitionId });
+    await logger.recognitionStep('decision_making', { step: 'Making decision' }, { recognitionId });
     console.log('🎯 Step 7: Making final decision...');
 
     const decision = decide(candidates, 0.15);
-    logger.decisionMaking(decision, 0.15, { recognitionId });
+    await logger.recognitionStep('decision_making', {
+      mode: decision.mode,
+      margin: 0.15,
+      topCandidates: decision.mode === 'pick' ? 
+        [decision.pick] : 
+        decision.top3?.slice(0, 3),
+      decisionReason: decision.mode === 'pick' ? 
+        'High confidence single result' : 
+        'Multiple candidates, showing top 3 for disambiguation'
+    }, { recognitionId });
 
     // Step 8: Return response
     const totalTime = Date.now() - startTime;
@@ -285,12 +345,12 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    logger.recognitionSuccess(result, totalTime, { recognitionId });
+    await logger.recognitionSuccess(result, totalTime, { recognitionId });
 
     return NextResponse.json(result);
 
   } catch (error) {
-    logger.recognitionError(error as Error, { recognitionId });
+    await logger.recognitionError(error as Error, { recognitionId });
     return NextResponse.json(
       { 
         success: false, 

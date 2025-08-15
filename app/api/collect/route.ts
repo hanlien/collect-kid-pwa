@@ -142,12 +142,12 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    logger.collectionSuccess(speciesResult, coinsEarned, { userId });
+    await logger.collectionSuccess(speciesResult, coinsEarned, { userId });
     apiCall.end(response);
     
     return NextResponse.json(response);
   } catch (error) {
-    logger.collectionError(error as Error, { userId: userId || 'unknown' });
+    await logger.collectionError(error as Error, { userId: userId || 'unknown' });
     apiCall.end(undefined, error as Error);
     
     return NextResponse.json(
