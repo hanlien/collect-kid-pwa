@@ -54,26 +54,27 @@ export const AI_MODELS: AIModel[] = [
     visionSupport: true,
     kidFriendly: false
   },
-  {
-    name: 'claude-3-sonnet-20240229',
-    provider: 'anthropic',
-    capabilities: ['vision', 'text', 'accurate', 'kidFriendly'],
-    costPerToken: 0.008, // $0.008 per 1K tokens
-    maxTokens: 4096,
-    avgResponseTime: 2500,
-    visionSupport: true,
-    kidFriendly: true
-  },
-  {
-    name: 'claude-3-haiku-20240307',
-    provider: 'anthropic',
-    capabilities: ['vision', 'text', 'fast', 'cheap'],
-    costPerToken: 0.00025, // $0.00025 per 1K tokens
-    maxTokens: 4096,
-    avgResponseTime: 1000,
-    visionSupport: true,
-    kidFriendly: false
-  }
+  // Anthropic models temporarily disabled - add when needed
+  // {
+  //   name: 'claude-3-sonnet-20240229',
+  //   provider: 'anthropic',
+  //   capabilities: ['vision', 'text', 'accurate', 'kidFriendly'],
+  //   costPerToken: 0.008, // $0.008 per 1K tokens
+  //   maxTokens: 4096,
+  //   avgResponseTime: 2500,
+  //   visionSupport: true,
+  //   kidFriendly: true
+  // },
+  // {
+  //   name: 'claude-3-haiku-20240307',
+  //   provider: 'anthropic',
+  //   capabilities: ['vision', 'text', 'fast', 'cheap'],
+  //   costPerToken: 0.00025, // $0.00025 per 1K tokens
+  //   maxTokens: 4096,
+  //   avgResponseTime: 1000,
+  //   visionSupport: true,
+  //   kidFriendly: false
+  // }
 ];
 
 // LLM Request Parameters
