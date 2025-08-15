@@ -438,7 +438,17 @@ async function runTraditionalPipeline(imageBase64: string, recognitionId?: strin
       };
     }
 
-    return null;
+    // Return the decision for debugging even if it's not a pick
+    return {
+      decision,
+      candidates: scoredCandidates,
+      debug: {
+        visionBundle,
+        allCandidates,
+        scoredCandidates,
+        decision
+      }
+    };
 
   } catch (error) {
     console.error('🔍 [DEBUG] Traditional pipeline error:', error);
