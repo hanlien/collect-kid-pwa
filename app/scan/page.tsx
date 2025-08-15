@@ -370,14 +370,13 @@ export default function ScanPage() {
       recognitionId = logger.recognitionStart(base64Image.length);
       logger.recognitionStep('sending_request', { imageSize: base64Image.length }, { recognitionId });
       
-      // Call new hybrid recognition API (v3) with AI router
-      const response = await fetch('/api/recognize-v3', {
+      // Call AI-only recognition API
+      const response = await fetch('/api/recognize-llm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           imageBase64: base64Image,
-          enableAIRouter: true,
-          aiBudget: 0.05,
+          aiBudget: 0.08,
           aiPriority: 'accuracy'
         }),
       });
