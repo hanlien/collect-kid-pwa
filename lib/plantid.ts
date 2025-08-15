@@ -4,7 +4,13 @@ export async function getPlantIdResults(imageBase64: string): Promise<{ results:
   const startTime = Date.now();
   
   try {
-    const response = await fetch('/api/plantid', {
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:3000' 
+        : 'http://localhost:3000';
+    
+    const response = await fetch(`${baseUrl}/api/plantid`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageBase64 })

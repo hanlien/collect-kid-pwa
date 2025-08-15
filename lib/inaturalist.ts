@@ -4,7 +4,13 @@ export async function getINaturalistResults(queries: string[]): Promise<{ result
   const startTime = Date.now();
   
   try {
-    const response = await fetch('/api/inat/search', {
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:3000' 
+        : 'http://localhost:3000';
+    
+    const response = await fetch(`${baseUrl}/api/inat/search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ queries })

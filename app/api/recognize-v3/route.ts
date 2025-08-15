@@ -60,6 +60,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
   const startTime = Date.now();
   const recognitionId = `recognition-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   
+  console.log('🔍 [DEBUG] Starting recognition v3...');
+  
   try {
     const { imageBase64, lat, lon, enableAIRouter = true, aiBudget = 0.05, aiPriority = 'accuracy' }: RecognitionV3Request = await request.json();
 
@@ -93,7 +95,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
     logger.recognitionStep('traditional_pipeline_start', {}, { recognitionId });
     
     const traditionalStartTime = Date.now();
+    console.log('🔍 [DEBUG] About to call runTraditionalPipeline...');
     const traditionalResults = await runTraditionalPipeline(imageBase64, recognitionId);
+    console.log('🔍 [DEBUG] Traditional results returned:', traditionalResults);
     const traditionalTime = Date.now() - traditionalStartTime;
     const traditionalCost = 0.012; // Estimated cost for traditional pipeline
 
@@ -311,11 +315,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
 }
 
 async function runTraditionalPipeline(imageBase64: string, recognitionId?: string) {
+  console.log('🔍 [DEBUG] Starting traditional pipeline...');
   try {
     // Step 1: Google Vision for quick labels
+    console.log('🔍 [DEBUG] Calling getVisionLabels...');
     const visionStartTime = Date.now();
     const visionBundle = await getVisionLabels(imageBase64);
     const visionTime = Date.now() - visionStartTime;
+
+    console.log('🔍 [DEBUG] Vision bundle:', JSON.stringify(visionBundle, null, 2));
 
     logger.recognitionStep('vision_complete', {
       labels: visionBundle.labels?.length || 0,
@@ -325,6 +333,7 @@ async function runTraditionalPipeline(imageBase64: string, recognitionId?: strin
 
     // Step 2: Check if it's a plant
     const isPlant = plantGate(visionBundle);
+    console.log('🔍 [DEBUG] Is plant:', isPlant);
     
     // Step 3: Parallel API calls
     const parallelPromises = [];
@@ -366,6 +375,7 @@ async function runTraditionalPipeline(imageBase64: string, recognitionId?: strin
 
     // Wait for all parallel API calls
     const parallelResults = await Promise.all(parallelPromises);
+    console.log('🔍 [DEBUG] Parallel results:', JSON.stringify(parallelResults, null, 2));
 
     // Extract results
     let canonicalResults: any[] = [];
@@ -426,6 +436,7 @@ async function runTraditionalPipeline(imageBase64: string, recognitionId?: strin
     return null;
 
   } catch (error) {
+    console.error('🔍 [DEBUG] Traditional pipeline error:', error);
     logger.recognitionStep('traditional_pipeline_error', {
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { recognitionId });
