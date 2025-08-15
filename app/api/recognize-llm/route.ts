@@ -13,9 +13,10 @@ function looseExtractFromFreeform(content: string): { commonName: string; confid
   const matches = Array.from(text.matchAll(/\b(?:a|an|the)\s+([a-z][a-z\-]+(?:\s+[a-z][a-z\-]+){0,3})/g)).map(m => m[1]);
   const stop = new Set(['animal','creature','thing','photo','image','picture','background','scene','nature']);
   const candidates = matches
+    .filter((p): p is string => Boolean(p))
     .map(p => p.trim())
     .filter(p => p.split(' ').every(w => !stop.has(w)));
-  let guess = candidates.find(p => p.includes('panda') || p.includes('rose') || p.includes('flower') || p.includes('bird') || p.includes('butterfly') || p.includes('dog') || p.includes('cat'))
+  const guess = candidates.find(p => p.includes('panda') || p.includes('rose') || p.includes('flower') || p.includes('bird') || p.includes('butterfly') || p.includes('dog') || p.includes('cat'))
             || candidates[0];
   if (!guess) return null;
   const commonName = guess.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
