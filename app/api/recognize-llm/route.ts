@@ -141,8 +141,13 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    logger.recognitionStep('llm_only_error', { error: error instanceof Error ? error.message : 'Unknown' });
-    return NextResponse.json({ success: false, error: 'LLM recognition failed' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.recognitionStep('llm_only_error', { error: errorMessage }, { recognitionId });
+    return NextResponse.json({ 
+      success: false, 
+      error: `LLM recognition failed: ${errorMessage}`,
+      details: error instanceof Error ? error.stack : undefined
+    }, { status: 500 });
   }
 }
 
