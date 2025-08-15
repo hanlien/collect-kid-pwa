@@ -171,8 +171,8 @@ export function scoreCandidates(
 
     // Create a proper Candidate object
     const scoredCandidate: Candidate = {
-      commonName: candidate.commonName || candidate.name,
-      scientificName: candidate.scientificName || candidate.scientific_name,
+      commonName: candidate.commonName || candidate.name || 'Unknown',
+      scientificName: candidate.scientificName || candidate.scientific_name || 'Unknown',
       scores,
       totalScore: candidate.confidence || 0.5
     };
