@@ -15,19 +15,9 @@ export interface AIModel {
 // Available AI Models
 export const AI_MODELS: AIModel[] = [
   {
-    name: 'gpt-4-vision-preview',
-    provider: 'openai',
-    capabilities: ['vision', 'text', 'accurate', 'kidFriendly'],
-    costPerToken: 0.01, // $0.01 per 1K tokens
-    maxTokens: 4096,
-    avgResponseTime: 3000,
-    visionSupport: true,
-    kidFriendly: true
-  },
-  {
     name: 'gpt-4o',
     provider: 'openai',
-    capabilities: ['vision', 'text', 'fast', 'accurate'],
+    capabilities: ['vision', 'text', 'fast', 'accurate', 'kidFriendly'],
     costPerToken: 0.005, // $0.005 per 1K tokens
     maxTokens: 4096,
     avgResponseTime: 2000,
