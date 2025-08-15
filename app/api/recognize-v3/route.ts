@@ -141,7 +141,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
         // Parse AI response
         const structuredData = extractStructuredData(aiResponse.content);
         
-        if (structuredData && validateAIResponse(aiResponse.content)) {
+        // Validate the extracted JSON, not the raw content
+        if (structuredData && validateAIResponse(JSON.stringify(structuredData))) {
           aiResults = {
             commonName: structuredData.commonName,
             scientificName: structuredData.scientificName,
@@ -167,10 +168,35 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
           }, { recognitionId });
 
         } else {
-          logger.recognitionStep('ai_router_invalid_response', {
-            content: aiResponse.content.substring(0, 200) + '...',
-            model: aiResponse.model
-          }, { recognitionId });
+          // Heuristic fallback for freeform text responses
+          const fallback = looseExtractFromFreeform(aiResponse.content);
+          if (fallback) {
+            aiResults = {
+              commonName: fallback.commonName,
+              scientificName: '',
+              confidence: fallback.confidence,
+              category: fallback.category,
+              funFacts: [],
+              safetyNotes: '',
+              habitat: '',
+              identification: '',
+              educationalValue: '',
+              provider: 'ai-router',
+              model: aiResponse.model,
+              cost: aiCost,
+              responseTime: aiTime
+            };
+            logger.recognitionStep('ai_router_loose_parse', {
+              guess: fallback.commonName,
+              confidence: fallback.confidence,
+              model: aiResponse.model
+            }, { recognitionId });
+          } else {
+            logger.recognitionStep('ai_router_invalid_response', {
+              content: aiResponse.content.substring(0, 200) + '...',
+              model: aiResponse.model
+            }, { recognitionId });
+          }
         }
 
       } catch (aiError) {
@@ -458,4 +484,25 @@ async function runTraditionalPipeline(imageBase64: string, recognitionId?: strin
     }, { recognitionId });
     return null;
   }
+}
+
+// Very small heuristic to salvage a species/common name from freeform LLM text
+function looseExtractFromFreeform(content: string): { commonName: string; confidence: number; category: 'plant' | 'animal' | 'bug' | 'mysterious' } | null {
+  if (!content) return null;
+  const text = content.toLowerCase();
+  const matches = Array.from(text.matchAll(/\b(?:a|an|the)\s+([a-z][a-z\-]+(?:\s+[a-z][a-z\-]+){0,3})/g)).map(m => m[1]);
+  const stop = new Set(['animal','creature','thing','photo','image','picture','background','scene','nature']);
+  const candidates = matches
+    .map(p => p.trim())
+    .filter(p => p.split(' ').every(w => !stop.has(w)))
+    .map(p => p.replace(/\bred\s+panda\b/,'red panda'));
+  let guess = candidates.find(p => p.includes('panda') || p.includes('rose') || p.includes('flower') || p.includes('bird') || p.includes('butterfly') || p.includes('dog') || p.includes('cat'))
+            || candidates[0];
+  if (!guess) return null;
+  const commonName = guess.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const category: 'plant' | 'animal' | 'bug' | 'mysterious' =
+    /rose|flower|tree|plant/.test(guess) ? 'plant' :
+    /butterfly|bee|ant|ladybug|beetle|dragonfly|spider/.test(guess) ? 'bug' :
+    /panda|dog|cat|bird|heron|jay|fox|bear|deer|fish|frog|lizard/.test(guess) ? 'animal' : 'mysterious';
+  return { commonName, confidence: 0.6, category };
 }
