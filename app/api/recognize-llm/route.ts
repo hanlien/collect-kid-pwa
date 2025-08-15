@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   const start = Date.now();
   const recognitionId = `llm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   try {
-    const { imageBase64, aiBudget = 0.08, aiPriority = 'accuracy' }: { imageBase64: string; aiBudget?: number; aiPriority?: 'speed' | 'accuracy' | 'cost' } = await request.json();
+    const { imageBase64, aiBudget = 0.08, aiPriority = 'speed' }: { imageBase64: string; aiBudget?: number; aiPriority?: 'speed' | 'accuracy' | 'cost' } = await request.json();
 
     if (!imageBase64) {
       return NextResponse.json({ success: false, error: 'No image provided' }, { status: 400 });
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       prompt: PROMPT_TEMPLATES.speciesIdentification,
       budget: aiBudget,
       priority: aiPriority,
-      requiredCapabilities: ['vision', 'text', 'accurate', 'kidFriendly'],
+      requiredCapabilities: ['vision', 'text', 'kidFriendly'],
       maxTokens: 1200,
       temperature: 0.6,
       recognitionId
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
         prompt: PROMPT_TEMPLATES.quickIdentification,
         budget: Math.max(0.02, aiBudget * 0.4),
         priority: aiPriority,
-        requiredCapabilities: ['vision', 'text', 'accurate'],
+        requiredCapabilities: ['vision', 'text'],
         maxTokens: 400,
         temperature: 0.5,
         recognitionId

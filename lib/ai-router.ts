@@ -15,26 +15,6 @@ export interface AIModel {
 // Available AI Models
 export const AI_MODELS: AIModel[] = [
   {
-    name: 'gpt-4o',
-    provider: 'openai',
-    capabilities: ['vision', 'text', 'fast', 'accurate', 'kidFriendly'],
-    costPerToken: 0.005, // $0.005 per 1K tokens
-    maxTokens: 4096,
-    avgResponseTime: 2000,
-    visionSupport: true,
-    kidFriendly: true
-  },
-  {
-    name: 'gemini-1.5-pro',
-    provider: 'google',
-    capabilities: ['vision', 'text', 'fast', 'cheap'],
-    costPerToken: 0.00375, // $0.00375 per 1K tokens
-    maxTokens: 8192,
-    avgResponseTime: 1500,
-    visionSupport: true,
-    kidFriendly: true
-  },
-  {
     name: 'gemini-1.5-flash',
     provider: 'google',
     capabilities: ['vision', 'text', 'fast', 'cheap'],
@@ -43,6 +23,26 @@ export const AI_MODELS: AIModel[] = [
     avgResponseTime: 800,
     visionSupport: true,
     kidFriendly: false
+  },
+  {
+    name: 'gemini-1.5-pro',
+    provider: 'google',
+    capabilities: ['vision', 'text', 'fast', 'cheap', 'kidFriendly'],
+    costPerToken: 0.00375, // $0.00375 per 1K tokens
+    maxTokens: 8192,
+    avgResponseTime: 1500,
+    visionSupport: true,
+    kidFriendly: true
+  },
+  {
+    name: 'gpt-4o',
+    provider: 'openai',
+    capabilities: ['vision', 'text', 'fast', 'accurate', 'kidFriendly'],
+    costPerToken: 0.005, // $0.005 per 1K tokens
+    maxTokens: 4096,
+    avgResponseTime: 2000,
+    visionSupport: true,
+    kidFriendly: true
   },
   // Anthropic models temporarily disabled - add when needed
   // {
@@ -230,8 +230,11 @@ export class AIRouter {
       return null;
     }
 
+    // For recognition, prioritize speed by default
+    const effectivePriority = params.priority === 'accuracy' ? 'speed' : params.priority;
+
     // Sort by priority
-    switch (params.priority) {
+    switch (effectivePriority as 'speed' | 'accuracy' | 'cost') {
       case 'speed':
         return candidates.sort((a, b) => a.avgResponseTime - b.avgResponseTime)[0] || null;
       
