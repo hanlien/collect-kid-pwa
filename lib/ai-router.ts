@@ -284,7 +284,7 @@ export class AIRouter {
       });
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GOOGLE_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GOOGLE_KNOWLEDGE_GRAPH_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

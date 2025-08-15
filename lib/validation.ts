@@ -8,7 +8,7 @@ export const envSchema = z.object({
   
   // AI Router Providers (Phase 6)
   OPENAI_API_KEY: z.string().min(1).optional(),
-  GOOGLE_API_KEY: z.string().min(1).optional(),
+  GOOGLE_API_KEY: z.string().min(1).optional(), // Uses GOOGLE_KNOWLEDGE_GRAPH_API_KEY
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
   
   // AI Router Cost Controls (Phase 6)
