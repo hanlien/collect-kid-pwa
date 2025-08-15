@@ -301,7 +301,6 @@ export default function DebugPage() {
 
   const extractScoringBreakdown = (logs: any[]) => {
     const decisionLog = logs.find(l => l.message.includes('Decision Making'));
-    const candidateLog = logs.find(l => l.message.includes('Candidate Building'));
     
     if (!decisionLog?.data) return <div className="text-gray-500">No scoring breakdown found</div>;
 
