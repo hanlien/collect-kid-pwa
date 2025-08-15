@@ -43,7 +43,6 @@ try {
 }
 
 class Logger {
-  private isProduction = process.env.NODE_ENV === 'production';
   private deploymentId = process.env.VERCEL_GIT_COMMIT_SHA || 'local';
 
   constructor() {
