@@ -5,6 +5,17 @@ export const envSchema = z.object({
   PLANT_ID_API_KEY: z.string().min(1),
   GOOGLE_APPLICATION_CREDENTIALS_JSON: z.string().min(1),
   GOOGLE_KNOWLEDGE_GRAPH_API_KEY: z.string().min(1),
+  
+  // AI Router Providers (Phase 6)
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  GOOGLE_API_KEY: z.string().min(1).optional(),
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  
+  // AI Router Cost Controls (Phase 6)
+  AI_ROUTER_MAX_DAILY_COST: z.string().transform(Number).pipe(z.number().positive()).optional(),
+  AI_ROUTER_DEFAULT_BUDGET: z.string().transform(Number).pipe(z.number().positive()).optional(),
+  AI_ROUTER_DEFAULT_PRIORITY: z.enum(['speed', 'accuracy', 'cost']).optional(),
+  
   SUPABASE_URL: z.string().url().optional().or(z.literal('')),
   SUPABASE_ANON_KEY: z.string().min(1).optional().or(z.literal('')),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional().or(z.literal('')),
@@ -18,6 +29,15 @@ export const recognizeRequestSchema = z.object({
   hint: z.enum(['auto', 'flower', 'bug', 'animal']).default('auto'),
 });
 
+export const recognizeV3RequestSchema = z.object({
+  imageBase64: z.string().min(1),
+  lat: z.number().optional(),
+  lon: z.number().optional(),
+  enableAIRouter: z.boolean().optional(),
+  aiBudget: z.number().positive().optional(),
+  aiPriority: z.enum(['speed', 'accuracy', 'cost']).optional(),
+});
+
 export const collectRequestSchema = z.object({
   userId: z.string().min(1), // Changed from UUID to any non-empty string for profile IDs
   result: z.object({
@@ -26,7 +46,7 @@ export const collectRequestSchema = z.object({
     commonName: z.string().optional(),
     rank: z.enum(['species', 'genus', 'family']).optional(),
     confidence: z.number().min(0).max(1),
-    provider: z.enum(['plantid', 'gcv', 'inaturalist', 'multi-signal']),
+    provider: z.enum(['plantid', 'gcv', 'inaturalist', 'multi-signal', 'ai-router']),
     gbifKey: z.number().optional(),
     capturedImageUrl: z.string().optional(),
     wiki: z.object({
@@ -57,6 +77,12 @@ export function validateEnv() {
         PLANT_ID_API_KEY: 'placeholder',
         GOOGLE_APPLICATION_CREDENTIALS_JSON: '{"type":"service_account"}',
         GOOGLE_KNOWLEDGE_GRAPH_API_KEY: 'placeholder',
+        OPENAI_API_KEY: 'placeholder',
+        GOOGLE_API_KEY: 'placeholder',
+        ANTHROPIC_API_KEY: 'placeholder',
+        AI_ROUTER_MAX_DAILY_COST: 5.00,
+        AI_ROUTER_DEFAULT_BUDGET: 0.05,
+        AI_ROUTER_DEFAULT_PRIORITY: 'accuracy',
         SUPABASE_URL: 'https://placeholder.supabase.co',
         SUPABASE_ANON_KEY: 'placeholder',
         SUPABASE_SERVICE_ROLE_KEY: 'placeholder',

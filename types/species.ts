@@ -1,5 +1,5 @@
 export type Category = 'flower' | 'bug' | 'animal' | 'mysterious';
-export type Provider = 'plantid' | 'gcv' | 'local' | 'inaturalist' | 'multi-signal';
+export type Provider = 'plantid' | 'gcv' | 'local' | 'inaturalist' | 'multi-signal' | 'ai-router';
 
 export type SpeciesResult = {
   category: Category;
@@ -12,6 +12,24 @@ export type SpeciesResult = {
   wiki?: { summary?: string; imageUrl?: string };
   ui?: { colorChips?: string[]; funFacts?: string[] };
   capturedImageUrl?: string; // URL of the captured image
+  
+  // AI Router specific fields (Phase 6)
+  funFacts?: string[];
+  safetyNotes?: string;
+  habitat?: string;
+  identification?: string;
+  educationalValue?: string;
+  debug?: {
+    traditionalResults?: any;
+    aiResults?: any;
+    processingTime?: number;
+    costs?: {
+      traditional: number;
+      ai: number;
+      total: number;
+    };
+  };
+  
   meta?: {
     modelVersion?: string;
     reasoning?: string;

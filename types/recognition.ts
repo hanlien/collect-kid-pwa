@@ -34,6 +34,7 @@ export type Candidate = {
   commonName?: string | undefined;
   kgId?: string | undefined;
   wikipediaTitle?: string | undefined;
+  wikipediaSummary?: WikiCard | undefined;
   scores: {
     vision?: number | undefined;
     webGuess?: number | undefined;

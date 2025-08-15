@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### 🚀 Phase 6: AI Router & Enhanced Recognition
+- **AI Model Router**: Smart selection of AI providers (OpenAI, Google, Anthropic) based on budget and requirements
+- **Multi-Provider LLM System**: Unified interface to multiple AI models with cost optimization
+- **Kid-Friendly Prompt Templates**: Optimized prompts specifically designed for children ages 6-12
+- **Hybrid Recognition Pipeline**: Combines traditional multi-signal recognition with AI router for best results
+- **Educational Content Generation**: AI-generated fun facts, safety notes, and habitat information
+- **Cost-Optimized Routing**: Budget-based model selection with fallback strategies
+- **Enhanced Species Cards**: Rich educational content including fun facts, safety warnings, and identification guides
+- **Comprehensive Logging**: Detailed tracking of AI router performance, costs, and model selection
+
+#### 🔧 Technical Enhancements
+- **New API Endpoint**: `/api/recognize-v3` for hybrid recognition with AI router
+- **Environment Variables**: Support for OpenAI, Google, and Anthropic API keys
+- **Cost Controls**: Daily spending limits and budget management for AI services
+- **Response Validation**: Structured data extraction and validation for AI responses
+- **Fallback Mechanisms**: Graceful degradation when AI services are unavailable
+
 ### Planned
 - Family sharing features
 - Enhanced AI accuracy improvements

@@ -155,6 +155,32 @@ function calculateEducationalValue(commonName: string, _scientificName: string):
   return 1.0; // No boost for low educational value
 }
 
+export function scoreCandidates(
+  candidates: any[]
+): Candidate[] {
+  return candidates.map(candidate => {
+    // Calculate scores based on available data
+    const scores = {
+      vision: candidate.visionScore || 0,
+      webGuess: candidate.webGuessScore || 0,
+      kgMatch: candidate.kgMatchScore || 0,
+      provider: candidate.providerScore || 0,
+      cropAgree: candidate.cropAgreeScore || 0,
+      habitatTime: candidate.habitatTimeScore || 0
+    };
+
+    // Create a proper Candidate object
+    const scoredCandidate: Candidate = {
+      commonName: candidate.commonName || candidate.name,
+      scientificName: candidate.scientificName || candidate.scientific_name,
+      scores,
+      totalScore: candidate.confidence || 0.5
+    };
+
+    return scoredCandidate;
+  });
+}
+
 export function decide(
   candidates: Candidate[], 
   margin: number = 0.15

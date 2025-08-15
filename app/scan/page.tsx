@@ -370,11 +370,16 @@ export default function ScanPage() {
       recognitionId = logger.recognitionStart(base64Image.length);
       logger.recognitionStep('sending_request', { imageSize: base64Image.length }, { recognitionId });
       
-      // Call new multi-signal recognition API
-      const response = await fetch('/api/recognize-v2', {
+      // Call new hybrid recognition API (v3) with AI router
+      const response = await fetch('/api/recognize-v3', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64Image }),
+        body: JSON.stringify({ 
+          imageBase64: base64Image,
+          enableAIRouter: true,
+          aiBudget: 0.05,
+          aiPriority: 'accuracy'
+        }),
       });
 
       const data = await response.json();
@@ -404,25 +409,41 @@ export default function ScanPage() {
         // Single species identified with high confidence
         const candidate = decision.pick;
         result = {
-          canonicalName: candidate.scientificName,
-          commonName: candidate.commonName || candidate.scientificName,
-          category: 'mysterious', // Default category, will be refined
-          confidence: candidate.totalScore || 0.8,
-          provider: 'multi-signal',
+          canonicalName: candidate.scientificName || candidate.canonicalName,
+          commonName: candidate.commonName,
+          category: candidate.category || 'mysterious',
+          confidence: candidate.confidence || candidate.totalScore || 0.8,
+          provider: candidate.provider || 'ai-router',
           rank: 'species',
           capturedImageUrl: `captured-image-${Date.now()}`,
+          // Add AI-specific fields if available
+          funFacts: candidate.funFacts,
+          safetyNotes: candidate.safetyNotes,
+          habitat: candidate.habitat,
+          identification: candidate.identification,
+          educationalValue: candidate.educationalValue,
+          // Add debug info if available
+          debug: decision.debug
         };
       } else if (decision.mode === 'disambiguate' && decision.top3) {
         // Multiple candidates - use the top one for now
         const topCandidate = decision.top3[0];
         result = {
-          canonicalName: topCandidate.scientificName,
-          commonName: topCandidate.commonName || topCandidate.scientificName,
-          category: 'mysterious', // Default category, will be refined
-          confidence: topCandidate.totalScore || 0.6,
-          provider: 'multi-signal',
+          canonicalName: topCandidate.scientificName || topCandidate.canonicalName,
+          commonName: topCandidate.commonName,
+          category: topCandidate.category || 'mysterious',
+          confidence: topCandidate.confidence || topCandidate.totalScore || 0.6,
+          provider: topCandidate.provider || 'ai-router',
           rank: 'species',
           capturedImageUrl: `captured-image-${Date.now()}`,
+          // Add AI-specific fields if available
+          funFacts: topCandidate.funFacts,
+          safetyNotes: topCandidate.safetyNotes,
+          habitat: topCandidate.habitat,
+          identification: topCandidate.identification,
+          educationalValue: topCandidate.educationalValue,
+          // Add debug info if available
+          debug: decision.debug
         };
       } else if (decision.mode === 'no_match') {
         // No species detected by online recognition, try local model as fallback
