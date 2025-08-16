@@ -66,12 +66,6 @@ export default function DebugPage() {
     checkAuth();
   }, [checkAuth]);
 
-  useEffect(() => {
-    if (isAuthorized) {
-      fetchLogs();
-    }
-  }, [isAuthorized]);
-
   const testConnection = async () => {
     if (!isAuthorized) return;
     
@@ -118,6 +112,12 @@ export default function DebugPage() {
       setLoading(false);
     }
   }, [isAuthorized]);
+
+  useEffect(() => {
+    if (isAuthorized) {
+      fetchLogs();
+    }
+  }, [isAuthorized, fetchLogs]);
 
   const fetchSessionLogs = async (sessionId: string) => {
     if (!isAuthorized) return;
@@ -171,16 +171,6 @@ export default function DebugPage() {
       case 2: return '⚠️';
       case 3: return '❌';
       default: return '📝';
-    }
-  };
-
-  const getLevelName = (level: number) => {
-    switch (level) {
-      case 0: return 'DEBUG';
-      case 1: return 'INFO';
-      case 2: return 'WARN';
-      case 3: return 'ERROR';
-      default: return 'UNKNOWN';
     }
   };
 
