@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const password = searchParams.get('password');
 
     // Simple password protection
-    const DEBUG_PASSWORD = process.env.NEXT_PUBLIC_DEBUG_PASSWORD || 'brandon2024';
+    const DEBUG_PASSWORD = process.env.NEXT_PUBLIC_DEBUG_PASSWORD || 'brandon2025';
     if (password !== DEBUG_PASSWORD) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

@@ -64,7 +64,7 @@ export default function DebugPage() {
   const [connectionStatus, setConnectionStatus] = useState<string>('unknown');
 
   // Simple password protection for production
-  const DEBUG_PASSWORD = process.env.NEXT_PUBLIC_DEBUG_PASSWORD || 'brandon2024';
+  const DEBUG_PASSWORD = process.env.NEXT_PUBLIC_DEBUG_PASSWORD || 'brandon2025';
 
   const checkAuth = useCallback(() => {
     if (process.env.NODE_ENV === 'development') {
