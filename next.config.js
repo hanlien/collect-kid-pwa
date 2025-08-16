@@ -24,6 +24,11 @@ const nextConfig = {
     },
   },
   
+  // Expose app version to the client
+  env: {
+    NEXT_PUBLIC_APP_VERSION: require('./package.json').version,
+  },
+  
   // Fix build trace collection issues
   outputFileTracing: true,
   

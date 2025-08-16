@@ -45,6 +45,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const version = process.env.NEXT_PUBLIC_APP_VERSION;
   return (
     <html lang="en">
       <head>
@@ -73,6 +74,15 @@ export default function RootLayout({
       <body className={inter.className}>
         <PWAProvider>
           <div className="min-h-screen flex flex-col">
+            {/* Discreet version badge in the bottom-right corner */}
+            {version && (
+              <div
+                aria-label={`Version ${version}`}
+                className="pointer-events-none fixed bottom-2 right-2 z-50 text-[10px] text-gray-500 bg-white/70 backdrop-blur px-2 py-1 rounded-full shadow"
+              >
+                v{version}
+              </div>
+            )}
             {children}
           </div>
         </PWAProvider>

@@ -1,3 +1,20 @@
+## Changelog
+
+All notable changes to this project will be documented in this file.
+
+### 2.0.1 - 2025-08-16
+- Debug dashboard: simplified visual UI with final result, AI model info, and processing steps
+- Fixed AI-only recognition logging and dashboard status extraction
+- Minor TypeScript and lint fixes
+
+### 2.0.0 - 2025-08-16
+- Major redesign of Debug Dashboard with grid layout and server-side progress saving
+- Added AI router logs and recognition session summaries
+- Infrastructure and performance improvements
+
+### 1.x
+- Initial versions
+
 # Changelog
 
 All notable changes to Backyard Brandon will be documented in this file.
