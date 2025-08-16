@@ -216,6 +216,24 @@ export default function DebugPage() {
       }
       if (log.message.includes('llm_only_success') && log.data) {
         llmResults.confidence = log.data.confidence;
+        llmResults.model = log.data.model;
+        llmResults.provider = 'ai-router';
+        // For AI-only, we might not have cost/tokens in the success log
+        if (!llmResults.cost && log.data.cost) {
+          llmResults.cost = log.data.cost;
+        }
+        if (!llmResults.responseTime && log.data.responseTime) {
+          llmResults.responseTime = log.data.responseTime;
+        }
+      }
+      // Also check for ai_router_model_selected for model info
+      if (log.message.includes('ai_router_model_selected') && log.data) {
+        if (!llmResults.model) {
+          llmResults.model = log.data.model;
+        }
+        if (!llmResults.provider) {
+          llmResults.provider = log.data.provider;
+        }
       }
     });
     
@@ -254,6 +272,11 @@ export default function DebugPage() {
       if (log.message.includes('ai_only_success') && log.data) {
         decision.provider = log.data.provider;
         decision.confidence = log.data.confidence;
+      }
+      if (log.message.includes('llm_only_success') && log.data) {
+        decision.provider = 'ai-router';
+        decision.confidence = log.data.confidence;
+        decision.model = log.data.model;
       }
     });
     

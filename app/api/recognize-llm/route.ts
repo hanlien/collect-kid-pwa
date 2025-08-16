@@ -125,6 +125,20 @@ export async function POST(request: NextRequest) {
 
     const total = Date.now() - start;
     if (pick) {
+      // Log the final successful result
+      await logger.recognitionStep('llm_only_final_success', {
+        result: {
+          commonName: pick.commonName,
+          scientificName: pick.scientificName,
+          confidence: pick.confidence,
+          category: pick.category,
+          provider: pick.provider,
+          model: pick.model
+        },
+        processingTime: total,
+        cost: pick.cost
+      }, { recognitionId });
+      
       return NextResponse.json({
         success: true,
         decision: {

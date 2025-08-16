@@ -42,26 +42,74 @@ export async function GET(request: NextRequest) {
 
     // Create a summary of each recognition session
     const sessionSummaries = Object.entries(groupedLogs).map(([sessionId, sessionLogs]) => {
-      const startLog = sessionLogs.find(log => log.message.includes('Recognition Pipeline Started'));
-      const successLog = sessionLogs.find(log => log.message.includes('Recognition Successful'));
-      const errorLog = sessionLogs.find(log => log.message.includes('Recognition Failed'));
+      const startLog = sessionLogs.find(log => log.message.includes('Recognition Pipeline Started') || log.message.includes('llm_only_start'));
+      const successLog = sessionLogs.find(log => 
+        log.message.includes('Recognition Successful') || 
+        log.message.includes('llm_only_success') ||
+        log.message.includes('llm_only_final_success') ||
+        log.message.includes('hybrid_success') ||
+        log.message.includes('ai_only_success')
+      );
+      const errorLog = sessionLogs.find(log => 
+        log.message.includes('Recognition Failed') || 
+        log.message.includes('llm_only_error') ||
+        log.message.includes('both_systems_failed')
+      );
       
       const visionLog = sessionLogs.find(log => log.message.includes('Vision API Results'));
       const decisionLog = sessionLogs.find(log => log.message.includes('Decision Making'));
+      const llmSuccessLog = sessionLogs.find(log => log.message.includes('llm_only_success'));
+      
+      // Calculate duration from start to success or last log
+      let duration;
+      if (startLog && successLog) {
+        duration = new Date(successLog.timestamp).getTime() - new Date(startLog.timestamp).getTime();
+      } else if (startLog && sessionLogs.length > 0) {
+        const lastLog = sessionLogs[0]; // Logs are ordered by timestamp desc
+        duration = new Date(lastLog.timestamp).getTime() - new Date(startLog.timestamp).getTime();
+      }
+      
+      // Determine status
+      let status = 'in_progress';
+      if (errorLog) {
+        status = 'failed';
+      } else if (successLog || llmSuccessLog) {
+        status = 'success';
+      }
+      
+      // Extract final result from various log types
+      let finalResult = null;
+      if (successLog?.data?.result) {
+        finalResult = successLog.data.result;
+      } else if (llmSuccessLog?.data) {
+        // For AI-only results, construct the result from log data
+        finalResult = {
+          commonName: llmSuccessLog.data.commonName || 'Unknown',
+          scientificName: llmSuccessLog.data.scientificName || '',
+          confidence: llmSuccessLog.data.confidence || 0.6,
+          category: llmSuccessLog.data.category || 'mysterious',
+          provider: 'ai-router',
+          model: llmSuccessLog.data.model
+        };
+      }
+      
+      // Also check for the final success log
+      const finalSuccessLog = sessionLogs.find(log => log.message.includes('llm_only_final_success'));
+      if (finalSuccessLog?.data?.result) {
+        finalResult = finalSuccessLog.data.result;
+      }
       
       return {
         sessionId,
         startTime: startLog?.timestamp,
-        duration: startLog && successLog ? 
-          new Date(successLog.timestamp).getTime() - new Date(startLog.timestamp).getTime() : 
-          undefined,
-        status: errorLog ? 'failed' : successLog ? 'success' : 'in_progress',
+        duration,
+        status,
         imageSize: startLog?.data?.imageSize,
         visionLabels: visionLog?.data?.labels?.length || 0,
         decision: decisionLog?.data?.mode,
         logCount: sessionLogs.length,
-        error: errorLog?.data?.details || errorLog?.error?.message,
-        finalResult: successLog?.data?.result
+        error: errorLog?.data?.details || errorLog?.error?.message || errorLog?.data?.error,
+        finalResult
       };
     });
 
