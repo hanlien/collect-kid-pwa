@@ -34,8 +34,8 @@ export default function ProfileSelector({ isOpen, onClose, onProfileSwitch }: Pr
     }
   }, [isOpen, loadProfiles]);
 
-  const handleProfileSwitch = (profile: Profile) => {
-    profileManager.switchProfile(profile.id);
+  const handleProfileSwitch = async (profile: Profile) => {
+    await profileManager.switchProfileWithSync(profile.id);
     setCurrentProfile(profile);
     onProfileSwitch(profile);
     onClose();

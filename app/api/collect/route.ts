@@ -145,6 +145,14 @@ export async function POST(request: NextRequest) {
     await logger.collectionSuccess(speciesResult, coinsEarned, { userId });
     apiCall.end(response);
     
+    // Sync progress to server
+    try {
+      const profileManager = ProfileManager.getInstance();
+      await profileManager.syncProgressToServer();
+    } catch (error) {
+      console.error('Failed to sync progress after collection:', error);
+    }
+    
     return NextResponse.json(response);
   } catch (error) {
     await logger.collectionError(error as Error, { userId: userId || 'unknown' });

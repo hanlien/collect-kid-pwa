@@ -179,6 +179,10 @@ class ProfileManager {
 
     // Update profile stats
     this.updateProfileStats(newCapture);
+    
+    // Sync to server
+    this.syncProgressToServer();
+    
     return newCapture;
   }
 
@@ -235,6 +239,9 @@ class ProfileManager {
     this.saveBadges(badges);
     
     console.log('Badges after saving:', this.getBadges());
+    
+    // Sync to server
+    this.syncProgressToServer();
     
     return newBadge;
   }
@@ -403,6 +410,76 @@ class ProfileManager {
     };
 
     return JSON.stringify(data, null, 2);
+  }
+
+  // Server-side progress synchronization
+  async syncProgressToServer(): Promise<void> {
+    try {
+      const profile = this.getCurrentProfile();
+      const captures = this.getCaptures();
+      const badges = this.getBadges();
+
+      const progressData = {
+        profileId: profile.id,
+        collections: captures,
+        badges: badges,
+        coins: profile.coins,
+        level: profile.level,
+        experience: profile.totalCaptures * 10, // Simple XP calculation
+      };
+
+      const response = await fetch('/api/progress/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(progressData),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to sync progress to server');
+      } else {
+        console.log('Progress synced to server successfully');
+      }
+    } catch (error) {
+      console.error('Error syncing progress to server:', error);
+    }
+  }
+
+  async loadProgressFromServer(): Promise<void> {
+    try {
+      const profile = this.getCurrentProfile();
+      
+      const response = await fetch(`/api/progress/save?profileId=${profile.id}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          // Update local storage with server data
+          this.saveCaptures(data.data.collections || []);
+          this.saveBadges(data.data.badges || []);
+          
+          // Update profile stats
+          this.updateProfile(profile.id, {
+            coins: data.data.coins || 0,
+            level: data.data.level || 1,
+          });
+          
+          console.log('Progress loaded from server successfully');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading progress from server:', error);
+    }
+  }
+
+  // Auto-sync on profile switch
+  async switchProfileWithSync(profileId: string): Promise<boolean> {
+    const success = this.switchProfile(profileId);
+    if (success) {
+      await this.loadProgressFromServer();
+    }
+    return success;
   }
 }
 

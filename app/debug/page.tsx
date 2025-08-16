@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Typography } from '@/components/ui/Typography';
 
 interface LogEntry {
@@ -12,74 +12,67 @@ interface LogEntry {
   message: string;
   data?: any;
   error?: string;
-  recognitionId?: string;
+  userId?: string;
+  sessionId?: string;
+  requestId?: string;
   api?: string;
   duration?: number;
+  environment?: string;
+  deployment?: string;
+  recognitionId?: string;
 }
 
 interface SessionSummary {
   sessionId: string;
-  startTime: string;
+  startTime?: string;
   duration?: number;
-  status: 'failed' | 'success' | 'in_progress';
+  status: string;
   imageSize?: number;
   logCount: number;
   error?: string;
   finalResult?: any;
-  lastActivity: string;
-}
-
-interface DebugTestResult {
-  success: boolean;
-  timestamp: string;
-  environment: string;
-  tests: {
-    databaseConnection: boolean;
-    loggingTest: boolean;
-    recentLogsCount: number;
-  };
-  environmentVariables: {
-    supabaseUrl: boolean;
-    supabaseServiceKey: boolean;
-    supabaseAnonKey: boolean;
-    nodeEnv: string;
-  };
-  recentLogs: Array<{
-    timestamp: string;
-    message: string;
-    level: number;
-  }>;
+  lastActivity?: string;
+  llmResults?: any;
+  scoring?: any;
+  decision?: any;
 }
 
 export default function DebugPage() {
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [password, setPassword] = useState('brandon2025');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [sessionSummaries, setSessionSummaries] = useState<SessionSummary[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [sessionLogs, setSessionLogs] = useState<LogEntry[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [password, setPassword] = useState('');
-  const [testResult, setTestResult] = useState<DebugTestResult | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<string>('unknown');
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState('unknown');
+  const [testResult, setTestResult] = useState<any>(null);
 
   // Simple password protection for production
   const DEBUG_PASSWORD = process.env.NEXT_PUBLIC_DEBUG_PASSWORD || 'brandon2025';
 
   const checkAuth = useCallback(() => {
+    // In development, always allow access
     if (process.env.NODE_ENV === 'development') {
       setIsAuthorized(true);
-    } else {
-      // In production, require password
-      setIsAuthorized(password === DEBUG_PASSWORD);
+      return;
     }
+    // In production, require password
+    setIsAuthorized(password === DEBUG_PASSWORD);
   }, [password, DEBUG_PASSWORD]);
 
   useEffect(() => {
     checkAuth();
-  }, [password, checkAuth]);
+  }, [checkAuth]);
 
-  const testConnection = useCallback(async () => {
+  useEffect(() => {
+    if (isAuthorized) {
+      fetchLogs();
+    }
+  }, [isAuthorized]);
+
+  const testConnection = async () => {
     if (!isAuthorized) return;
     
     try {
@@ -88,7 +81,7 @@ export default function DebugPage() {
       
       if (data.success) {
         setTestResult(data);
-        setConnectionStatus(data.tests.databaseConnection ? 'connected' : 'disconnected');
+        setConnectionStatus('connected');
       } else {
         setError(data.error || 'Connection test failed');
         setConnectionStatus('error');
@@ -98,7 +91,7 @@ export default function DebugPage() {
       setError('Connection test failed');
       setConnectionStatus('error');
     }
-  }, [isAuthorized, password]);
+  };
 
   const fetchLogs = useCallback(async () => {
     if (!isAuthorized) return;
@@ -124,7 +117,7 @@ export default function DebugPage() {
     } finally {
       setLoading(false);
     }
-  }, [isAuthorized, password]);
+  }, [isAuthorized]);
 
   const fetchSessionLogs = async (sessionId: string) => {
     if (!isAuthorized) return;
@@ -148,7 +141,7 @@ export default function DebugPage() {
   const clearLogs = async () => {
     if (!isAuthorized) return;
     
-    if (!confirm('Are you sure you want to clear all logs?')) return;
+    if (!window.confirm('Are you sure you want to clear all logs?')) return;
     
     try {
       const response = await fetch(`/api/logs-recognition`, {
@@ -161,7 +154,7 @@ export default function DebugPage() {
         setSessionSummaries([]);
         setSessionLogs([]);
         setSelectedSession(null);
-        alert('All logs cleared successfully');
+        window.alert('All logs cleared successfully');
       } else {
         setError(data.error || 'Failed to clear logs');
       }
@@ -209,6 +202,64 @@ export default function DebugPage() {
     }
   };
 
+  // Extract LLM results from session logs
+  const extractLLMResults = (sessionLogs: LogEntry[]) => {
+    const llmResults: any = {};
+    
+    sessionLogs.forEach(log => {
+      if (log.message.includes('ai_router_complete') && log.data) {
+        llmResults.model = log.data.model;
+        llmResults.provider = log.data.provider;
+        llmResults.cost = log.data.actualCost;
+        llmResults.responseTime = log.data.responseTime;
+        llmResults.tokens = log.data.tokens;
+      }
+      if (log.message.includes('llm_only_success') && log.data) {
+        llmResults.confidence = log.data.confidence;
+      }
+    });
+    
+    return llmResults;
+  };
+
+  // Extract scoring information
+  const extractScoring = (sessionLogs: LogEntry[]) => {
+    const scoring: any = {};
+    
+    sessionLogs.forEach(log => {
+      if (log.message.includes('scoring_details') && log.data?.candidate) {
+        scoring.candidate = log.data.candidate;
+      }
+      if (log.message.includes('decision_making') && log.data) {
+        scoring.mode = log.data.mode;
+        scoring.margin = log.data.margin;
+        scoring.topCandidates = log.data.topCandidates;
+      }
+    });
+    
+    return scoring;
+  };
+
+  // Extract decision information
+  const extractDecision = (sessionLogs: LogEntry[]) => {
+    const decision: any = {};
+    
+    sessionLogs.forEach(log => {
+      if (log.message.includes('hybrid_success') && log.data) {
+        decision.finalProvider = log.data.finalProvider;
+        decision.backupProvider = log.data.backupProvider;
+        decision.aiConfidence = log.data.aiConfidence;
+        decision.traditionalConfidence = log.data.traditionalConfidence;
+      }
+      if (log.message.includes('ai_only_success') && log.data) {
+        decision.provider = log.data.provider;
+        decision.confidence = log.data.confidence;
+      }
+    });
+    
+    return decision;
+  };
+
   if (!isAuthorized) {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
@@ -238,7 +289,7 @@ export default function DebugPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
@@ -250,9 +301,9 @@ export default function DebugPage() {
               <Button onClick={fetchLogs} disabled={loading}>
                 {loading ? 'Loading...' : 'Refresh Logs'}
               </Button>
-                             <Button onClick={clearLogs} variant="danger">
-                 Clear All Logs
-               </Button>
+              <Button onClick={clearLogs} variant="danger">
+                Clear All Logs
+              </Button>
             </div>
           </div>
           
@@ -297,73 +348,152 @@ export default function DebugPage() {
           )}
         </Card>
 
-        {/* Session Summaries */}
-        <Card className="p-6">
-          <Typography variant="h2" className="mb-4">
-            Recognition Sessions ({sessionSummaries.length})
-          </Typography>
-          
-          {sessionSummaries.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No recognition sessions found. Try scanning an image to generate logs.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {sessionSummaries.map((session) => (
-                <div
-                  key={session.sessionId}
-                  className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => fetchSessionLogs(session.sessionId)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`font-medium ${getStatusColor(session.status)}`}>
+        {/* Recognition Sessions Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Sessions */}
+          <Card className="p-6">
+            <Typography variant="h2" className="mb-4">
+              Recent Recognition Sessions ({sessionSummaries.length})
+            </Typography>
+            
+            {sessionSummaries.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No recognition sessions found. Try scanning an image to generate logs.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sessionSummaries.slice(0, 10).map((session) => (
+                  <div
+                    key={session.sessionId}
+                    className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => fetchSessionLogs(session.sessionId)}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(session.status)}`}>
                           {session.status.toUpperCase()}
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-xs text-gray-500">
                           {session.logCount} logs
                         </span>
                       </div>
-                      <div className="text-sm text-gray-600">
-                        <div>Session: {session.sessionId}</div>
-                        <div>Started: {session.startTime ? new Date(session.startTime).toLocaleString() : 'Unknown'}</div>
-                        {session.duration && <div>Duration: {session.duration}ms</div>}
-                        {session.imageSize && <div>Image Size: {session.imageSize} bytes</div>}
-                        {session.error && <div className="text-red-600">Error: {session.error}</div>}
-                        {session.finalResult && (
-                          <div>
-                            Result: {session.finalResult.commonName || session.finalResult.canonicalName}
-                            (Confidence: {Math.round(session.finalResult.confidence * 100)}%)
-                          </div>
-                        )}
-                      </div>
+                                             <span className="text-xs text-gray-400">
+                         {session.lastActivity ? new Date(session.lastActivity).toLocaleTimeString() : 'Unknown'}
+                       </span>
                     </div>
-                    <div className="text-xs text-gray-400">
-                      {new Date(session.lastActivity).toLocaleTimeString()}
+                    
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <div className="font-mono text-xs">{session.sessionId}</div>
+                      {session.duration && (
+                        <div>⏱️ Duration: {session.duration}ms</div>
+                      )}
+                      {session.finalResult && (
+                        <div className="font-medium text-green-700">
+                          🎯 Result: {session.finalResult.commonName || session.finalResult.canonicalName}
+                          {session.finalResult.confidence && (
+                            <span className="text-xs ml-2">
+                              ({Math.round(session.finalResult.confidence * 100)}%)
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+                ))}
+              </div>
+            )}
+          </Card>
 
-        {/* Session Logs */}
+          {/* Session Details */}
+          {selectedSession && (
+            <Card className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <Typography variant="h2">
+                  Session Analysis: {selectedSession.slice(0, 20)}...
+                </Typography>
+                <Button
+                  onClick={() => setSelectedSession(null)}
+                  variant="outline"
+                  size="sm"
+                >
+                  Close
+                </Button>
+              </div>
+              
+              {sessionLogs.length > 0 && (
+                <div className="space-y-4">
+                  {/* LLM Results */}
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <Typography variant="h3" className="mb-2 text-blue-800">🤖 LLM Results</Typography>
+                    {(() => {
+                      const llmResults = extractLLMResults(sessionLogs);
+                      return Object.keys(llmResults).length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          {llmResults.model && <div><strong>Model:</strong> {llmResults.model}</div>}
+                          {llmResults.provider && <div><strong>Provider:</strong> {llmResults.provider}</div>}
+                          {llmResults.confidence && <div><strong>Confidence:</strong> {Math.round(llmResults.confidence * 100)}%</div>}
+                          {llmResults.cost && <div><strong>Cost:</strong> ${llmResults.cost.toFixed(6)}</div>}
+                          {llmResults.responseTime && <div><strong>Response Time:</strong> {llmResults.responseTime}ms</div>}
+                          {llmResults.tokens && <div><strong>Tokens:</strong> {llmResults.tokens}</div>}
+                        </div>
+                      ) : (
+                        <div className="text-gray-500">No LLM results found</div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Scoring */}
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <Typography variant="h3" className="mb-2 text-green-800">📊 Scoring</Typography>
+                    {(() => {
+                      const scoring = extractScoring(sessionLogs);
+                      return Object.keys(scoring).length > 0 ? (
+                        <div className="space-y-2 text-sm">
+                          {scoring.mode && <div><strong>Decision Mode:</strong> {scoring.mode}</div>}
+                          {scoring.margin && <div><strong>Margin:</strong> {scoring.margin}</div>}
+                          {scoring.candidate && (
+                            <div>
+                              <strong>Top Candidate:</strong> {scoring.candidate.commonName || scoring.candidate.scientificName}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-gray-500">No scoring data found</div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Final Decision */}
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <Typography variant="h3" className="mb-2 text-purple-800">🎯 Final Decision</Typography>
+                    {(() => {
+                      const decision = extractDecision(sessionLogs);
+                      return Object.keys(decision).length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          {decision.finalProvider && <div><strong>Primary:</strong> {decision.finalProvider}</div>}
+                          {decision.backupProvider && <div><strong>Backup:</strong> {decision.backupProvider}</div>}
+                          {decision.provider && <div><strong>Provider:</strong> {decision.provider}</div>}
+                          {decision.confidence && <div><strong>Confidence:</strong> {Math.round(decision.confidence * 100)}%</div>}
+                          {decision.aiConfidence && <div><strong>AI Confidence:</strong> {Math.round(decision.aiConfidence * 100)}%</div>}
+                          {decision.traditionalConfidence && <div><strong>Traditional:</strong> {Math.round(decision.traditionalConfidence * 100)}%</div>}
+                        </div>
+                      ) : (
+                        <div className="text-gray-500">No decision data found</div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+            </Card>
+          )}
+        </div>
+
+        {/* Detailed Logs */}
         {selectedSession && (
           <Card className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <Typography variant="h2">
-                Session Logs: {selectedSession}
-              </Typography>
-              <Button
-                onClick={() => setSelectedSession(null)}
-                variant="outline"
-                size="sm"
-              >
-                Close
-              </Button>
-            </div>
+            <Typography variant="h2" className="mb-4">
+              Detailed Logs: {selectedSession}
+            </Typography>
             
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {sessionLogs.map((log, index) => (
@@ -398,46 +528,45 @@ export default function DebugPage() {
           </Card>
         )}
 
-        {/* All Logs */}
+        {/* All Logs Summary */}
         <Card className="p-6">
           <Typography variant="h2" className="mb-4">
-            All Logs ({logs.length})
+            All Logs Summary ({logs.length})
           </Typography>
           
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {logs.map((log, index) => (
-              <div key={log.id || index} className="border rounded p-3 bg-white">
-                <div className="flex items-start gap-2">
-                  <span className="text-lg">{getLevelEmoji(log.level)}</span>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-gray-600">
-                        {getLevelName(log.level)}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {new Date(log.timestamp).toLocaleString()}
-                      </span>
-                      {log.recognitionId && (
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                          {log.recognitionId}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm">{log.message}</div>
-                    {log.data && (
-                      <pre className="text-xs bg-gray-100 p-2 rounded mt-2 overflow-x-auto">
-                        {JSON.stringify(log.data, null, 2)}
-                      </pre>
-                    )}
-                    {log.error && (
-                      <div className="text-xs text-red-600 mt-1">
-                        Error: {log.error}
-                      </div>
-                    )}
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{logs.length}</div>
+              <div className="text-sm text-blue-800">Total Logs</div>
+            </div>
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">
+                {logs.filter(log => log.level === 0).length}
               </div>
-            ))}
+              <div className="text-sm text-green-800">Debug Logs</div>
+            </div>
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-yellow-600">
+                {logs.filter(log => log.level === 1).length}
+              </div>
+              <div className="text-sm text-yellow-800">Info Logs</div>
+            </div>
+            <div className="bg-orange-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-orange-600">
+                {logs.filter(log => log.level === 2).length}
+              </div>
+              <div className="text-sm text-orange-800">Warning Logs</div>
+            </div>
+            <div className="bg-red-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-red-600">
+                {logs.filter(log => log.level === 3).length}
+              </div>
+              <div className="text-sm text-red-800">Error Logs</div>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">{sessionSummaries.length}</div>
+              <div className="text-sm text-purple-800">Recognition Sessions</div>
+            </div>
           </div>
         </Card>
       </div>
