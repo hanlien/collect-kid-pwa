@@ -186,10 +186,10 @@ export default function DebugPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'success': return 'text-green-600';
-      case 'failed': return 'text-red-600';
-      case 'in_progress': return 'text-yellow-600';
-      default: return 'text-gray-600';
+      case 'success': return 'text-green-600 bg-green-100';
+      case 'failed': return 'text-red-600 bg-red-100';
+      case 'in_progress': return 'text-yellow-600 bg-yellow-100';
+      default: return 'text-gray-600 bg-gray-100';
     }
   };
 
@@ -218,7 +218,6 @@ export default function DebugPage() {
         llmResults.confidence = log.data.confidence;
         llmResults.model = log.data.model;
         llmResults.provider = 'ai-router';
-        // For AI-only, we might not have cost/tokens in the success log
         if (!llmResults.cost && log.data.cost) {
           llmResults.cost = log.data.cost;
         }
@@ -226,7 +225,6 @@ export default function DebugPage() {
           llmResults.responseTime = log.data.responseTime;
         }
       }
-      // Also check for ai_router_model_selected for model info
       if (log.message.includes('ai_router_model_selected') && log.data) {
         if (!llmResults.model) {
           llmResults.model = log.data.model;
@@ -240,53 +238,32 @@ export default function DebugPage() {
     return llmResults;
   };
 
-  // Extract scoring information
-  const extractScoring = (sessionLogs: LogEntry[]) => {
-    const scoring: any = {};
+  // Extract final result from session logs
+  const extractFinalResult = (sessionLogs: LogEntry[]) => {
+    let finalResult: any = null;
     
     sessionLogs.forEach(log => {
-      if (log.message.includes('scoring_details') && log.data?.candidate) {
-        scoring.candidate = log.data.candidate;
-      }
-      if (log.message.includes('decision_making') && log.data) {
-        scoring.mode = log.data.mode;
-        scoring.margin = log.data.margin;
-        scoring.topCandidates = log.data.topCandidates;
+      if (log.message.includes('llm_only_final_success') && log.data?.result) {
+        finalResult = log.data.result;
+      } else if (log.message.includes('llm_only_success') && log.data) {
+        finalResult = {
+          commonName: log.data.commonName || 'Unknown',
+          scientificName: log.data.scientificName || '',
+          confidence: log.data.confidence || 0.6,
+          category: log.data.category || 'mysterious',
+          provider: 'ai-router',
+          model: log.data.model
+        };
       }
     });
     
-    return scoring;
-  };
-
-  // Extract decision information
-  const extractDecision = (sessionLogs: LogEntry[]) => {
-    const decision: any = {};
-    
-    sessionLogs.forEach(log => {
-      if (log.message.includes('hybrid_success') && log.data) {
-        decision.finalProvider = log.data.finalProvider;
-        decision.backupProvider = log.data.backupProvider;
-        decision.aiConfidence = log.data.aiConfidence;
-        decision.traditionalConfidence = log.data.traditionalConfidence;
-      }
-      if (log.message.includes('ai_only_success') && log.data) {
-        decision.provider = log.data.provider;
-        decision.confidence = log.data.confidence;
-      }
-      if (log.message.includes('llm_only_success') && log.data) {
-        decision.provider = 'ai-router';
-        decision.confidence = log.data.confidence;
-        decision.model = log.data.model;
-      }
-    });
-    
-    return decision;
+    return finalResult;
   };
 
   if (!isAuthorized) {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <Card className="p-6">
             <Typography variant="h1" className="mb-4">🔧 Debug Dashboard</Typography>
             <Typography variant="body" className="mb-4">
@@ -312,7 +289,7 @@ export default function DebugPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
@@ -371,224 +348,176 @@ export default function DebugPage() {
           )}
         </Card>
 
-        {/* Recognition Sessions Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Sessions */}
-          <Card className="p-6">
-            <Typography variant="h2" className="mb-4">
-              Recent Recognition Sessions ({sessionSummaries.length})
-            </Typography>
-            
-            {sessionSummaries.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No recognition sessions found. Try scanning an image to generate logs.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {sessionSummaries.slice(0, 10).map((session) => (
-                  <div
-                    key={session.sessionId}
-                    className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => fetchSessionLogs(session.sessionId)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(session.status)}`}>
-                          {session.status.toUpperCase()}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {session.logCount} logs
-                        </span>
-                      </div>
-                                             <span className="text-xs text-gray-400">
-                         {session.lastActivity ? new Date(session.lastActivity).toLocaleTimeString() : 'Unknown'}
-                       </span>
-                    </div>
-                    
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <div className="font-mono text-xs">{session.sessionId}</div>
-                      {session.duration && (
-                        <div>⏱️ Duration: {session.duration}ms</div>
-                      )}
-                      {session.finalResult && (
-                        <div className="font-medium text-green-700">
-                          🎯 Result: {session.finalResult.commonName || session.finalResult.canonicalName}
-                          {session.finalResult.confidence && (
-                            <span className="text-xs ml-2">
-                              ({Math.round(session.finalResult.confidence * 100)}%)
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          {/* Session Details */}
-          {selectedSession && (
-            <Card className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <Typography variant="h2">
-                  Session Analysis: {selectedSession.slice(0, 20)}...
-                </Typography>
-                <Button
-                  onClick={() => setSelectedSession(null)}
-                  variant="outline"
-                  size="sm"
+        {/* Recent Sessions */}
+        <Card className="p-6">
+          <Typography variant="h2" className="mb-4">
+            Recent Recognition Sessions ({sessionSummaries.length})
+          </Typography>
+          
+          {sessionSummaries.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No recognition sessions found. Try scanning an image to generate logs.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {sessionSummaries.slice(0, 5).map((session) => (
+                <div
+                  key={session.sessionId}
+                  className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => fetchSessionLogs(session.sessionId)}
                 >
-                  Close
-                </Button>
-              </div>
-              
-              {sessionLogs.length > 0 && (
-                <div className="space-y-4">
-                  {/* LLM Results */}
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <Typography variant="h3" className="mb-2 text-blue-800">🤖 LLM Results</Typography>
-                    {(() => {
-                      const llmResults = extractLLMResults(sessionLogs);
-                      return Object.keys(llmResults).length > 0 ? (
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          {llmResults.model && <div><strong>Model:</strong> {llmResults.model}</div>}
-                          {llmResults.provider && <div><strong>Provider:</strong> {llmResults.provider}</div>}
-                          {llmResults.confidence && <div><strong>Confidence:</strong> {Math.round(llmResults.confidence * 100)}%</div>}
-                          {llmResults.cost && <div><strong>Cost:</strong> ${llmResults.cost.toFixed(6)}</div>}
-                          {llmResults.responseTime && <div><strong>Response Time:</strong> {llmResults.responseTime}ms</div>}
-                          {llmResults.tokens && <div><strong>Tokens:</strong> {llmResults.tokens}</div>}
-                        </div>
-                      ) : (
-                        <div className="text-gray-500">No LLM results found</div>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Scoring */}
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <Typography variant="h3" className="mb-2 text-green-800">📊 Scoring</Typography>
-                    {(() => {
-                      const scoring = extractScoring(sessionLogs);
-                      return Object.keys(scoring).length > 0 ? (
-                        <div className="space-y-2 text-sm">
-                          {scoring.mode && <div><strong>Decision Mode:</strong> {scoring.mode}</div>}
-                          {scoring.margin && <div><strong>Margin:</strong> {scoring.margin}</div>}
-                          {scoring.candidate && (
-                            <div>
-                              <strong>Top Candidate:</strong> {scoring.candidate.commonName || scoring.candidate.scientificName}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="text-gray-500">No scoring data found</div>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Final Decision */}
-                  <div className="bg-purple-50 p-4 rounded-lg">
-                    <Typography variant="h3" className="mb-2 text-purple-800">🎯 Final Decision</Typography>
-                    {(() => {
-                      const decision = extractDecision(sessionLogs);
-                      return Object.keys(decision).length > 0 ? (
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          {decision.finalProvider && <div><strong>Primary:</strong> {decision.finalProvider}</div>}
-                          {decision.backupProvider && <div><strong>Backup:</strong> {decision.backupProvider}</div>}
-                          {decision.provider && <div><strong>Provider:</strong> {decision.provider}</div>}
-                          {decision.confidence && <div><strong>Confidence:</strong> {Math.round(decision.confidence * 100)}%</div>}
-                          {decision.aiConfidence && <div><strong>AI Confidence:</strong> {Math.round(decision.aiConfidence * 100)}%</div>}
-                          {decision.traditionalConfidence && <div><strong>Traditional:</strong> {Math.round(decision.traditionalConfidence * 100)}%</div>}
-                        </div>
-                      ) : (
-                        <div className="text-gray-500">No decision data found</div>
-                      );
-                    })()}
-                  </div>
-                </div>
-              )}
-            </Card>
-          )}
-        </div>
-
-        {/* Detailed Logs */}
-        {selectedSession && (
-          <Card className="p-6">
-            <Typography variant="h2" className="mb-4">
-              Detailed Logs: {selectedSession}
-            </Typography>
-            
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {sessionLogs.map((log, index) => (
-                <div key={log.id || index} className="border rounded p-3 bg-white">
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg">{getLevelEmoji(log.level)}</span>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-gray-600">
-                          {getLevelName(log.level)}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {new Date(log.timestamp).toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="text-sm">{log.message}</div>
-                      {log.data && (
-                        <pre className="text-xs bg-gray-100 p-2 rounded mt-2 overflow-x-auto">
-                          {JSON.stringify(log.data, null, 2)}
-                        </pre>
-                      )}
-                      {log.error && (
-                        <div className="text-xs text-red-600 mt-1">
-                          Error: {log.error}
-                        </div>
-                      )}
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(session.status)}`}>
+                        {session.status.toUpperCase()}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {session.logCount} logs • {session.duration ? `${session.duration}ms` : 'Unknown duration'}
+                      </span>
                     </div>
+                    <span className="text-xs text-gray-400">
+                      {session.lastActivity ? new Date(session.lastActivity).toLocaleTimeString() : 'Unknown'}
+                    </span>
+                  </div>
+                  
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div className="font-mono text-xs text-gray-400">{session.sessionId}</div>
+                    {session.finalResult && (
+                      <div className="font-medium text-green-700 text-lg">
+                        🎯 {session.finalResult.commonName || session.finalResult.canonicalName}
+                        {session.finalResult.confidence && (
+                          <span className="text-sm ml-2 text-gray-500">
+                            ({Math.round(session.finalResult.confidence * 100)}% confidence)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {session.error && (
+                      <div className="text-red-600">❌ Error: {session.error}</div>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
+          )}
+        </Card>
+
+        {/* Session Details */}
+        {selectedSession && (
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <Typography variant="h2">
+                Session Analysis: {selectedSession.slice(0, 20)}...
+              </Typography>
+              <Button
+                onClick={() => setSelectedSession(null)}
+                variant="outline"
+                size="sm"
+              >
+                Close
+              </Button>
+            </div>
+            
+            {sessionLogs.length > 0 && (
+              <div className="space-y-6">
+                {/* Final Result */}
+                {(() => {
+                  const finalResult = extractFinalResult(sessionLogs);
+                  return finalResult ? (
+                    <div className="bg-green-50 p-6 rounded-lg border-2 border-green-200">
+                      <Typography variant="h3" className="mb-3 text-green-800">🎯 Final Result</Typography>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-lg">
+                        <div>
+                          <strong>Species:</strong> {finalResult.commonName}
+                        </div>
+                        <div>
+                          <strong>Confidence:</strong> {Math.round(finalResult.confidence * 100)}%
+                        </div>
+                        <div>
+                          <strong>Category:</strong> {finalResult.category}
+                        </div>
+                        <div>
+                          <strong>Provider:</strong> {finalResult.provider}
+                        </div>
+                        {finalResult.scientificName && (
+                          <div className="md:col-span-2">
+                            <strong>Scientific Name:</strong> {finalResult.scientificName}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
+
+                {/* LLM Results */}
+                {(() => {
+                  const llmResults = extractLLMResults(sessionLogs);
+                  return Object.keys(llmResults).length > 0 ? (
+                    <div className="bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
+                      <Typography variant="h3" className="mb-3 text-blue-800">🤖 AI Model Used</Typography>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-lg">
+                        {llmResults.model && <div><strong>Model:</strong> {llmResults.model}</div>}
+                        {llmResults.provider && <div><strong>Provider:</strong> {llmResults.provider}</div>}
+                        {llmResults.confidence && <div><strong>Confidence:</strong> {Math.round(llmResults.confidence * 100)}%</div>}
+                        {llmResults.cost && <div><strong>Cost:</strong> ${llmResults.cost.toFixed(6)}</div>}
+                        {llmResults.responseTime && <div><strong>Time:</strong> {llmResults.responseTime}ms</div>}
+                        {llmResults.tokens && <div><strong>Tokens:</strong> {llmResults.tokens}</div>}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
+                      <Typography variant="h3" className="mb-3 text-gray-800">🤖 AI Model Used</Typography>
+                      <div className="text-gray-500">No AI model information found</div>
+                    </div>
+                  );
+                })()}
+
+                {/* Processing Steps */}
+                <div className="bg-purple-50 p-6 rounded-lg border-2 border-purple-200">
+                  <Typography variant="h3" className="mb-3 text-purple-800">⚡ Processing Steps</Typography>
+                  <div className="space-y-2">
+                    {sessionLogs.slice(0, 10).map((log, index) => (
+                      <div key={log.id || index} className="flex items-center gap-3 text-sm">
+                        <span className="text-lg">{getLevelEmoji(log.level)}</span>
+                        <span className="text-gray-600">{log.message}</span>
+                        <span className="text-xs text-gray-400">
+                          {new Date(log.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </Card>
         )}
 
-        {/* All Logs Summary */}
+        {/* Summary Stats */}
         <Card className="p-6">
           <Typography variant="h2" className="mb-4">
-            All Logs Summary ({logs.length})
+            Summary ({logs.length} total logs)
           </Typography>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-blue-100 p-4 rounded-lg text-center">
               <div className="text-2xl font-bold text-blue-600">{logs.length}</div>
               <div className="text-sm text-blue-800">Total Logs</div>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg">
+            <div className="bg-green-100 p-4 rounded-lg text-center">
               <div className="text-2xl font-bold text-green-600">
-                {logs.filter(log => log.level === 0).length}
+                {sessionSummaries.filter(s => s.status === 'success').length}
               </div>
-              <div className="text-sm text-green-800">Debug Logs</div>
+              <div className="text-sm text-green-800">Successful</div>
             </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-600">
-                {logs.filter(log => log.level === 1).length}
-              </div>
-              <div className="text-sm text-yellow-800">Info Logs</div>
-            </div>
-            <div className="bg-orange-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-orange-600">
-                {logs.filter(log => log.level === 2).length}
-              </div>
-              <div className="text-sm text-orange-800">Warning Logs</div>
-            </div>
-            <div className="bg-red-50 p-4 rounded-lg">
+            <div className="bg-red-100 p-4 rounded-lg text-center">
               <div className="text-2xl font-bold text-red-600">
-                {logs.filter(log => log.level === 3).length}
+                {sessionSummaries.filter(s => s.status === 'failed').length}
               </div>
-              <div className="text-sm text-red-800">Error Logs</div>
+              <div className="text-sm text-red-800">Failed</div>
             </div>
-            <div className="bg-purple-50 p-4 rounded-lg">
+            <div className="bg-purple-100 p-4 rounded-lg text-center">
               <div className="text-2xl font-bold text-purple-600">{sessionSummaries.length}</div>
-              <div className="text-sm text-purple-800">Recognition Sessions</div>
+              <div className="text-sm text-purple-800">Sessions</div>
             </div>
           </div>
         </Card>
