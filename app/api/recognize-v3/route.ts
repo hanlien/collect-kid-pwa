@@ -83,7 +83,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
       }, { status: 400 });
     }
 
-    logger.recognitionStep('recognition_v3_start', {
+    await logger.recognitionStep('recognition_v3_start', {
       imageSize: imageBase64.length,
       enableAIRouter,
       aiBudget,
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
     }, { recognitionId });
 
     // Step 1: Traditional multi-signal recognition (fast, cost-effective)
-    logger.recognitionStep('traditional_pipeline_start', {}, { recognitionId });
+    await logger.recognitionStep('traditional_pipeline_start', {}, { recognitionId });
     
     const traditionalStartTime = Date.now();
     console.log('🔍 [DEBUG] About to call runTraditionalPipeline...');
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
     const traditionalTime = Date.now() - traditionalStartTime;
     const traditionalCost = 0.012; // Estimated cost for traditional pipeline
 
-    logger.recognitionStep('traditional_pipeline_complete', {
+    await logger.recognitionStep('traditional_pipeline_complete', {
       processingTime: traditionalTime,
       estimatedCost: traditionalCost,
       hasResults: !!traditionalResults
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
 
     // Run AI Router regardless of traditional results so we still get an answer
     if (enableAIRouter) {
-      logger.recognitionStep('ai_router_start', {
+      await logger.recognitionStep('ai_router_start', {
         budget: aiBudget,
         priority: aiPriority
       }, { recognitionId });
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
             responseTime: aiTime
           };
 
-          logger.recognitionStep('ai_router_success', {
+          await logger.recognitionStep('ai_router_success', {
             model: aiResponse.model,
             provider: aiResponse.provider,
             cost: aiCost,
@@ -186,13 +186,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
               cost: aiCost,
               responseTime: aiTime
             };
-            logger.recognitionStep('ai_router_loose_parse', {
+            await logger.recognitionStep('ai_router_loose_parse', {
               guess: fallback.commonName,
               confidence: fallback.confidence,
               model: aiResponse.model
             }, { recognitionId });
           } else {
-            logger.recognitionStep('ai_router_invalid_response', {
+            await logger.recognitionStep('ai_router_invalid_response', {
               content: aiResponse.content.substring(0, 200) + '...',
               model: aiResponse.model
             }, { recognitionId });
@@ -200,7 +200,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
         }
 
       } catch (aiError) {
-        logger.recognitionStep('ai_router_error', {
+        await logger.recognitionStep('ai_router_error', {
           error: aiError instanceof Error ? aiError.message : 'Unknown error'
         }, { recognitionId });
         // Continue with traditional results only
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
     const totalTime = Date.now() - startTime;
     const totalCost = traditionalCost + aiCost;
 
-    logger.recognitionStep('hybrid_decision_start', {
+    await logger.recognitionStep('hybrid_decision_start', {
       traditionalResults: !!traditionalResults,
       aiResults: !!aiResults,
       totalTime,
@@ -253,7 +253,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
         }
       };
 
-      logger.recognitionStep('hybrid_success', {
+      await logger.recognitionStep('hybrid_success', {
         finalProvider: 'ai-router',
         backupProvider: traditionalPick.provider || 'multi-signal',
         aiConfidence: aiResults.confidence,
@@ -276,7 +276,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
         }
       };
 
-      logger.recognitionStep('ai_only_success', {
+      await logger.recognitionStep('ai_only_success', {
         provider: 'ai-router',
         confidence: aiResults.confidence
       }, { recognitionId });
@@ -297,7 +297,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
         }
       };
 
-      logger.recognitionStep('traditional_only_success', {
+      await logger.recognitionStep('traditional_only_success', {
         provider: traditionalPick.provider || 'multi-signal',
         confidence: traditionalPick.confidence || 0.7
       }, { recognitionId });
@@ -316,13 +316,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
         }
       };
 
-      logger.recognitionStep('both_systems_failed', {
+      await logger.recognitionStep('both_systems_failed', {
         totalTime,
         totalCost
       }, { recognitionId });
     }
 
-    logger.recognitionStep('recognition_v3_complete', {
+    await logger.recognitionStep('recognition_v3_complete', {
       mode: finalDecision.mode,
       totalTime,
       totalCost,
@@ -335,7 +335,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<HybridRec
     });
 
   } catch (error) {
-    logger.recognitionStep('recognition_v3_error', {
+    await logger.recognitionStep('recognition_v3_error', {
       error: error instanceof Error ? error.message : 'Unknown error'
     }, { recognitionId });
 

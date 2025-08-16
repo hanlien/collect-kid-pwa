@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
     
     if (action === 'test') {
       // Test logging
-      logger.info('Test log entry', { test: true, timestamp: Date.now() });
-      logger.recognitionStep('test_step', { test: true }, { recognitionId: 'test-123' });
+          await logger.info('Test log entry', { test: true, timestamp: Date.now() });
+    await logger.recognitionStep('test_step', { test: true }, { recognitionId: 'test-123' });
       
       return NextResponse.json({ success: true, message: 'Test logs created' });
     }

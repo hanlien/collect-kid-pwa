@@ -114,7 +114,7 @@ export class AIRouter {
         throw new Error(`No suitable model found for budget $${params.budget} and capabilities: ${params.requiredCapabilities.join(', ')}`);
       }
 
-      logger.recognitionStep('ai_router_model_selected', {
+      await logger.recognitionStep('ai_router_model_selected', {
         model: selectedModel.name,
         provider: selectedModel.provider,
         budget: params.budget,
@@ -130,7 +130,7 @@ export class AIRouter {
         const responseTime = Date.now() - startTime;
         const cost = this.calculateActualCost(selectedModel, result.tokens);
         
-        logger.recognitionStep('ai_router_complete', {
+        await logger.recognitionStep('ai_router_complete', {
           model: selectedModel.name,
           provider: selectedModel.provider,
           actualCost: cost,
@@ -152,7 +152,7 @@ export class AIRouter {
             modelError instanceof Error && 
             modelError.message.includes('insufficient_quota')) {
           
-          logger.recognitionStep('ai_router_fallback', {
+          await logger.recognitionStep('ai_router_fallback', {
             originalModel: selectedModel.name,
             reason: 'OpenAI quota exceeded, trying Google models'
           }, { recognitionId: params.recognitionId });
@@ -167,7 +167,7 @@ export class AIRouter {
               throw new Error('No fallback model available');
             }
             
-            logger.recognitionStep('ai_router_model_selected', {
+            await logger.recognitionStep('ai_router_model_selected', {
               model: fallbackModel.name,
               provider: fallbackModel.provider,
               budget: params.budget,
@@ -180,7 +180,7 @@ export class AIRouter {
             const responseTime = Date.now() - startTime;
             const cost = this.calculateActualCost(fallbackModel, result.tokens);
             
-            logger.recognitionStep('ai_router_complete', {
+            await logger.recognitionStep('ai_router_complete', {
               model: fallbackModel.name,
               provider: fallbackModel.provider,
               actualCost: cost,
@@ -204,7 +204,7 @@ export class AIRouter {
       }
 
     } catch (error) {
-      logger.recognitionStep('ai_router_error', {
+      await logger.recognitionStep('ai_router_error', {
         error: error instanceof Error ? error.message : 'Unknown error',
         budget: params.budget,
         priority: params.priority

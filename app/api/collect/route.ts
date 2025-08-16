@@ -9,19 +9,19 @@ export async function POST(request: NextRequest) {
   let userId: string | undefined;
   
   try {
-    logger.info('Collect API called');
+    await logger.info('Collect API called');
     const body = await request.json();
-    logger.debug('Request body', body);
+          await logger.debug('Request body', body);
     
     const parsed = collectRequestSchema.parse(body);
     userId = parsed.userId;
     const { result: speciesResult } = parsed;
-    logger.info('Parsed request', { userId, speciesResult });
+          await logger.info('Parsed request', { userId, speciesResult });
 
     // Use ProfileManager to check if this is a new species
     const profileManager = ProfileManager.getInstance();
     const currentProfile = profileManager.getCurrentProfile();
-    logger.debug('Current profile', currentProfile);
+          await logger.debug('Current profile', currentProfile);
     
     // Check if this is a new species for this profile
     const existingCaptures = profileManager.getCaptures();
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     
     // Prevent duplicate collection - if already collected, return error
     if (!isNewSpecies) {
-      logger.warn('Species already collected', { speciesResult });
+      await logger.warn('Species already collected', { speciesResult });
       apiCall.end({ error: 'Species already collected!', alreadyCollected: true });
       return NextResponse.json(
         { error: 'Species already collected!', alreadyCollected: true },
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       b.subtype === badgeSubtype
     );
 
-    logger.debug('Badge check', {
+          await logger.debug('Badge check', {
       category: speciesResult.category,
       badgeSubtype,
       existingBadges: existingBadges.length,
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     if (isNewSpecies) {
       const badgeLevel = getBadgeLevel(1); // Level 1 for first capture
       
-      logger.info('Creating badge', {
+      await logger.info('Creating badge', {
         category: speciesResult.category,
         subtype: badgeSubtype,
         level: badgeLevel,
@@ -91,11 +91,11 @@ export async function POST(request: NextRequest) {
         nextGoal: 3, // Next goal is 3 for level 2
       });
       
-      logger.info('Created new badge', badge);
+      await logger.info('Created new badge', badge);
       
       // Verify badge was saved
       const allBadges = profileManager.getBadges();
-      logger.debug('All badges after creation', allBadges);
+      await logger.debug('All badges after creation', allBadges);
     }
 
     // Create capture data (don't save to ProfileManager on server)

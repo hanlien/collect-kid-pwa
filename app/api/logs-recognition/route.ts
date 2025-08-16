@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    logger.error('Error fetching recognition logs', error as Error);
+    await logger.error('Error fetching recognition logs', error as Error);
     return NextResponse.json(
       { error: 'Failed to fetch recognition logs' },
       { status: 500 }
@@ -96,7 +96,7 @@ export async function DELETE() {
     });
 
   } catch (error) {
-    logger.error('Error clearing recognition logs', error as Error);
+    await logger.error('Error clearing recognition logs', error as Error);
     return NextResponse.json(
       { error: 'Failed to clear recognition logs' },
       { status: 500 }
