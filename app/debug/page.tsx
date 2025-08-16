@@ -106,7 +106,7 @@ export default function DebugPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/debug/logs?password=${password}`);
+      const response = await fetch(`/api/logs-recognition`);
       const data = await response.json();
       
       if (data.success) {
@@ -130,7 +130,7 @@ export default function DebugPage() {
     if (!isAuthorized) return;
     
     try {
-      const response = await fetch(`/api/debug/logs?recognitionId=${sessionId}&password=${password}`);
+      const response = await fetch(`/api/logs-recognition?recognitionId=${sessionId}`);
       const data = await response.json();
       
       if (data.success) {
@@ -151,7 +151,7 @@ export default function DebugPage() {
     if (!confirm('Are you sure you want to clear all logs?')) return;
     
     try {
-      const response = await fetch(`/api/debug/logs?password=${password}`, {
+      const response = await fetch(`/api/logs-recognition`, {
         method: 'DELETE'
       });
       const data = await response.json();
