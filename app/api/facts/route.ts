@@ -109,10 +109,22 @@ export async function GET(request: NextRequest) {
       imageUrl: wikiData?.thumbnail?.source,
     });
   } catch (error) {
-    console.error('Facts API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch facts' },
-      { status: 500 }
-    );
+    // Graceful fallback: never 500 for facts
+    console.error('Facts API error (serving fallback):', error);
+    try {
+      const canonicalName = request.nextUrl.searchParams.get('canonicalName') || 'this species';
+      const fallbackFacts = [
+        'This species is unique in its own way!',
+        'Look closely at its colors and patterns.',
+        'Respect nature: observe without disturbing.'
+      ];
+      return NextResponse.json({
+        funFacts: fallbackFacts,
+        summary: `Learn more about ${canonicalName}!`,
+        imageUrl: undefined,
+      });
+    } catch {
+      return NextResponse.json({ funFacts: [], summary: 'Learn more about nature!', imageUrl: undefined });
+    }
   }
 }
