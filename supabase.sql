@@ -105,3 +105,19 @@ CREATE INDEX IF NOT EXISTS idx_badges_category ON badges(category);
 CREATE INDEX IF NOT EXISTS idx_achievements_user_id ON achievements(user_id);
 CREATE INDEX IF NOT EXISTS idx_al_queue_status ON active_learning_queue(status);
 CREATE INDEX IF NOT EXISTS idx_al_queue_user_id ON active_learning_queue(user_id);
+
+-- Profiles table for cross-device profile discovery
+CREATE TABLE IF NOT EXISTS profiles (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  emoji TEXT DEFAULT '👤',
+  last_seen TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Basic RLS (adjust to project policies as needed)
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  CREATE POLICY profiles_read ON profiles FOR SELECT TO anon, authenticated USING (true);
+  CREATE POLICY profiles_insert ON profiles FOR INSERT TO service_role WITH CHECK (true);
+  CREATE POLICY profiles_update ON profiles FOR UPDATE TO service_role USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;

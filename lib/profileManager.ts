@@ -518,6 +518,16 @@ class ProfileManager {
   async switchProfileWithSync(profileId: string): Promise<boolean> {
     const success = this.switchProfile(profileId);
     if (success) {
+      // Update server profile last_seen
+      try {
+        const profile = this.getCurrentProfile();
+        fetch('/api/profiles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: profile.id, name: profile.name, emoji: profile.emoji })
+        }).catch(() => {});
+      } catch {}
+
       await this.fetchProfilesFromServer();
       await this.loadProgressFromServer();
     }
