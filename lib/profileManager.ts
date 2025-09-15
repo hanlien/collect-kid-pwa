@@ -117,6 +117,14 @@ class ProfileManager {
 
     this.settings.profiles.push(newProfile);
     this.saveSettings();
+    // Fire-and-forget: upsert profile metadata to server for cross-device discovery
+    try {
+      fetch('/api/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: newProfile.id, name: newProfile.name, emoji: newProfile.emoji })
+      }).catch(() => {});
+    } catch {}
     return newProfile;
   }
 
@@ -473,10 +481,44 @@ class ProfileManager {
     }
   }
 
+  // List all profiles known by server (across devices) and merge into local list
+  async fetchProfilesFromServer(): Promise<void> {
+    try {
+      const response = await fetch('/api/profiles');
+      if (!response.ok) return;
+      const data = await response.json();
+      const serverProfiles: Array<{ id: string; name?: string; emoji?: string }> = data.profiles || [];
+      let changed = false;
+      for (const sp of serverProfiles) {
+        const exists = this.settings.profiles.some(p => p.id === sp.id);
+        if (!exists) {
+          this.settings.profiles.push({
+            id: sp.id,
+            name: sp.name || sp.id,
+            emoji: sp.emoji || '👤',
+            level: 1,
+            coins: 0,
+            totalCaptures: 0,
+            uniqueSpeciesCount: 0,
+            createdAt: new Date().toISOString(),
+            lastSeen: new Date().toISOString(),
+            kidMode: true,
+            streakDays: 0,
+          });
+          changed = true;
+        }
+      }
+      if (changed) this.saveSettings();
+    } catch (error) {
+      console.error('Failed to fetch profiles from server:', error);
+    }
+  }
+
   // Auto-sync on profile switch
   async switchProfileWithSync(profileId: string): Promise<boolean> {
     const success = this.switchProfile(profileId);
     if (success) {
+      await this.fetchProfilesFromServer();
       await this.loadProgressFromServer();
     }
     return success;

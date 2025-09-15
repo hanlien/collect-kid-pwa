@@ -31,6 +31,8 @@ export default function ProfileSelector({ isOpen, onClose, onProfileSwitch }: Pr
   useEffect(() => {
     if (isOpen) {
       loadProfiles();
+      // Try to merge profiles from server for cross-device access
+      profileManager.fetchProfilesFromServer().then(loadProfiles).catch(() => {});
     }
   }, [isOpen, loadProfiles]);
 
@@ -43,11 +45,12 @@ export default function ProfileSelector({ isOpen, onClose, onProfileSwitch }: Pr
 
   const handleCreateProfile = () => {
     if (newProfileName.trim()) {
-      // const newProfile = profileManager.createProfile(newProfileName.trim(), newProfileEmoji); // TODO: Implement profile creation
+      const newProfile = profileManager.createProfile(newProfileName.trim(), newProfileEmoji);
       setNewProfileName('');
       setNewProfileEmoji('👤');
       setShowCreateForm(false);
-      loadProfiles();
+      setProfiles(prev => [...prev, newProfile]);
+      setCurrentProfile(newProfile);
     }
   };
 
