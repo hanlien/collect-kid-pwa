@@ -69,38 +69,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Generate fun facts
+    // Generate fun facts tailored to summary if available
     let funFacts: string[] = [];
     if (wikiData?.extract) {
       funFacts = generateFunFacts(wikiData.extract);
     } else {
-      // Fallback facts based on category
-      const category = validatedParams.canonicalName.toLowerCase();
-      if (category.includes('flower') || category.includes('plant')) {
-        funFacts = [
-          'Plants make their own food using sunlight!',
-          'Flowers help plants make seeds for new plants.',
-          'Some flowers can change color to attract bees!',
-        ];
-      } else if (category.includes('bird')) {
-        funFacts = [
-          'Birds are the only animals with feathers!',
-          'Most birds can fly, but some prefer to walk.',
-          'Birds build nests to keep their eggs safe.',
-        ];
-      } else if (category.includes('bug') || category.includes('insect')) {
-        funFacts = [
-          'Insects have six legs and three body parts!',
-          'Bees help flowers grow by carrying pollen.',
-          'Butterflies taste with their feet!',
-        ];
-      } else {
-        funFacts = [
-          'Animals come in all shapes and sizes!',
-          'Each animal has special ways to survive.',
-          'Animals are amazing and unique!',
-        ];
-      }
+      // Minimal generic fallback
+      funFacts = [
+        'Look closely at its colors and patterns!',
+        'Where does it like to live? Forests, gardens, or ponds?',
+        'What does it eat? Plants, nectar, or little insects?',
+      ];
     }
 
     return NextResponse.json({

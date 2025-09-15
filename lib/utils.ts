@@ -99,21 +99,49 @@ export function isDangerousSpecies(result: SpeciesResult): boolean {
 
 // Generate fun facts from summary
 export function generateFunFacts(summary: string): string[] {
-  const sentences = summary.split('. ').filter(s => s.length > 20);
-  const facts = sentences.slice(0, 3).map(s => {
-    // Remove technical jargon and make kid-friendly
-    return s
+  const raw = summary
+    .replace(/\n+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const sentences = raw
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 20 && s.length < 240);
+
+  // Prioritize kid-friendly topics
+  const topics = [
+    { key: 'habitat', match: /(habitat|live|found|native|range|forest|garden|river|ocean|desert)/i },
+    { key: 'diet', match: /(diet|eat|food|feeds on|nectar|prey|herbivore|carnivore|omnivore)/i },
+    { key: 'behavior', match: /(behavior|flies|migrat|nocturnal|diurnal|active|build|nest|pollinat)/i },
+    { key: 'appearance', match: /(color|pattern|wings|petals|size|shape|spots|stripes)/i },
+    { key: 'safety', match: /(sting|poison|venom|harm|safe|danger)/i },
+  ];
+
+  const chosen: string[] = [];
+  for (const t of topics) {
+    const pick = sentences.find((s) => t.match.test(s));
+    if (pick) chosen.push(pick);
+  }
+  // Fill remaining slots with first sentences
+  for (const s of sentences) {
+    if (chosen.length >= 3) break;
+    if (!chosen.includes(s)) chosen.push(s);
+  }
+
+  // Kid-friendly rewrite
+  const friendly = chosen.slice(0, 3).map((s) =>
+    s
       .replace(/scientific name/gi, 'name')
       .replace(/species/gi, 'type')
       .replace(/genus/gi, 'family')
-      .replace(/family/gi, 'group')
       .replace(/taxonomy/gi, 'grouping')
       .replace(/morphology/gi, 'looks')
       .replace(/habitat/gi, 'home')
-      .replace(/distribution/gi, 'where they live');
-  });
-  
-  return facts.filter(f => f.length > 10 && f.length < 200);
+      .replace(/distribution/gi, 'where they live')
+  );
+
+  return friendly.filter((f) => f.length > 10 && f.length < 240);
 }
 
 // Format confidence for display

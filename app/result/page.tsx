@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Volume2, Heart, ArrowLeft, RotateCcw, Star, MapPin, Award, BookOpen, Bookmark, Target } from 'lucide-react';
 import Image from 'next/image';
 import BigButton from '@/components/BigButton';
-// import ColorChips from '@/components/ColorChips'; // TODO: Use when needed
+import ColorChips from '@/components/ColorChips';
 import Toast from '@/components/Toast';
 import dynamic from 'next/dynamic';
 
@@ -526,15 +526,7 @@ function ResultPageContent() {
                 <div className="space-y-4">
                   <h4 className="font-semibold text-gray-800 mb-3">Dominant Colors</h4>
                   {result.ui?.colorChips && result.ui.colorChips.length > 0 ? (
-                    <div className="flex flex-wrap gap-3">
-                      {result.ui.colorChips.map((color, index) => (
-                        <div
-                          key={index}
-                          className="w-16 h-16 rounded-xl shadow-md"
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
+                    <ColorChips colors={result.ui.colorChips} />
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       <div className="text-4xl mb-2">🎨</div>
