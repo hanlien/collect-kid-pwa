@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, User } from 'lucide-react';
+import { X, Plus, User, Trash2, Pencil } from 'lucide-react';
 import ProfileManager from '@/lib/profileManager';
 import { Profile } from '@/types/profile';
 
@@ -18,13 +18,20 @@ export default function ProfileSelector({ isOpen, onClose, onProfileSwitch }: Pr
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
   const [newProfileEmoji, setNewProfileEmoji] = useState('👤');
+  const [renameId, setRenameId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const profileManager = ProfileManager.getInstance();
 
   const loadProfiles = useCallback(() => {
     const allProfiles = profileManager.getAllProfiles();
+    const sorted = [...allProfiles].sort((a, b) => {
+      const at = new Date(a.lastSeen || 0).getTime();
+      const bt = new Date(b.lastSeen || 0).getTime();
+      return bt - at;
+    });
     const current = profileManager.getCurrentProfile();
-    setProfiles(allProfiles);
+    setProfiles(sorted);
     setCurrentProfile(current);
   }, [profileManager]);
 
@@ -51,6 +58,31 @@ export default function ProfileSelector({ isOpen, onClose, onProfileSwitch }: Pr
       setShowCreateForm(false);
       setProfiles(prev => [...prev, newProfile]);
       setCurrentProfile(newProfile);
+    }
+  };
+
+  const handleRenameProfile = async (profile: Profile) => {
+    if (!renameValue.trim()) return;
+    // optimistic local update
+    profileManager.updateProfile(profile.id, { name: renameValue.trim() });
+    setProfiles(prev => prev.map(p => (p.id === profile.id ? { ...p, name: renameValue.trim() } : p)));
+    setRenameId(null);
+    setRenameValue('');
+    // server update
+    try {
+      await fetch('/api/profiles', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: profile.id, name: profile.name, emoji: profile.emoji })
+      });
+    } catch {}
+  };
+
+  const handleDeleteProfile = async (profile: Profile) => {
+    if (profile.isDefault) return;
+    const ok = profileManager.deleteProfile(profile.id);
+    if (ok) {
+      setProfiles(prev => prev.filter(p => p.id !== profile.id));
     }
   };
 
@@ -141,14 +173,45 @@ export default function ProfileSelector({ isOpen, onClose, onProfileSwitch }: Pr
                         <div className="flex items-center gap-3">
                           <div className="text-2xl">{profile.emoji}</div>
                           <div className="flex-1 text-left">
-                            <h4 className="font-semibold text-gray-800">{profile.name}</h4>
+                            <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+                              {renameId === profile.id ? (
+                                <input
+                                  autoFocus
+                                  className="border rounded px-2 py-1 text-sm"
+                                  value={renameValue}
+                                  onChange={(e) => setRenameValue(e.target.value)}
+                                  onKeyDown={(e) => e.key === 'Enter' && handleRenameProfile(profile)}
+                                  onBlur={() => setRenameId(null)}
+                                />
+                              ) : (
+                                <span>{profile.name}</span>
+                              )}
+                            </h4>
                             <p className="text-sm text-gray-600">
                               Level {profile.level} • {profile.coins} coins • {profile.totalCaptures} captures
                             </p>
                           </div>
-                          {profile.id !== currentProfile?.id && (
-                            <div className="text-xs text-blue-600 font-medium">Switch</div>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              className="p-2 text-gray-500 hover:text-blue-600"
+                              onClick={(e) => { e.stopPropagation(); setRenameId(profile.id); setRenameValue(profile.name); }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            {!profile.isDefault && (
+                              <button
+                                type="button"
+                                className="p-2 text-gray-500 hover:text-red-600"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteProfile(profile); }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                            {profile.id !== currentProfile?.id && (
+                              <div className="text-xs text-blue-600 font-medium">Switch</div>
+                            )}
+                          </div>
                         </div>
                       </motion.button>
                     ))}

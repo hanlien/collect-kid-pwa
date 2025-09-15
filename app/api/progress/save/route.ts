@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Service unavailable' }, { status: 503 });
     }
     const body = await request.json();
-    const { profileId, collections, badges, coins, level, experience } = body;
+    const { profileId, collections, badges, coins, level, experience, scanHistory } = body;
 
     if (!profileId) {
       return NextResponse.json({ error: 'Profile ID is required' }, { status: 400 });
@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
         coins: coins || 0,
         level: level || 1,
         experience: experience || 0,
+        scan_history: scanHistory || [],
         last_updated: new Date().toISOString()
       }, {
         onConflict: 'profile_id'

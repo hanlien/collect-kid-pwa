@@ -29,6 +29,10 @@ class ProfileManager {
   private constructor() {
     this.settings = this.loadSettings();
     this.ensureDefaultProfile();
+    // Best-effort: fetch server profiles on startup for cross-device discovery
+    if (typeof window !== 'undefined') {
+      this.fetchProfilesFromServer().catch(() => {});
+    }
   }
 
   static getInstance(): ProfileManager {
@@ -159,6 +163,10 @@ class ProfileManager {
       }
       
       this.saveSettings();
+      // Fire-and-forget: remove from server profiles list
+      try {
+        fetch(`/api/profiles?id=${encodeURIComponent(profileId)}`, { method: 'DELETE' }).catch(() => {});
+      } catch {}
       
       // Clean up profile data
       this.clearProfileData(profileId);
@@ -426,6 +434,7 @@ class ProfileManager {
       const profile = this.getCurrentProfile();
       const captures = this.getCaptures();
       const badges = this.getBadges();
+      const scanHistory = this.getScanHistory();
 
       const progressData = {
         profileId: profile.id,
@@ -434,6 +443,7 @@ class ProfileManager {
         coins: profile.coins,
         level: profile.level,
         experience: profile.totalCaptures * 10, // Simple XP calculation
+        scanHistory,
       };
 
       const response = await fetch('/api/progress/save', {
@@ -466,6 +476,9 @@ class ProfileManager {
           // Update local storage with server data
           this.saveCaptures(data.data.collections || []);
           this.saveBadges(data.data.badges || []);
+          if (Array.isArray(data.data.scan_history)) {
+            this.saveScanHistory(data.data.scan_history);
+          }
           
           // Update profile stats
           this.updateProfile(profile.id, {

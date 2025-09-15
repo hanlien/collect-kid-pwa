@@ -99,4 +99,63 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 }
 
+// PATCH: update profile metadata (name, emoji)
+export async function PATCH(request: NextRequest): Promise<NextResponse> {
+  try {
+    const supabase = getSupabase();
+    const body = await request.json();
+    const { id, name, emoji } = body as { id: string; name?: string; emoji?: string };
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Missing id' }, { status: 400 });
+    }
+
+    if (!supabase) {
+      await logger.warn('Supabase env missing on PATCH /api/profiles; noop success');
+      return NextResponse.json({ success: true });
+    }
+
+    const updates: any = { id, last_seen: new Date().toISOString() };
+    if (typeof name === 'string') updates.name = name;
+    if (typeof emoji === 'string') updates.emoji = emoji;
+
+    const { error } = await supabase.from('profiles').upsert(updates, { onConflict: 'id' });
+    if (error) {
+      await logger.warn('Update profiles failed', { error: error.message });
+      return NextResponse.json({ success: false, error: 'Update failed' }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    await logger.error('PATCH /api/profiles failed', error as Error);
+    return NextResponse.json({ success: false }, { status: 500 });
+  }
+}
+
+// DELETE: remove profile metadata (does not cascade other tables here)
+export async function DELETE(request: NextRequest): Promise<NextResponse> {
+  try {
+    const supabase = getSupabase();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Missing id' }, { status: 400 });
+    }
+
+    if (!supabase) {
+      await logger.warn('Supabase env missing on DELETE /api/profiles; noop success');
+      return NextResponse.json({ success: true });
+    }
+
+    const { error } = await supabase.from('profiles').delete().eq('id', id);
+    if (error) {
+      await logger.warn('Delete profile failed', { error: error.message });
+      return NextResponse.json({ success: false, error: 'Delete failed' }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    await logger.error('DELETE /api/profiles failed', error as Error);
+    return NextResponse.json({ success: false }, { status: 500 });
+  }
+}
+
 
