@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Save progress to database
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('user_progress')
       .upsert({
         profile_id: profileId,
@@ -41,6 +41,25 @@ export async function POST(request: NextRequest) {
       }, {
         onConflict: 'profile_id'
       });
+
+    // Fallback if scan_history column doesn't exist yet: retry without it
+    if (error && /scan_history|column/i.test(error.message)) {
+      const retry = await supabase
+        .from('user_progress')
+        .upsert({
+          profile_id: profileId,
+          collections: collections || [],
+          badges: badges || [],
+          coins: coins || 0,
+          level: level || 1,
+          experience: experience || 0,
+          last_updated: new Date().toISOString()
+        }, {
+          onConflict: 'profile_id'
+        });
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       console.error('Error saving progress:', error);
