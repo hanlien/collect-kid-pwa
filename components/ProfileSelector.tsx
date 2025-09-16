@@ -41,7 +41,7 @@ export default function ProfileSelector({ isOpen, onClose, onProfileSwitch }: Pr
       // Try to merge profiles from server for cross-device access
       profileManager.fetchProfilesFromServer().then(loadProfiles).catch(() => {});
     }
-  }, [isOpen, loadProfiles]);
+  }, [isOpen, loadProfiles, profileManager]);
 
   const handleProfileSwitch = async (profile: Profile) => {
     await profileManager.switchProfileWithSync(profile.id);
